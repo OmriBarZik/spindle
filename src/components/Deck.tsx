@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useRecordLanding } from "@/lib/recordFlight";
 import { formatTime, type HiddenPlayer } from "@/lib/youtube";
 
 /**
@@ -37,10 +39,28 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
   const busy = loading || !player.ready;
   const statusText = !player.ready ? t.common.loadingPlayer : loading ? t.common.loadingSong : "";
 
+  // Coming from the home page, the record flies in from where it was there.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  useRecordLanding(boxRef, buttonRef);
+
+  // After a guess the player is usually down at the "Place it" button, below a
+  // long timeline. Bring the record into view so they see it glow and swipe.
+  const swapping = !!swap;
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!swapping || !box) return;
+    const r = box.getBoundingClientRect();
+    if (r.top >= 0 && r.bottom <= window.innerHeight) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    box.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  }, [swapping]);
+
   return (
-    // overflow-x-clip: the record swipes sideways without causing horizontal scroll.
-    <div className="flex flex-col items-center gap-4 overflow-x-clip">
-      <div className="relative aspect-square w-56 sm:w-64">
+    // While the record swipes, clip sideways so the page doesn't scroll horizontally.
+    // Only then, so the flight from the home page is never clipped.
+    <div className={`flex flex-col items-center gap-4 ${swap ? "overflow-x-clip" : ""}`}>
+      <div ref={boxRef} className="relative aspect-square w-56 sm:w-64">
         {/* Loading ring: always mounted and faded in/out so nothing shifts. */}
         <div
           aria-hidden
@@ -79,6 +99,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
             }`}
           />
           <button
+            ref={buttonRef}
             type="button"
             disabled={!player.ready || !videoId || !!swap}
             onClick={() => videoId && player.toggle(videoId, start)}
