@@ -3,8 +3,7 @@
 import { Fragment, useState } from "react";
 import Deck from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
-import SongReveal from "@/components/SongReveal";
-import { Stats } from "@/components/SortGame";
+import { SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { dayKey, puzzleNumber } from "@/lib/dates";
 import { getSong } from "@/lib/songs";
 import {
@@ -103,9 +102,9 @@ export default function TimelineGame() {
                   onClick={() => setSlot(i)}
                 />
               )}
-              {wrongAt === i && <Card card={mystery} variant="bad" />}
-              <Card
-                card={card}
+              {wrongAt === i && <SongCard song={mystery} variant="bad" note="belongs here" />}
+              <SongCard
+                song={card}
                 variant={
                   today.result === "correct" && card.id === song.id
                     ? "good"
@@ -123,7 +122,9 @@ export default function TimelineGame() {
               onClick={() => setSlot(t.cards.length)}
             />
           )}
-          {wrongAt === t.cards.length && <Card card={mystery} variant="bad" />}
+          {wrongAt === t.cards.length && (
+            <SongCard song={mystery} variant="bad" note="belongs here" />
+          )}
           <li className="text-xs uppercase tracking-widest text-muted">▼ Newest</li>
         </ol>
       )}
@@ -170,45 +171,5 @@ export default function TimelineGame() {
         </section>
       )}
     </main>
-  );
-}
-
-function SlotButton({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onClick}
-        className={`w-full rounded-xl border-2 border-dashed px-3 py-2 text-sm transition ${
-          selected
-            ? "border-white bg-white/10 font-semibold text-white"
-            : "border-line text-muted hover:border-white/50 hover:text-white"
-        }`}
-      >
-        {selected ? `🎵 Today's song goes here · ${label}` : `+ ${label}`}
-      </button>
-    </li>
-  );
-}
-
-function Card({ card, variant }: { card: TimelineCard; variant: "plain" | "good" | "bad" }) {
-  return (
-    <li
-      className={`card flex items-center gap-3 p-3 ${
-        variant === "good" ? "card-good" : variant === "bad" ? "card-bad" : ""
-      }`}
-    >
-      <div className="w-14 shrink-0 text-center text-xl font-bold tabular-nums">{card.year}</div>
-      <SongReveal {...card} />
-      {variant === "bad" && <span className="ml-auto text-xs">belongs here</span>}
-    </li>
   );
 }

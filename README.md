@@ -5,9 +5,11 @@ title, thumbnail, or comments visible, and work out when they were released.
 
 ## Game modes
 
-### 🎚️ Daily Sort
-Five songs, same for everyone each day. Listen to each one and order them from oldest
-to newest. Every song in the right spot scores a 🟩. Perfect days build a streak.
+### 🎚️ Daily Five
+Five songs, same for everyone each day, played **one at a time**. The line starts with a
+single year card (e.g. *1980*). Place the first song *before* or *after* it, then the next
+song into one of the gaps, and so on. Each right placement scores a 🟩; a wrong one is shown
+in red and moved to its real spot so the line stays accurate. Perfect days build a streak.
 
 ### 📈 Daily Timeline
 One song per day, and a timeline that grows the longer you keep playing:
@@ -55,7 +57,7 @@ Built with Next.js (App Router), React, TypeScript and Tailwind CSS.
 | `src/lib/storage.ts` | Save format and all game state transitions |
 | `src/lib/timeline.ts` | Slot / placement rules |
 | `src/lib/youtube.ts` | Hidden YouTube player hook |
-| `src/components/` | `Deck` (turntable), `SortGame`, `TimelineGame` |
+| `src/components/` | `Deck` (turntable), `SortGame` (Daily Five), `TimelineGame`, `TimelineParts` |
 
 ## Adding songs
 

@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "../dates";
-import { initialSortOrder, sortSongsFor, timelineSongFor } from "../daily";
+import { anchorYearFor, sortSongsFor, timelineSongFor } from "../daily";
 import { getSong, SONGS } from "../songs";
 import {
   emptySave,
   ensureSortDay,
   ensureTimelineDay,
-  moveSortItem,
+  placeSortSong,
   placeTimelineCard,
   revealAnchor,
   skipTimelineSong,
-  submitSort,
+  sortDayDone,
+  sortLine,
   type SaveData,
 } from "../storage";
 import { correctSlot, isSlotCorrect, slotLabel } from "../timeline";
@@ -37,10 +38,11 @@ describe("daily selection", () => {
     expect(sortSongsFor(addDays(DAY, 1)).map((s) => s.id)).not.toEqual(a.map((s) => s.id));
   });
 
-  it("never starts already sorted", () => {
-    for (let i = 0; i < 200; i++) {
-      const years = initialSortOrder(addDays(DAY, i)).map((id) => getSong(id)!.year);
-      expect(years).not.toEqual([...years].sort((x, y) => x - y));
+  it("picks an anchor year different from the five songs", () => {
+    for (let i = 0; i < 100; i++) {
+      const day = addDays(DAY, i);
+      const years = sortSongsFor(day).map((s) => s.year);
+      expect(years).not.toContain(anchorYearFor(day));
     }
   });
 
@@ -71,29 +73,49 @@ describe("timeline slots", () => {
   });
 });
 
-describe("sort mode", () => {
-  it("scores a perfect order and tracks streaks", () => {
-    let d: SaveData = emptySave();
-    for (const day of [DAY, addDays(DAY, 1)]) {
-      d = ensureSortDay(d, day);
-      const sorted = sortSongsFor(day)
-        .slice()
-        .sort((a, b) => a.year - b.year)
-        .map((s) => s.id);
-      d = { ...d, sort: { ...d.sort, days: { ...d.sort.days, [day]: { order: sorted, submitted: false } } } };
-      d = submitSort(d, day);
-      expect(d.sort.days[day].correct).toEqual([true, true, true, true, true]);
+describe("daily five", () => {
+  function playDay(d: SaveData, day: string, rightFor: (i: number) => boolean): SaveData {
+    d = ensureSortDay(d, day);
+    for (let i = 0; i < 5; i++) {
+      const state = d.sort.days[day];
+      const line = sortLine(state);
+      const song = getSong(state.songIds[i])!;
+      const right = correctSlot(line, song.year);
+      const wrong = right === 0 ? line.length : 0;
+      d = placeSortSong(d, day, rightFor(i) ? right : wrong);
     }
-    expect(d.sort.stats.streak).toBe(2);
-    expect(d.sort.stats.perfect).toBe(2);
+    return d;
+  }
+
+  it("starts with only the anchor year", () => {
+    const d = ensureSortDay(emptySave(), DAY);
+    expect(sortLine(d.sort.days[DAY])).toEqual([{ kind: "anchor", year: anchorYearFor(DAY) }]);
   });
 
-  it("locks the order after submitting", () => {
-    let d = ensureSortDay(emptySave(), DAY);
-    d = submitSort(d, DAY);
-    const before = d.sort.days[DAY].order;
-    d = moveSortItem(d, DAY, 0, 1);
-    expect(d.sort.days[DAY].order).toEqual(before);
+  it("scores a perfect day and tracks streaks", () => {
+    let d = playDay(emptySave(), DAY, () => true);
+    d = playDay(d, addDays(DAY, 1), () => true);
+    expect(d.sort.days[DAY].placements.every((p) => p.correct)).toBe(true);
+    expect(d.sort.stats.streak).toBe(2);
+    expect(d.sort.stats.perfect).toBe(2);
+    expect(d.sort.stats.played).toBe(2);
+  });
+
+  it("keeps the line in order even after wrong placements", () => {
+    const d = playDay(emptySave(), DAY, (i) => i % 2 === 0);
+    const state = d.sort.days[DAY];
+    expect(sortDayDone(state)).toBe(true);
+    expect(state.placements.map((p) => p.correct)).toEqual([true, false, true, false, true]);
+    const years = sortLine(state).map((c) => c.year);
+    expect(years).toHaveLength(6);
+    expect(years).toEqual([...years].sort((a, b) => a - b));
+    expect(d.sort.stats.streak).toBe(0);
+    expect(d.sort.stats.distribution[3]).toBe(1);
+  });
+
+  it("ignores placements after the day is done", () => {
+    const d = playDay(emptySave(), DAY, () => true);
+    expect(placeSortSong(d, DAY, 0)).toBe(d);
   });
 });
 
