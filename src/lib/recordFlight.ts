@@ -27,7 +27,13 @@ const TIMEOUT = 10000;
 const SPIN_SLOW_MS = 8000;
 
 /** `landing` is set while a Deck has taken over the flight. */
-type Flight = { ghost: HTMLElement; timer: ReturnType<typeof setTimeout>; landing: boolean };
+type Flight = {
+  ghost: HTMLElement;
+  timer: ReturnType<typeof setTimeout>;
+  landing: boolean;
+  /** Stops listening for Back/Forward. */
+  unlisten: () => void;
+};
 let flight: Flight | null = null;
 
 function canAnimate(): boolean {
@@ -82,11 +88,17 @@ function holdHidden(els: HTMLElement[]): Animation[] {
   return els.map((el) => el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 0, fill: "forwards" }));
 }
 
+/** Forget the current flight (if it is `f`) and stop its timers and listeners. */
+function endFlight(f: Flight) {
+  if (flight === f) flight = null;
+  clearTimeout(f.timer);
+  f.unlisten();
+}
+
 function removeGhost(fade: boolean) {
   const f = flight;
   if (!f) return;
-  flight = null;
-  clearTimeout(f.timer);
+  endFlight(f);
   if (!fade) {
     f.ghost.remove();
     return;
@@ -122,7 +134,16 @@ export function launchRecordFlight(record: HTMLElement | null) {
   });
   document.body.appendChild(ghost);
 
-  flight = { ghost, timer: setTimeout(() => removeGhost(true), TIMEOUT), landing: false };
+  // Back/Forward before the record lands (e.g. straight back to the home
+  // page) cancels the flight, so no record is left floating on the page.
+  const onPop = () => removeGhost(false);
+  window.addEventListener("popstate", onPop);
+  flight = {
+    ghost,
+    timer: setTimeout(() => removeGhost(true), TIMEOUT),
+    landing: false,
+    unlisten: () => window.removeEventListener("popstate", onPop),
+  };
 }
 
 /** Let a game screen without a Deck (e.g. a finished Daily Five) fade the ghost out. */
@@ -168,7 +189,7 @@ export function useRecordLanding(
     let raf = 0;
 
     const land = () => {
-      if (flight === f) flight = null;
+      endFlight(f);
       f.ghost.remove();
       setHidden(boxEl, false);
       holds.forEach((h) => h.cancel());
@@ -215,7 +236,10 @@ export function useRecordLanding(
       setHidden(boxEl, false);
       holds.forEach((h) => h.cancel());
       f.landing = false;
-      if (flight === f) f.timer = setTimeout(() => removeGhost(true), TIMEOUT);
+      // Unmounted mid-flight, e.g. Back to the home page: drop the record
+      // right away. Waiting one tick lets React's dev double-mount pick the
+      // flight up again first (the re-run clears this timer).
+      if (flight === f) f.timer = setTimeout(() => removeGhost(false), 0);
     };
   }, [box, button]);
 }
