@@ -8,6 +8,7 @@ import {
   ensureTimelineDay,
   placeSortSong,
   placeTimelineCard,
+  setSongLanguage,
   skipTimelineSong,
   sortDayDone,
   sortLine,
@@ -199,5 +200,59 @@ describe("timeline mode", () => {
     d = skipTimelineSong(d, DAY);
     expect(d.timeline.today!.songId).not.toBe(first);
     expect(d.timeline.today!.skipped).toEqual([first]);
+  });
+});
+
+describe("song language settings", () => {
+  const he = (id: string) => Boolean(getSong(id)?.titleHe);
+
+  it("defaults to every language and leaves the shared puzzle unchanged", () => {
+    const d = ensureSortDay(emptySave(), DAY);
+    expect(d.settings.songLanguages).toEqual(["en", "he"]);
+    expect(d.sort.days[DAY].songIds).toEqual(sortSongsFor(DAY).map((s) => s.id));
+    expect(d.sort.days[DAY].anchorYear).toBe(anchorYearFor(DAY));
+  });
+
+  it("only picks songs in the chosen language", () => {
+    for (const lang of ["en", "he"] as const) {
+      let d = setSongLanguage(emptySave(), lang === "en" ? "he" : "en", false);
+      for (let i = 0; i < 20; i++) {
+        const day = addDays(DAY, i);
+        d = ensureTimelineDay(ensureSortDay(d, day), day);
+        expect(d.sort.days[day].songIds.every((id) => he(id) === (lang === "he"))).toBe(true);
+        expect(he(d.timeline.today!.songId)).toBe(lang === "he");
+      }
+    }
+  });
+
+  it("never turns off the last language", () => {
+    const d = setSongLanguage(emptySave(), "he", false);
+    expect(setSongLanguage(d, "en", false)).toBe(d);
+    expect(setSongLanguage(d, "en", true)).toBe(d);
+  });
+
+  it("re-picks today only if it hasn't been started", () => {
+    let d = ensureSortDay(emptySave(), DAY);
+    const before = d.sort.days[DAY].songIds;
+    d = setSongLanguage(d, "en", false);
+    const fresh = ensureSortDay(d, DAY);
+    expect(fresh.sort.days[DAY].songIds).not.toEqual(before);
+    expect(fresh.sort.days[DAY].songIds.every(he)).toBe(true);
+
+    const started = placeSortSong(ensureSortDay(emptySave(), DAY), DAY, 0);
+    const kept = setSongLanguage(started, "en", false);
+    expect(ensureSortDay(kept, DAY)).toBe(kept);
+  });
+
+  it("swaps a pending timeline song whose language was turned off", () => {
+    let d = setSongLanguage(emptySave(), "he", false);
+    d = ensureTimelineDay(d, DAY);
+    expect(he(d.timeline.today!.songId)).toBe(false);
+    const swapped = ensureTimelineDay(setSongLanguage(setSongLanguage(d, "he", true), "en", false), DAY);
+    expect(he(swapped.timeline.today!.songId)).toBe(true);
+    // Answered days are left alone.
+    const answered = placeTimelineCard(d, DAY, 0);
+    const after = setSongLanguage(setSongLanguage(answered, "he", true), "en", false);
+    expect(ensureTimelineDay(after, DAY)).toBe(after);
   });
 });

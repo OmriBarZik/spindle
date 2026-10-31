@@ -21,6 +21,18 @@ export const SONGS: Song[] = (songsData as RawSong[]).map((s) => ({
   id: s.youtubeId,
 }));
 
+/**
+ * Which pool a song belongs to, for the player's song settings. Israeli songs (the ones
+ * with Hebrew names) are "he"; everything else is "en". A few Israeli entries are sung
+ * in English, so the UI calls these "Israeli" and "International" songs.
+ */
+export type SongLanguage = "en" | "he";
+export const SONG_LANGUAGES: readonly SongLanguage[] = ["en", "he"];
+
+export function songLanguage(song: Pick<Song, "titleHe">): SongLanguage {
+  return song.titleHe ? "he" : "en";
+}
+
 export const SONG_BY_ID = new Map(SONGS.map((s) => [s.id, s]));
 
 export function getSong(id: string): Song | undefined {

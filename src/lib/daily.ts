@@ -1,16 +1,29 @@
 import { seededShuffle } from "./random";
-import { SONGS, type Song } from "./songs";
+import { SONG_LANGUAGES, SONGS, songLanguage, type Song, type SongLanguage } from "./songs";
 
 export const SORT_SIZE = 5;
+
+/**
+ * The day's seeded shuffle, keeping only songs in the player's chosen languages.
+ * The seed never depends on the setting, so players with every language on (the
+ * default) all get exactly the same picks, and players with the same setting match
+ * each other. Falls back to the full list if the filter would leave nothing.
+ */
+function shuffled(seed: string, langs?: readonly SongLanguage[]): Song[] {
+  const all = seededShuffle(SONGS, seed);
+  if (!langs || SONG_LANGUAGES.every((l) => langs.includes(l))) return all;
+  const kept = all.filter((s) => langs.includes(songLanguage(s)));
+  return kept.length > 0 ? kept : all;
+}
 
 /**
  * The 5 songs for the "Daily Five" puzzle, in the order they are played. Everyone
  * gets the same songs on the same calendar day. Years are kept distinct.
  */
-export function sortSongsFor(day: string): Song[] {
+export function sortSongsFor(day: string, langs?: readonly SongLanguage[]): Song[] {
   const picked: Song[] = [];
   const years = new Set<number>();
-  for (const song of seededShuffle(SONGS, `sort:${day}`)) {
+  for (const song of shuffled(`sort:${day}`, langs)) {
     if (years.has(song.year)) continue;
     picked.push(song);
     years.add(song.year);
@@ -23,15 +36,19 @@ export function sortSongsFor(day: string): Song[] {
  * The starting year card for the daily five, e.g. 1980. Taken from another song
  * in the catalog (so it's a realistic year) whose year differs from all five.
  */
-export function anchorYearFor(day: string): number {
-  const used = new Set(sortSongsFor(day).map((s) => s.year));
-  const pick = seededShuffle(SONGS, `anchor:${day}`).find((s) => !used.has(s.year));
+export function anchorYearFor(day: string, langs?: readonly SongLanguage[]): number {
+  const used = new Set(sortSongsFor(day, langs).map((s) => s.year));
+  const pick = shuffled(`anchor:${day}`, langs).find((s) => !used.has(s.year));
   return pick?.year ?? 1990;
 }
 
 /** Starting year for a new Daily Timeline, different from the first song's year. */
-export function timelineAnchorYearFor(day: string, songYear: number): number {
-  const pick = seededShuffle(SONGS, `timeline-anchor:${day}`).find((s) => s.year !== songYear);
+export function timelineAnchorYearFor(
+  day: string,
+  songYear: number,
+  langs?: readonly SongLanguage[],
+): number {
+  const pick = shuffled(`timeline-anchor:${day}`, langs).find((s) => s.year !== songYear);
   return pick?.year ?? 1990;
 }
 
@@ -43,9 +60,10 @@ export function timelineAnchorYearFor(day: string, songYear: number): number {
 export function timelineSongFor(
   day: string,
   exclude: ReadonlySet<string>,
+  langs?: readonly SongLanguage[],
 ): Song | undefined {
-  const sortIds = new Set(sortSongsFor(day).map((s) => s.id));
-  return seededShuffle(SONGS, `timeline:${day}`).find(
-    (s) => !sortIds.has(s.id) && !exclude.has(s.id),
-  );
+  const sortIds = new Set(sortSongsFor(day, langs).map((s) => s.id));
+  const ok = (s: Song) => !sortIds.has(s.id) && !exclude.has(s.id);
+  // If the chosen languages run out (a very long run), fall back to any song.
+  return shuffled(`timeline:${day}`, langs).find(ok) ?? shuffled(`timeline:${day}`).find(ok);
 }

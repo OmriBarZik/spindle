@@ -35,7 +35,9 @@ export default function SortGame() {
 
   const hits = state.placements.filter((p) => p.correct).length;
   const emoji = state.placements.map((p) => (p.correct ? "🟩" : "🟥")).join("");
-  const shareText = `${t.sort.shareHead(puzzleNumber(day), hits, total)}\n${emoji}\n${
+  // A puzzle picked from only one kind of song differs from everyone else's: say so.
+  const only = state.languages?.length === 1 ? ` · ${t.settings.shareTag[state.languages[0]]}` : "";
+  const shareText = `${t.sort.shareHead(puzzleNumber(day), hits, total)}${only}\n${emoji}\n${
     typeof window !== "undefined" ? window.location.origin : ""
   }`;
 

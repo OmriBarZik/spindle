@@ -48,7 +48,9 @@ export default function TimelineGame() {
   const wrongAt = today.result === "wrong" ? correctSlot(t.cards, song.year) : null;
 
   const shareText = (() => {
-    const head = tr.timeline.shareHead(puzzleNumber(day));
+    const langs = data.settings.songLanguages;
+    const only = langs.length === 1 ? ` · ${tr.settings.shareTag[langs[0]]}` : "";
+    const head = `${tr.timeline.shareHead(puzzleNumber(day))}${only}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     if (today.result === "wrong")
       return `${head}\n${tr.timeline.shareEnded(songs)}\n${"🟩".repeat(songs)}🟥\n${origin}`;

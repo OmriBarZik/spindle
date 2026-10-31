@@ -30,6 +30,8 @@ The "sort" name is historical: the mode used to be "order all 5 at once". Keep t
 internal names (route, save keys, functions) so existing saves and links keep working;
 only the UI says "Daily Five".
 
+| **Settings** | `/{lang}/settings` | `Settings` | Players choose which songs can appear: International (`en`) and/or Israeli (`he`) songs. Stored in `data.settings.songLanguages` (never empty). |
+
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
@@ -74,6 +76,12 @@ is a "default" served without a prefix.
 - **Deterministic daily picks.** `src/lib/daily.ts` runs `seededShuffle(SONGS, seed)`
   (`src/lib/random.ts`, FNV-1a + mulberry32) with these seed strings:
   `sort:${day}`, `anchor:${day}`, `timeline:${day}`, `timeline-anchor:${day}`.
+  The song-language setting only **filters** that shuffled list (`shuffled()` in `daily.ts`);
+  it never changes the seed. So everyone with both kinds on (the default) shares one puzzle,
+  and players with the same setting match each other. A Daily Five day remembers its
+  `languages` and is re-picked only while no song has been placed; a pending Timeline song
+  in a turned-off language is swapped. Share text says "Israeli songs only" etc. when the
+  puzzle came from one kind.
   **Never change these strings or the shuffle algorithm**: doing so changes everyone's
   past and future puzzles. Editing `songs.json` also reshuffles the picks, so add songs
   rather than reorder or remove them, and avoid doing it mid-day.
@@ -99,6 +107,7 @@ is a "default" served without a prefix.
 | `src/components/TimelineParts.tsx` | Shared `SlotButton`, `SongCard`, `AnchorCard`, `Stats` |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
 | `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
+| `src/components/Settings.tsx` | Settings page (song-language switches) |
 | `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
 | `src/app/globals.css` | Theme tokens and custom classes (`.card`, `.btn-primary`, `.record`, `.loading-ring`, …) |
 | `scripts/validate-songs.mjs` | oEmbed check for missing or non-embeddable videos |
