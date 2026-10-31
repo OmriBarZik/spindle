@@ -103,6 +103,7 @@ is a "default" served without a prefix.
 | `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |
 | `src/lib/timeline.ts` | `TimelineCard`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `slotLabel` |
 | `src/lib/youtube.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
+| `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
 | `src/components/Deck.tsx` | Turntable UI: opaque record over the hidden iframe, play/pause, loading ring, status line |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |
@@ -143,6 +144,11 @@ is a "default" served without a prefix.
 - **Avoid layout shift.** The ring is always mounted and fades with opacity. The status
   line under the record has a fixed height (`h-5`). Keep it that way, since the user
   explicitly asked for no jumps.
+- **Result animation:** after a guess, `Deck`'s `swap` prop makes the record glow green or red.
+  In Daily Five it then swipes out in the reading direction (separate `-rtl` keyframes under
+  `[dir="rtl"]`) and the next record slides in. Keep `var()` out of `@keyframes`: Safari
+  can't run those off the main thread, so they lag on a throttled CPU. Play and "Place it" stay locked until
+  `onSwapEnd`. The player, record and button move together so the iframe stays covered.
 - If a video fails (`status === "error"`), Timeline offers "Give me a different song"
   (`skipTimelineSong`).
 
@@ -156,6 +162,10 @@ is a "default" served without a prefix.
 - **Tailwind v4.** `.card` and the other classes in `globals.css` are unlayered, so they
   **beat Tailwind utilities**. To change a card's border or background, add a custom class
   (like `.card-good`, `.card-bad` or `.card-anchor`) instead of utility classes.
+- **CSS minifier:** in `globals.css`, an `animation` shorthand without a name is
+  minified to `animation: none`. Use longhands (`animation-duration`, …) when the name is set
+  by another class, and check the built CSS in `.next/static/chunks/*.css`. If a CSS edit
+  doesn't show up there, Turbopack's cache is stale: `rm -rf .next` and build again.
 - The site has a dark theme only.
 - **Song years** are the original release year of the song (single or album), not the
   video or a remaster.

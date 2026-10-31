@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import Deck from "@/components/Deck";
+import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
 import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -9,7 +9,7 @@ import { dayKey, puzzleNumber } from "@/lib/dates";
 import { useDropRecordFlight } from "@/lib/recordFlight";
 import { getSong, songNames } from "@/lib/songs";
 import { ensureSortDay, placeSortSong, sortDayDone, sortLine } from "@/lib/storage";
-import { slotLabel } from "@/lib/timeline";
+import { isSlotCorrect, slotLabel } from "@/lib/timeline";
 import { useSave } from "@/lib/useSave";
 import { useHiddenPlayer } from "@/lib/youtube";
 
@@ -22,6 +22,8 @@ export default function SortGame() {
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // The record's result animation; the next song can't be played until it ends.
+  const [swap, setSwap] = useState<DeckSwap | null>(null);
   // A finished day has no Deck to land on, so let the home record fade away.
   useDropRecordFlight();
 
@@ -80,13 +82,15 @@ export default function SortGame() {
         </p>
       )}
 
-      {!done && (
+      {(!done || swap) && (
         <Deck
           hostRef={hostRef}
           player={player}
           videoId={current?.youtubeId ?? null}
           start={current?.start}
-          label={t.sort.deckLabel(turn + 1, total)}
+          label={done ? undefined : t.sort.deckLabel(turn + 1, total)}
+          swap={swap}
+          onSwapEnd={() => setSwap(null)}
         />
       )}
 
@@ -122,10 +126,14 @@ export default function SortGame() {
         <button
           type="button"
           className="btn-primary"
-          disabled={slot === null}
+          disabled={slot === null || !!swap}
           onClick={() => {
-            if (slot === null) return;
+            if (slot === null || !current) return;
             player.stop();
+            setSwap({
+              correct: isSlotCorrect(line, slot, current.year),
+              kind: turn + 1 < total ? "next" : "last",
+            });
             update((d) => placeSortSong(d, day, slot));
             setSlot(null);
           }}

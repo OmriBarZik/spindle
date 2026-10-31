@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import Deck from "@/components/Deck";
+import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
 import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -13,7 +13,7 @@ import {
   placeTimelineCard,
   skipTimelineSong,
 } from "@/lib/storage";
-import { slotLabel, songCount, type TimelineCard } from "@/lib/timeline";
+import { isSlotCorrect, slotLabel, songCount, type TimelineCard } from "@/lib/timeline";
 import { useSave } from "@/lib/useSave";
 import { useHiddenPlayer } from "@/lib/youtube";
 
@@ -23,6 +23,8 @@ export default function TimelineGame() {
   const [data, update] = useSave((d) => ensureTimelineDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // Today's record glows green or red after the guess. There's no next song until tomorrow.
+  const [swap, setSwap] = useState<DeckSwap | null>(null);
 
   const t = data.timeline;
   const today = t.today;
@@ -80,6 +82,8 @@ export default function TimelineGame() {
         start={song.start}
         label={pending ? tr.timeline.today : String(song.year)}
         onSkip={pending ? () => update((d) => skipTimelineSong(d, day)) : undefined}
+        swap={swap}
+        onSwapEnd={() => setSwap(null)}
       />
 
       <ol className="flex flex-col gap-2">
@@ -125,6 +129,7 @@ export default function TimelineGame() {
           onClick={() => {
             if (slot === null) return;
             player.stop();
+            setSwap({ correct: isSlotCorrect(t.cards, slot, song.year), kind: "flash" });
             update((d) => placeTimelineCard(d, day, slot));
           }}
         >

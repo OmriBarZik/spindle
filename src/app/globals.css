@@ -150,6 +150,171 @@ body {
     transform: rotate(360deg);
   }
 }
+/* After a guess the record glows green (right) or red (wrong), then swipes out in the
+   reading direction (left to right in English, right to left in Hebrew) and the next
+   record slides in from the other side. */
+.deck-glow {
+  opacity: 0;
+}
+.deck-glow-good {
+  --glow: var(--good);
+}
+.deck-glow-bad {
+  --glow: var(--bad);
+}
+.deck-glow-good,
+.deck-glow-bad {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glow) 35%, transparent) 0 40%,
+    color-mix(in srgb, var(--glow) 60%, transparent) 100%
+  );
+  box-shadow:
+    0 0 0 4px var(--glow),
+    0 0 48px color-mix(in srgb, var(--glow) 70%, transparent);
+}
+.deck-swap {
+  /* Longhands: the minifier turns a shorthand without a name into "none". */
+  animation-duration: 2s;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+.deck-swap-next {
+  animation-name: deck-swap-next;
+}
+.deck-swap-next .deck-glow {
+  animation: deck-glow-next 2s ease-in-out both;
+}
+/* Hebrew swipes the other way. Separate keyframes rather than a CSS variable:
+   Safari can't run keyframes that use var() off the main thread, so they lag
+   on a busy or throttled CPU. */
+[dir="rtl"] .deck-swap-next {
+  animation-name: deck-swap-next-rtl;
+}
+.deck-swap-last {
+  animation-name: deck-swap-last;
+  animation-duration: 1.6s;
+}
+[dir="rtl"] .deck-swap-last {
+  animation-name: deck-swap-last-rtl;
+}
+.deck-swap-last .deck-glow {
+  animation: deck-glow-hold 1.6s ease-in-out both;
+}
+.deck-swap-flash {
+  animation-name: deck-flash;
+}
+.deck-swap-flash .deck-glow {
+  animation: deck-glow-flash 2s ease-in-out both;
+}
+/* The record holds still for the first half, so it can be scrolled into view first. */
+@keyframes deck-swap-next {
+  0%,
+  50% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  75% {
+    transform: translateX(130%) rotate(90deg);
+    opacity: 0;
+  }
+  75.01% {
+    transform: translateX(-130%) rotate(-90deg);
+    opacity: 0;
+    animation-timing-function: ease-out;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes deck-swap-next-rtl {
+  0%,
+  50% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  75% {
+    transform: translateX(-130%) rotate(-90deg);
+    opacity: 0;
+  }
+  75.01% {
+    transform: translateX(130%) rotate(90deg);
+    opacity: 0;
+    animation-timing-function: ease-out;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes deck-swap-last {
+  0%,
+  60% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateX(130%) rotate(90deg);
+    opacity: 0;
+  }
+}
+@keyframes deck-swap-last-rtl {
+  0%,
+  60% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateX(-130%) rotate(-90deg);
+    opacity: 0;
+  }
+}
+/* Does nothing visible; it only times the end of the glow. */
+@keyframes deck-flash {
+  to {
+    transform: none;
+  }
+}
+@keyframes deck-glow-next {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  75% {
+    opacity: 1;
+  }
+  75.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes deck-glow-hold {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes deck-glow-flash {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Thin arc that spins around the record while a song loads. */
 .loading-ring {
   border: 3px solid rgb(255 255 255 / 0.08);
@@ -165,6 +330,14 @@ body {
   .spin,
   .spin-slow {
     animation: none;
+  }
+  /* Keep the glow and the timing, but don't move the record. */
+  /* [dir] so it also beats the Hebrew keyframes above. */
+  [dir] .deck-swap {
+    animation-name: deck-flash;
+  }
+  [dir] .deck-swap .deck-glow {
+    animation-name: deck-glow-flash;
   }
 }
 
