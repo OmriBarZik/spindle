@@ -31,9 +31,8 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
 
   // Coming from the home page, the record flies in from where it was there.
   const boxRef = useRef<HTMLDivElement>(null);
-  const recordRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  useRecordLanding(boxRef, recordRef, buttonRef);
+  useRecordLanding(boxRef, buttonRef);
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -53,7 +52,6 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
         />
         {/* Opaque record covering the player entirely. */}
         <div
-          ref={recordRef}
           className={`record absolute inset-0 rounded-full ${playing ? "spin" : ""}`}
           style={accent ? ({ "--label": accent } as React.CSSProperties) : undefined}
         >

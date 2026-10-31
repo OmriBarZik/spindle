@@ -20,11 +20,12 @@ import { useEffect, useLayoutEffect } from "react";
 const DURATION = 650;
 const EASING = "cubic-bezier(0.2, 0.8, 0.2, 1)";
 /** Give up on a flight that no Deck picks up (slow network, finished game). */
-const TIMEOUT = 5000;
+const TIMEOUT = 10000;
 /** Same as `.spin-slow` in globals.css. */
 const SPIN_SLOW_MS = 8000;
 
-type Flight = { ghost: HTMLElement; timer: ReturnType<typeof setTimeout> };
+/** `landing` is set while a Deck has taken over the flight. */
+type Flight = { ghost: HTMLElement; timer: ReturnType<typeof setTimeout>; landing: boolean };
 let flight: Flight | null = null;
 
 function canAnimate(): boolean {
@@ -47,6 +48,11 @@ function angleOf(el: Element): number {
 function boxOf(el: HTMLElement) {
   const r = el.getBoundingClientRect();
   return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, size: el.offsetWidth };
+}
+
+/** Hide or show an element without changing layout (also hides iframes inside). */
+function setHidden(el: HTMLElement, hidden: boolean) {
+  el.style.visibility = hidden ? "hidden" : "";
 }
 
 function removeGhost(fade: boolean) {
@@ -89,56 +95,94 @@ export function launchRecordFlight(record: HTMLElement | null) {
   });
   document.body.appendChild(ghost);
 
-  flight = { ghost, timer: setTimeout(() => removeGhost(true), TIMEOUT) };
+  flight = { ghost, timer: setTimeout(() => removeGhost(true), TIMEOUT), landing: false };
 }
 
 /** Let a game screen without a Deck (e.g. a finished Daily Five) fade the ghost out. */
 export function useDropRecordFlight() {
-  useEffect(() => removeGhost(true), []);
+  useEffect(() => {
+    if (!flight?.landing) removeGhost(true);
+  }, []);
+}
+
+/** True while a record is on its way, so loading screens can stay out of its way. */
+export function isRecordFlying(): boolean {
+  return flight !== null;
 }
 
 /**
- * Land a flight on the Deck: `box` is the element to move (record plus button),
- * `record` the spinning disc inside it, `extras` anything to fade in.
+ * Land a flight on the Deck. `box` is the Deck's record area (record, ring,
+ * hidden player and play button) and `button` fades in once the record lands.
+ *
+ * The ghost itself flies, and the Deck stays hidden (`visibility`, which also
+ * hides the YouTube iframe) until it lands. The flight starts a couple of
+ * frames after the Deck mounts, once the new page has laid out and the heavy
+ * mount work is done, so a slow page (seen in Firefox) can't make it stutter
+ * or land in the wrong place. Until then the ghost keeps spinning in place.
  */
 export function useRecordLanding(
   box: React.RefObject<HTMLElement | null>,
-  record: React.RefObject<HTMLElement | null>,
-  extras: React.RefObject<HTMLElement | null>,
+  button: React.RefObject<HTMLElement | null>,
 ) {
-  // Layout effect: start the animation before the first paint so the Deck is
-  // never seen in its final place first.
+  // Layout effect: hide the Deck before its first paint.
   useLayoutEffect(() => {
     const f = flight;
     const boxEl = box.current;
-    const recordEl = record.current;
-    if (!f || !boxEl || !recordEl) return;
+    if (!f || !boxEl) return;
 
-    const from = boxOf(f.ghost);
-    const angle = angleOf(f.ghost);
-    removeGhost(false);
+    clearTimeout(f.timer);
+    f.landing = true;
+    setHidden(boxEl, true);
+    let anim: Animation | null = null;
+    let raf = 0;
 
-    const to = boxOf(boxEl);
-    if (!to.size) return;
-    const dx = from.cx - to.cx;
-    const dy = from.cy - to.cy;
-    const scale = from.size / to.size;
-    // Finish a little over a quarter turn later, on a whole turn, so it settles at 0deg.
-    const end = Math.ceil((angle + 100) / 360) * 360;
+    const land = () => {
+      if (flight === f) flight = null;
+      f.ghost.remove();
+      setHidden(boxEl, false);
+      button.current?.animate([{ opacity: 0 }, { opacity: getComputedStyle(button.current).opacity }], {
+        duration: 200,
+        easing: "ease-out",
+      });
+    };
 
-    const opts: KeyframeAnimationOptions = { duration: DURATION, easing: EASING };
-    boxEl.animate(
-      [
-        { transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
-        { transform: "translate(0px, 0px) scale(1)" },
-      ],
-      opts,
-    );
-    recordEl.animate([{ transform: `rotate(${angle}deg)` }, { transform: `rotate(${end}deg)` }], opts);
-    const extrasEl = extras.current;
-    if (extrasEl) {
-      const opacity = Number(getComputedStyle(extrasEl).opacity) || 1;
-      extrasEl.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity }], opts);
-    }
-  }, [box, record, extras]);
+    const fly = () => {
+      const from = boxOf(f.ghost);
+      const to = boxOf(boxEl);
+      if (!to.size || !from.size) return land();
+      const angle = angleOf(f.ghost);
+      // Finish a little over a quarter turn later, on a whole turn, so it
+      // matches the Deck's record at 0deg.
+      const end = Math.ceil((angle + 100) / 360) * 360;
+      const move = `translate(${to.cx - from.cx}px, ${to.cy - from.cy}px) scale(${to.size / from.size})`;
+      f.ghost.style.animation = "none";
+      anim = f.ghost.animate(
+        [
+          { transform: `translate(0px, 0px) scale(1) rotate(${angle}deg)` },
+          { transform: `${move} rotate(${end}deg)` },
+        ],
+        { duration: DURATION, easing: EASING, fill: "forwards" },
+      );
+      anim.onfinish = land;
+    };
+
+    // Two frames: the first lets the browser lay out and paint the new page.
+    raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(fly);
+    });
+
+    return () => {
+      // Unmounted mid-flight (or React's dev double-mount): put things back so
+      // a remount can start over.
+      cancelAnimationFrame(raf);
+      if (anim) {
+        anim.onfinish = null;
+        anim.cancel();
+        f.ghost.style.animation = "";
+      }
+      setHidden(boxEl, false);
+      f.landing = false;
+      if (flight === f) f.timer = setTimeout(() => removeGhost(true), TIMEOUT);
+    };
+  }, [box, button]);
 }
