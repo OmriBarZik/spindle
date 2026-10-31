@@ -33,12 +33,12 @@ export function matchAcceptLanguage(header: string | null): Locale | null {
   const ranked = header
     .split(",")
     .map((part, i) => {
-      const [tag, ...params] = part.trim().split(";");
+      const [tag = "", ...params] = part.trim().split(";");
       const q = params.map((p) => p.trim()).find((p) => p.startsWith("q="));
       return { tag: tag.toLowerCase(), q: q ? Number(q.slice(2)) : 1, i };
     })
     .filter((x) => x.tag && x.q > 0)
-    .sort((a, b) => b.q - a.q || a.i - b.i);
+    .toSorted((a, b) => b.q - a.q || a.i - b.i);
   for (const { tag } of ranked) {
     const base = tag.split("-")[0];
     // "iw" is the legacy code for Hebrew that some browsers still send.

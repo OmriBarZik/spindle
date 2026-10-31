@@ -1,10 +1,11 @@
-import { addDays } from "./dates";
 import { anchorYearFor, sortSongsFor, timelineAnchorYearFor, timelineSongFor } from "./daily";
-import { getSong, SONG_LANGUAGES, songLanguage, type SongLanguage } from "./songs";
+import { addDays } from "./dates";
+import { getSong, type Song, SONG_LANGUAGES, type SongLanguage, songLanguage } from "./songs";
 import {
   anchorCard,
   correctSlot,
   isSlotCorrect,
+  songCard,
   songCount,
   type TimelineCard,
 } from "./timeline";
@@ -27,7 +28,7 @@ export type SortDay = {
 /** One card on the Daily Five line. */
 export type SortLineCard =
   | { kind: "anchor"; year: number }
-  | { kind: "song"; id: string; year: number; correct: boolean };
+  | { kind: "song"; song: Song; year: number; correct: boolean };
 
 export type SortStats = {
   played: number;
@@ -114,16 +115,25 @@ function sameLanguages(a: readonly SongLanguage[], b: readonly SongLanguage[]): 
   return a.length === b.length && a.every((l) => b.includes(l));
 }
 
+/** What may be in storage: anything from an older version, or hand-edited junk. */
+type StoredSave = {
+  version?: unknown;
+  sort?: { days?: Record<string, SortDay>; stats?: Partial<SortStats> };
+  timeline?: Partial<TimelineState>;
+  settings?: { songLanguages?: unknown };
+} | null;
+
 export function loadSave(): SaveData {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptySave();
-    const parsed = JSON.parse(raw) as SaveData;
+    const parsed = JSON.parse(raw) as StoredSave;
     if (parsed?.version !== 1) return emptySave();
     const base = emptySave();
     return {
       ...base,
       ...parsed,
+      version: 1,
       sort: {
         days: parsed.sort?.days ?? {},
         stats: { ...base.sort.stats, ...parsed.sort?.stats },
@@ -145,12 +155,8 @@ export function writeSave(data: SaveData): void {
 }
 
 /* ------------------------------------------------------------------ */
-/* Sort mode                                                           */
+/* Settings                                                            */
 /* ------------------------------------------------------------------ */
-
-function isValidSortDay(d: Partial<SortDay> | undefined): d is SortDay {
-  return !!d && typeof d.anchorYear === "number" && Array.isArray(d.placements);
-}
 
 /** Turn a song language on or off. The last one left can't be turned off. */
 export function setSongLanguage(data: SaveData, lang: SongLanguage, on: boolean): SaveData {
@@ -159,6 +165,14 @@ export function setSongLanguage(data: SaveData, lang: SongLanguage, on: boolean)
   const next = on ? cleanLanguages([...current, lang]) : current.filter((l) => l !== lang);
   if (next.length === 0) return data;
   return { ...data, settings: { ...data.settings, songLanguages: next } };
+}
+
+/* ------------------------------------------------------------------ */
+/* Sort mode                                                           */
+/* ------------------------------------------------------------------ */
+
+function isValidSortDay(d: Partial<SortDay> | undefined): d is SortDay {
+  return d !== undefined && typeof d.anchorYear === "number" && Array.isArray(d.placements);
 }
 
 /**
@@ -170,8 +184,7 @@ export function ensureSortDay(data: SaveData, day: string): SaveData {
   const existing = data.sort.days[day];
   if (
     isValidSortDay(existing) &&
-    (existing.placements.length > 0 ||
-      sameLanguages(existing.languages ?? SONG_LANGUAGES, langs))
+    (existing.placements.length > 0 || sameLanguages(existing.languages ?? SONG_LANGUAGES, langs))
   ) {
     return data;
   }
@@ -207,9 +220,26 @@ export function sortLine(d: SortDay): SortLineCard[] {
     const song = getSong(d.songIds[i]);
     if (!song) return;
     const at = p.correct ? p.slot : correctSlot(line, song.year);
-    line.splice(at, 0, { kind: "song", id: song.id, year: song.year, correct: p.correct });
+    line.splice(at, 0, { kind: "song", song, year: song.year, correct: p.correct });
   });
   return line;
+}
+
+/** Stats after finishing `day` with these placements. */
+function addSortResult(prev: SortStats, day: string, placements: SortPlacement[]): SortStats {
+  const hits = placements.filter((p) => p.correct).length;
+  const stats = { ...prev, distribution: prev.distribution.slice() };
+  stats.played += 1;
+  stats.distribution[hits] = (stats.distribution[hits] ?? 0) + 1;
+  if (hits === placements.length) {
+    stats.perfect += 1;
+    stats.streak = stats.lastPerfect === addDays(day, -1) ? stats.streak + 1 : 1;
+    stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+    stats.lastPerfect = day;
+  } else {
+    stats.streak = 0;
+  }
+  return stats;
 }
 
 /** Place the current song into `slot` (0 = before the first card). */
@@ -221,26 +251,14 @@ export function placeSortSong(data: SaveData, day: string, slot: number): SaveDa
   const line = sortLine(current);
   if (slot < 0 || slot > line.length) return data;
 
-  const placements = [...current.placements, { slot, correct: isSlotCorrect(line, slot, song.year) }];
+  const placements = [
+    ...current.placements,
+    { slot, correct: isSlotCorrect(line, slot, song.year) },
+  ];
   const next: SortDay = { ...current, placements };
   let sort = { ...data.sort, days: { ...data.sort.days, [day]: next } };
 
-  if (sortDayDone(next)) {
-    const hits = placements.filter((p) => p.correct).length;
-    const perfect = hits === placements.length;
-    const stats = { ...sort.stats, distribution: sort.stats.distribution.slice() };
-    stats.played += 1;
-    stats.distribution[hits] = (stats.distribution[hits] ?? 0) + 1;
-    if (perfect) {
-      stats.perfect += 1;
-      stats.streak = stats.lastPerfect === addDays(day, -1) ? stats.streak + 1 : 1;
-      stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
-      stats.lastPerfect = day;
-    } else {
-      stats.streak = 0;
-    }
-    sort = { ...sort, stats };
-  }
+  if (sortDayDone(next)) sort = { ...sort, stats: addSortResult(sort.stats, day, placements) };
   return { ...data, sort };
 }
 
@@ -301,10 +319,15 @@ export function ensureTimelineDay(data: SaveData, day: string): SaveData {
   return { ...data, timeline: next };
 }
 
+/** Today's turn, if it's still waiting for an answer. */
+function pendingTurn(t: TimelineState, day: string): TimelineToday | null {
+  return t.today?.date === day && t.today.result === "pending" ? t.today : null;
+}
+
 /** Swap today's song for another one when the video won't play. */
 export function skipTimelineSong(data: SaveData, day: string): SaveData {
-  const today = data.timeline.today;
-  if (!today || today.date !== day || today.result !== "pending") return data;
+  const today = pendingTurn(data.timeline, day);
+  if (!today) return data;
   const skipped = [...today.skipped, today.songId];
   const exclude = new Set([...data.timeline.cards.map((c) => c.id), ...skipped]);
   const song = timelineSongFor(day, exclude, data.settings.songLanguages);
@@ -315,19 +338,14 @@ export function skipTimelineSong(data: SaveData, day: string): SaveData {
   };
 }
 
-function toCard(id: string): TimelineCard | null {
-  const s = getSong(id);
-  return s
-    ? { id: s.id, title: s.title, artist: s.artist, year: s.year, youtubeId: s.youtubeId }
-    : null;
-}
-
 export function placeTimelineCard(data: SaveData, day: string, slot: number): SaveData {
   const t = data.timeline;
-  if (!t.today || t.today.date !== day || t.today.result !== "pending") return data;
+  const today = pendingTurn(t, day);
+  if (!today) return data;
   if (slot < 0 || slot > t.cards.length) return data;
-  const card = toCard(t.today.songId);
-  if (!card) return data;
+  const song = getSong(today.songId);
+  if (!song) return data;
+  const card = songCard(song);
 
   if (isSlotCorrect(t.cards, slot, card.year)) {
     const cards = t.cards.slice();
@@ -339,7 +357,7 @@ export function placeTimelineCard(data: SaveData, day: string, slot: number): Sa
         cards,
         lastDate: day,
         best: Math.max(t.best, songCount(cards)),
-        today: { ...t.today, result: "correct", slot },
+        today: { ...today, result: "correct", slot },
       },
     };
   }
@@ -349,9 +367,7 @@ export function placeTimelineCard(data: SaveData, day: string, slot: number): Sa
       ...t,
       lastDate: day,
       runOver: true,
-      today: { ...t.today, result: "wrong", slot },
+      today: { ...today, result: "wrong", slot },
     },
   };
 }
-
-export { correctSlot };

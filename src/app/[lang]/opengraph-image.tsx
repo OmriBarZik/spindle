@@ -40,7 +40,15 @@ function Record() {
       <circle cx={r} cy={r} r={r} fill="#000" />
       <circle cx={r} cy={r} r={r - 3} fill="#111" />
       {grooves}
-      <circle cx={r} cy={r} r={r * 0.31} fill="none" stroke="#fff" strokeOpacity={0.05} strokeWidth={3} />
+      <circle
+        cx={r}
+        cy={r}
+        r={r * 0.31}
+        fill="none"
+        stroke="#fff"
+        strokeOpacity={0.05}
+        strokeWidth={3}
+      />
       <circle cx={r} cy={r} r={r - 3} fill="url(#sheen)" />
       <circle cx={r} cy={r} r={r * 0.36} fill={LABEL} />
       <circle cx={r} cy={r} r={r * 0.036} fill={BACKGROUND} />
@@ -50,33 +58,31 @@ function Record() {
 
 export default function Image() {
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 72,
+        background: `radial-gradient(900px 500px at 50% -120px, #2a1846 0%, ${BACKGROUND} 70%)`,
+        color: "#f4f4f5",
+      }}
+    >
       <div
         style={{
-          width: "100%",
-          height: "100%",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 72,
-          background: `radial-gradient(900px 500px at 50% -120px, #2a1846 0%, ${BACKGROUND} 70%)`,
-          color: "#f4f4f5",
+          borderRadius: 9999,
+          boxShadow: "0 30px 80px rgba(0,0,0,0.7)",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            borderRadius: 9999,
-            boxShadow: "0 30px 80px rgba(0,0,0,0.7)",
-          }}
-        >
-          <Record />
-        </div>
-        <div style={{ display: "flex", fontSize: 120, fontWeight: 900, letterSpacing: -4 }}>
-          Spindle
-        </div>
+        <Record />
       </div>
-    ),
+      <div style={{ display: "flex", fontSize: 120, fontWeight: 900, letterSpacing: -4 }}>
+        Spindle
+      </div>
+    </div>,
     size,
   );
 }

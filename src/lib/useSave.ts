@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { loadSave, writeSave, type SaveData } from "./storage";
+import { loadSave, type SaveData, writeSave } from "./storage";
 
 /**
  * Local save state. Only use inside components rendered with `ssr: false`,

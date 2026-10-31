@@ -1,5 +1,6 @@
 "use client";
 
+import ExternalLink from "@/components/ExternalLink";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getSong, songNames } from "@/lib/songs";
 
@@ -16,14 +17,12 @@ export default function SongReveal(song: { title: string; artist: string; youtub
       </div>
       <div className="truncate text-sm text-muted">
         <bdi>{artist}</bdi> ·{" "}
-        <a
+        <ExternalLink
           href={`https://www.youtube.com/watch?v=${youtubeId}`}
-          target="_blank"
-          rel="noreferrer"
           className="underline decoration-dotted underline-offset-2 hover:text-white"
         >
           {t.common.watch}
-        </a>
+        </ExternalLink>
       </div>
     </div>
   );

@@ -9,7 +9,11 @@ function Loading() {
   const { t } = useI18n();
   // While the home record is flying in, it stands in for the loading text.
   const [flying] = useState(isRecordFlying);
-  return <p className={`p-8 text-center text-muted ${flying ? "invisible" : ""}`}>{t.common.loadingGame}</p>;
+  return (
+    <p className={`p-8 text-center text-muted ${flying ? "invisible" : ""}`}>
+      {t.common.loadingGame}
+    </p>
+  );
 }
 
 const loadSort = () => import("@/components/SortGame");
@@ -20,8 +24,12 @@ const loadTimeline = () => import("@/components/TimelineGame");
  * opening a game doesn't wait on the network. Safe to call many times.
  */
 export function preloadGames() {
-  void loadSort().catch(() => {});
-  void loadTimeline().catch(() => {});
+  void loadSort().catch(ignore);
+  void loadTimeline().catch(ignore);
+}
+
+function ignore(): void {
+  // A failed preload is retried when the game is opened.
 }
 
 export const SortGameClient = dynamic(loadSort, {

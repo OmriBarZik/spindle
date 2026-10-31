@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { type RefObject, useLayoutEffect, useRef } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useRecordLanding } from "@/lib/recordFlight";
 import { smoothScrollToCenter } from "@/lib/smoothScroll";
@@ -14,13 +14,12 @@ import { formatTime, type HiddenPlayer } from "@/lib/youtube";
 export type DeckSwap = { correct: boolean; kind: "next" | "last" | "flash" };
 
 type Props = {
-  hostRef: React.RefObject<HTMLDivElement | null>;
+  hostRef: RefObject<HTMLDivElement | null>;
   player: HiddenPlayer;
   /** The song this deck plays when the big button is pressed. */
   videoId: string | null;
   start?: number;
   label?: string;
-  accent?: string;
   onSkip?: () => void;
   /** While set, the record animates and the play button is locked. */
   swap?: DeckSwap | null;
@@ -31,7 +30,16 @@ type Props = {
  * The turntable. The YouTube iframe lives underneath the record and is fully
  * covered, so the title, channel, thumbnail and comments are never visible.
  */
-export default function Deck({ hostRef, player, videoId, start = 0, label, accent, onSkip, swap, onSwapEnd }: Props) {
+export default function Deck({
+  hostRef,
+  player,
+  videoId,
+  start = 0,
+  label,
+  onSkip,
+  swap,
+  onSwapEnd,
+}: Props) {
   const { t } = useI18n();
   const isCurrent = videoId !== null && player.currentId === videoId;
   const playing = isCurrent && player.status === "playing";
@@ -48,7 +56,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
   // After a guess the player is usually down at the "Place it" button, below a
   // long timeline. Bring the record into view so they see it glow and swipe.
   // A layout effect, so the glide starts in the same frame as the guess.
-  const swapping = !!swap;
+  const swapping = Boolean(swap);
   useLayoutEffect(() => {
     const box = boxRef.current;
     if (!swapping || !box) return;
@@ -79,17 +87,18 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
             if (e.target === e.currentTarget) onSwapEnd?.();
           }}
         >
-          {/* Hidden player — must stay mounted and must stay covered. */}
+          {/*
+            Hidden player: must stay mounted and must stay covered. `inert` also keeps
+            the YouTube iframe out of the Tab order and away from screen readers.
+          */}
           <div
             ref={hostRef}
+            inert
             aria-hidden
             className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
           />
           {/* Opaque record covering the player entirely. */}
-          <div
-            className={`record absolute inset-0 rounded-full ${playing ? "spin" : ""}`}
-            style={accent ? ({ "--label": accent } as React.CSSProperties) : undefined}
-          >
+          <div className={`record absolute inset-0 rounded-full ${playing ? "spin" : ""}`}>
             <div className="record-label" />
           </div>
           {/* Green or red glow over the record after a guess. */}
@@ -102,18 +111,18 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
           <button
             ref={buttonRef}
             type="button"
-            disabled={!player.ready || !videoId || !!swap}
+            disabled={!player.ready || !videoId || Boolean(swap)}
             onClick={() => videoId && player.toggle(videoId, start)}
             aria-label={playing || loading ? t.common.pause : t.common.play}
-            className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40"
+            className="absolute top-1/2 left-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40"
           >
             {playing || loading ? (
-              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor">
+              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden>
                 <rect x="6" y="5" width="4" height="14" rx="1" />
                 <rect x="14" y="5" width="4" height="14" rx="1" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7" fill="currentColor">
+              <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7" fill="currentColor" aria-hidden>
                 {/* Play icons point right in every language, so this offset stays physical. */}
                 <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
               </svg>
@@ -123,7 +132,9 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
       </div>
 
       {label && (
-        <div className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted rtl:tracking-normal">{label}</div>
+        <div className="mt-1 text-xs font-bold tracking-[0.3em] text-muted uppercase rtl:tracking-normal">
+          {label}
+        </div>
       )}
       <div className="flex items-center gap-3 text-sm text-muted">
         <span dir="ltr" className="w-12 text-end font-mono tabular-nums">

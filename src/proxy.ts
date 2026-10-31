@@ -1,8 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import {
   FALLBACK_LOCALE,
-  LOCALE_COOKIE,
   hasLocale,
+  LOCALE_COOKIE,
   localePath,
   matchAcceptLanguage,
   splitLocale,

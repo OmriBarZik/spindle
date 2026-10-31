@@ -28,13 +28,13 @@ describe("i18n routing", () => {
 
 describe("messages", () => {
   it("has the same keys in every language", () => {
-    const shape = (o: object): string[] =>
+    const shape = (o: Record<string, unknown>): string[] =>
       Object.entries(o).flatMap(([k, v]) =>
         v && typeof v === "object" && !Array.isArray(v) && !("$$typeof" in v)
-          ? shape(v).map((s) => `${k}.${s}`)
+          ? shape(v as Record<string, unknown>).map((s) => `${k}.${s}`)
           : [k],
       );
-    expect(shape(MESSAGES.he).sort()).toEqual(shape(MESSAGES.en).sort());
+    expect(shape(MESSAGES.he).toSorted()).toEqual(shape(MESSAGES.en).toSorted());
     expect(MESSAGES.he.home.rules.length).toBe(MESSAGES.en.home.rules.length);
   });
   it("labels slots in Hebrew", () => {

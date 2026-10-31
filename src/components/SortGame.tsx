@@ -1,15 +1,24 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
-import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
+import {
+  AnchorCard,
+  Announce,
+  PlaceButton,
+  ResultCard,
+  SlotLine,
+  SongCard,
+  Stats,
+} from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
-import { dayKey, puzzleNumber } from "@/lib/dates";
+import { dayKey } from "@/lib/dates";
 import { useDropRecordFlight } from "@/lib/recordFlight";
+import { sortEmoji, sortShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
 import { ensureSortDay, placeSortSong, sortDayDone, sortLine } from "@/lib/storage";
-import { isSlotCorrect, slotLabel } from "@/lib/timeline";
+import { isSlotCorrect } from "@/lib/timeline";
 import { useSave } from "@/lib/useSave";
 import { useHiddenPlayer } from "@/lib/youtube";
 
@@ -18,7 +27,7 @@ import { useHiddenPlayer } from "@/lib/youtube";
  */
 export default function SortGame() {
   const { lang, t } = useI18n();
-  const [day] = useState(() => dayKey());
+  const [day] = useState(dayKey);
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
@@ -27,24 +36,28 @@ export default function SortGame() {
   // A finished day has no Deck to land on, so let the home record fade away.
   useDropRecordFlight();
 
+  // `ensureSortDay` always prepares today, so this is only a type guard.
   const state = data.sort.days[day];
+  if (!state) return null;
+
   const done = sortDayDone(state);
   const line = sortLine(state);
   const turn = state.placements.length;
-  const current = done ? undefined : getSong(state.songIds[turn]);
   const total = state.songIds.length;
+  const current = done ? undefined : getSong(state.songIds[turn]);
 
-  const lastIdx = turn - 1;
-  const last = lastIdx >= 0 ? getSong(state.songIds[lastIdx]) : undefined;
-  const lastCorrect = lastIdx >= 0 ? state.placements[lastIdx].correct : false;
+  const last = getSong(state.songIds[turn - 1]);
+  const lastCorrect = state.placements[turn - 1]?.correct ?? false;
+  const lastNames = last && songNames(last, lang);
+  const feedback = last && lastNames && !done && (
+    <>
+      {lastCorrect ? t.sort.correct : t.sort.wrong}{" "}
+      {t.sort.reveal(lastNames.title, lastNames.artist, last.year)}
+    </>
+  );
 
   const hits = state.placements.filter((p) => p.correct).length;
-  const emoji = state.placements.map((p) => (p.correct ? "🟩" : "🟥")).join("");
-  // A puzzle picked from only one kind of song differs from everyone else's: say so.
-  const only = state.languages?.length === 1 ? ` · ${t.settings.shareTag[state.languages[0]]}` : "";
-  const shareText = `${t.sort.shareHead(puzzleNumber(day), hits, total)}${only}\n${emoji}\n${
-    typeof window !== "undefined" ? window.location.origin : ""
-  }`;
+  const score = hits === total ? t.sort.perfect : t.sort.score(hits, total);
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
@@ -53,6 +66,7 @@ export default function SortGame() {
         <p className="mt-1 text-sm text-muted">{t.sort.intro(state.anchorYear)}</p>
         <div
           className="mt-3 flex justify-center gap-1.5"
+          role="img"
           aria-label={t.sort.progress(Math.min(turn + 1, total), total)}
         >
           {state.songIds.map((id, i) => (
@@ -60,7 +74,7 @@ export default function SortGame() {
               key={id}
               className={`h-2.5 w-8 rounded-full ${
                 i < turn
-                  ? state.placements[i].correct
+                  ? state.placements[i]?.correct
                     ? "bg-green-500"
                     : "bg-red-500"
                   : i === turn
@@ -72,13 +86,14 @@ export default function SortGame() {
         </div>
       </section>
 
-      {last && !done && (
+      <Announce>{done ? score : feedback}</Announce>
+      {feedback && (
         <p
           className={`rounded-xl px-3 py-2 text-center text-sm ${
             lastCorrect ? "bg-green-500/15 text-green-300" : "bg-red-500/15 text-red-300"
           }`}
         >
-          {lastCorrect ? t.sort.correct : t.sort.wrong} {t.sort.reveal(songNames(last, lang).title, songNames(last, lang).artist, last.year)}
+          {feedback}
         </p>
       )}
 
@@ -94,58 +109,49 @@ export default function SortGame() {
         />
       )}
 
-      <ol className="flex flex-col gap-2">
-        <li className="text-xs uppercase tracking-widest text-muted rtl:tracking-normal">{t.common.oldest}</li>
-        {line.map((card, i) => (
-          <Fragment key={card.kind === "anchor" ? "anchor" : card.id}>
-            {!done && (
-              <SlotButton label={slotLabel(line, i, t.slots)} selected={slot === i} onClick={() => setSlot(i)} />
-            )}
-            {card.kind === "anchor" ? (
-              <AnchorCard year={card.year} />
-            ) : (
-              <SongCard
-                song={getSong(card.id)!}
-                variant={card.correct ? "good" : "bad"}
-                note={card.correct ? undefined : t.sort.movedHere}
-              />
-            )}
-          </Fragment>
-        ))}
-        {!done && (
-          <SlotButton
-            label={slotLabel(line, line.length, t.slots)}
-            selected={slot === line.length}
-            onClick={() => setSlot(line.length)}
-          />
-        )}
-        <li className="text-xs uppercase tracking-widest text-muted rtl:tracking-normal">{t.common.newest}</li>
-      </ol>
+      <SlotLine
+        cards={line}
+        cardKey={(card) => (card.kind === "anchor" ? "anchor" : card.song.id)}
+        renderCard={(card) =>
+          card.kind === "anchor" ? (
+            <AnchorCard year={card.year} />
+          ) : (
+            <SongCard
+              song={card.song}
+              variant={card.correct ? "good" : "bad"}
+              note={card.correct ? undefined : t.sort.movedHere}
+            />
+          )
+        }
+        canPlace={!done}
+        selected={slot}
+        onSelect={setSlot}
+      />
 
       {!done ? (
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={slot === null || !!swap}
-          onClick={() => {
-            if (slot === null || !current) return;
+        <PlaceButton
+          cards={line}
+          slot={slot}
+          pickSpot={t.sort.pickSpot}
+          disabled={Boolean(swap)}
+          onPlace={(at) => {
+            if (!current) return;
             player.stop();
             setSwap({
-              correct: isSlotCorrect(line, slot, current.year),
+              correct: isSlotCorrect(line, at, current.year),
               kind: turn + 1 < total ? "next" : "last",
             });
-            update((d) => placeSortSong(d, day, slot));
+            update((d) => placeSortSong(d, day, at));
             setSlot(null);
           }}
-        >
-          {slot === null ? t.sort.pickSpot : t.common.placeIt(slotLabel(line, slot, t.slots))}
-        </button>
+        />
       ) : (
-        <section className="card flex flex-col items-center gap-4 p-5 text-center">
-          <div className="text-3xl font-bold">
-            {hits === total ? t.sort.perfect : t.sort.score(hits, total)}
+        <ResultCard>
+          <div className="text-3xl font-bold">{score}</div>
+          {/* The score above says the same for screen readers. */}
+          <div dir="ltr" aria-hidden className="text-2xl tracking-widest">
+            {sortEmoji(state)}
           </div>
-          <div dir="ltr" className="text-2xl tracking-widest">{emoji}</div>
           <Stats
             items={[
               [t.sort.stats.played, data.sort.stats.played],
@@ -154,9 +160,9 @@ export default function SortGame() {
               [t.sort.stats.bestStreak, data.sort.stats.maxStreak],
             ]}
           />
-          <ShareButton text={shareText} />
+          <ShareButton text={sortShareText(t, day, state, window.location.origin)} />
           <p className="text-sm text-muted">{t.sort.tomorrow}</p>
-        </section>
+        </ResultCard>
       )}
     </main>
   );

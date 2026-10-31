@@ -6,18 +6,26 @@ export function dayKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Splits a YYYY-MM-DD key into its year, month (1-12) and day numbers. */
+function parseDayKey(key: string): [year: number, month: number, day: number] {
+  const [y = 0, m = 1, d = 1] = key.split("-").map(Number);
+  return [y, m, d];
+}
+
 export function addDays(key: string, n: number): string {
-  const [y, m, d] = key.split("-").map(Number);
+  const [y, m, d] = parseDayKey(key);
   return dayKey(new Date(y, m - 1, d + n));
 }
 
 const LAUNCH = "2026-11-01";
+const DAY_MS = 86_400_000;
+
+function toUtc(key: string): number {
+  const [y, m, d] = parseDayKey(key);
+  return Date.UTC(y, m - 1, d);
+}
 
 /** Puzzle number shown in share text (#1 on launch day). */
 export function puzzleNumber(key: string): number {
-  const toUtc = (k: string) => {
-    const [y, m, d] = k.split("-").map(Number);
-    return Date.UTC(y, m - 1, d);
-  };
-  return Math.round((toUtc(key) - toUtc(LAUNCH)) / 86_400_000) + 1;
+  return Math.round((toUtc(key) - toUtc(LAUNCH)) / DAY_MS) + 1;
 }

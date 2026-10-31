@@ -20,6 +20,8 @@ export type Song = {
 
 type RawSong = Omit<Song, "id"> & { id?: string };
 
+// Runs once at load; a fresh object per song keeps the JSON module untouched.
+// oxlint-disable-next-line oxc/no-map-spread
 export const SONGS: Song[] = (songsData as RawSong[]).map((s) => ({
   ...s,
   id: s.id ?? s.youtubeId,
@@ -41,8 +43,8 @@ export const SONG_BY_ID = new Map(SONGS.map((s) => [s.id, s]));
 const SONG_BY_VIDEO = new Map(SONGS.map((s) => [s.youtubeId, s]));
 
 /** Finds a song by its stable id, or by its current `youtubeId`. */
-export function getSong(id: string): Song | undefined {
-  return SONG_BY_ID.get(id) ?? SONG_BY_VIDEO.get(id);
+export function getSong(id: string | undefined): Song | undefined {
+  return id === undefined ? undefined : (SONG_BY_ID.get(id) ?? SONG_BY_VIDEO.get(id));
 }
 
 /**
