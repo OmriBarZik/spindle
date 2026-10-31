@@ -23,8 +23,16 @@ describe("catalog", () => {
   it("has unique, well-formed entries", () => {
     const ids = new Set(SONGS.map((s) => s.youtubeId));
     expect(ids.size).toBe(SONGS.length);
+    // Stable ids and current videos never collide, so getSong() is unambiguous.
+    const all = new Set(
+      SONGS.flatMap((s) => (s.id === s.youtubeId ? [s.id] : [s.id, s.youtubeId])),
+    );
+    expect(all.size).toBe(SONGS.reduce((n, s) => n + (s.id === s.youtubeId ? 1 : 2), 0));
     for (const s of SONGS) {
       expect(s.youtubeId).toMatch(/^[\w-]{11}$/);
+      expect(s.id).toMatch(/^[\w-]{11}$/);
+      expect(getSong(s.id)).toBe(s);
+      expect(getSong(s.youtubeId)).toBe(s);
       expect(s.year).toBeGreaterThan(1900);
       expect(s.title && s.artist).toBeTruthy();
     }

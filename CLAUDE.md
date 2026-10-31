@@ -101,8 +101,8 @@ is a "default" served without a prefix.
 
 | Path | What |
 | --- | --- |
-| `src/data/songs.json` | Song catalog: `{ artist, title, year, youtubeId, start?, titleHe?, artistHe? }`. The `id` is the `youtubeId`. One shared pool: Israeli songs (with Hebrew names) sit alongside the rest, so both languages get the same daily puzzle. |
-| `src/lib/songs.ts` | Loads the catalog; `getSong(id)` |
+| `src/data/songs.json` | Song catalog: `{ id?, artist, title, year, youtubeId, start?, titleHe?, artistHe? }`. The song `id` (stored in saves) is the `youtubeId`, unless the entry has its own `id`: when a video is swapped, keep the old video ID as `id` so saves keep working. Prefer audio-only uploads (an "Official Audio" or "- Topic" upload) over music videos and live clips, which often open with a long non-music intro. One shared pool: Israeli songs (with Hebrew names) sit alongside the rest, so both languages get the same daily puzzle. |
+| `src/lib/songs.ts` | Loads the catalog; `getSong(id)` (finds a song by stable `id` or current `youtubeId`) |
 | `src/lib/daily.ts` | Daily song and starting-year selection |
 | `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |
 | `src/lib/timeline.ts` | `TimelineCard`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `slotLabel` |
