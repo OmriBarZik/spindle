@@ -76,8 +76,10 @@ is a "default" served without a prefix.
 - **Deterministic daily picks.** `src/lib/daily.ts` runs `seededShuffle(SONGS, seed)`
   (`src/lib/random.ts`, FNV-1a + mulberry32) with these seed strings:
   `sort:${day}`, `anchor:${day}`, `timeline:${day}`, `timeline-anchor:${day}`.
-  The song-language setting only **filters** that shuffled list (`shuffled()` in `daily.ts`);
-  it never changes the seed. So everyone with both kinds on (the default) shares one puzzle,
+  `shuffled()` in `daily.ts` splits that shuffle by song language and interleaves the
+  lists with a seeded 50/50 coin (seed `${seed}:mix`), so with both kinds on about half the
+  picks are Israeli even though the catalog is mostly international. The song-language
+  setting only chooses which lists take part; it never changes the seed. So everyone with both kinds on (the default) shares one puzzle,
   and players with the same setting match each other. A Daily Five day remembers its
   `languages` and is re-picked only while no song has been placed; a pending Timeline song
   in a turned-off language is swapped. Share text says "Israeli songs only" etc. when the

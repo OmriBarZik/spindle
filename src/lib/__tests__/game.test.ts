@@ -256,3 +256,22 @@ describe("song language settings", () => {
     expect(ensureTimelineDay(after, DAY)).toBe(after);
   });
 });
+
+describe("language balance", () => {
+  const share = (ids: string[]) => ids.filter((id) => getSong(id)?.titleHe).length / ids.length;
+  const days = Array.from({ length: 365 }, (_, i) => addDays(DAY, i));
+
+  it("gives about half Israeli and half International songs when both are on", () => {
+    const five = days.flatMap((d) => sortSongsFor(d).map((s) => s.id));
+    const timeline = days.map((d) => timelineSongFor(d, new Set())!.id);
+    expect(share(five)).toBeGreaterThan(0.45);
+    expect(share(five)).toBeLessThan(0.55);
+    expect(share(timeline)).toBeGreaterThan(0.4);
+    expect(share(timeline)).toBeLessThan(0.6);
+  });
+
+  it("still uses every song once in a full day's order", () => {
+    const ids = new Set(sortSongsFor(DAY).map((s) => s.id));
+    expect(ids.size).toBe(5);
+  });
+});

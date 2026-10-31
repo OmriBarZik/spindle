@@ -1,19 +1,38 @@
-import { seededShuffle } from "./random";
+import { hashString, mulberry32, seededShuffle } from "./random";
 import { SONG_LANGUAGES, SONGS, songLanguage, type Song, type SongLanguage } from "./songs";
 
 export const SORT_SIZE = 5;
 
 /**
- * The day's seeded shuffle, keeping only songs in the player's chosen languages.
- * The seed never depends on the setting, so players with every language on (the
- * default) all get exactly the same picks, and players with the same setting match
- * each other. Falls back to the full list if the filter would leave nothing.
+ * The day's song order for the player's chosen languages.
+ *
+ * Each language keeps its own order from the one seeded shuffle, then the lists are
+ * interleaved: every next song comes from one of the chosen languages with equal odds
+ * (a second seeded coin, `${seed}:mix`), whatever their catalog sizes. So with
+ * International and Israeli songs both on, about half the picks are each. When a
+ * language runs out, the rest come from the others.
+ *
+ * Nothing here depends on anything but the seed and the setting: players with the same
+ * setting (both on is the default) get the same puzzle.
  */
-function shuffled(seed: string, langs?: readonly SongLanguage[]): Song[] {
+function shuffled(seed: string, langs: readonly SongLanguage[] = SONG_LANGUAGES): Song[] {
   const all = seededShuffle(SONGS, seed);
-  if (!langs || SONG_LANGUAGES.every((l) => langs.includes(l))) return all;
-  const kept = all.filter((s) => langs.includes(songLanguage(s)));
-  return kept.length > 0 ? kept : all;
+  const queues = SONG_LANGUAGES.filter((l) => langs.includes(l))
+    .map((l) => all.filter((s) => songLanguage(s) === l))
+    .filter((q) => q.length > 0);
+  if (queues.length === 0) return langs === SONG_LANGUAGES ? all : shuffled(seed);
+  if (queues.length === 1) return queues[0];
+
+  const coin = mulberry32(hashString(`${seed}:mix`));
+  const out: Song[] = [];
+  const heads = queues.map(() => 0);
+  let live = queues.map((_, i) => i);
+  while (live.length > 0) {
+    const q = live[Math.floor(coin() * live.length)];
+    out.push(queues[q][heads[q]++]);
+    if (heads[q] === queues[q].length) live = live.filter((i) => i !== q);
+  }
+  return out;
 }
 
 /**
