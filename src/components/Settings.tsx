@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { localePath } from "@/i18n/config";
 import { useI18n } from "@/i18n/I18nProvider";
-import { SONG_LANGUAGES, SONGS, songLanguage } from "@/lib/songs";
+import { SONG_LANGUAGES, songLanguage, SONGS } from "@/lib/songs";
 import { setSongLanguage } from "@/lib/storage";
 import { useSave } from "@/lib/useSave";
 

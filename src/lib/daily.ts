@@ -1,5 +1,5 @@
 import { hashString, mulberry32, seededShuffle } from "./random";
-import { SONG_LANGUAGES, SONGS, songLanguage, type Song, type SongLanguage } from "./songs";
+import { type Song, SONG_LANGUAGES, type SongLanguage, songLanguage, SONGS } from "./songs";
 
 export const SORT_SIZE = 5;
 
@@ -21,16 +21,18 @@ function shuffled(seed: string, langs: readonly SongLanguage[] = SONG_LANGUAGES)
     .map((l) => all.filter((s) => songLanguage(s) === l))
     .filter((q) => q.length > 0);
   if (queues.length === 0) return langs === SONG_LANGUAGES ? all : shuffled(seed);
-  if (queues.length === 1) return queues[0];
+  const [first] = queues;
+  if (queues.length === 1 && first) return first;
 
   const coin = mulberry32(hashString(`${seed}:mix`));
   const out: Song[] = [];
-  const heads = queues.map(() => 0);
-  let live = queues.map((_, i) => i);
+  let live = queues.map((songs) => ({ songs, next: 0 }));
   while (live.length > 0) {
-    const q = live[Math.floor(coin() * live.length)];
-    out.push(queues[q][heads[q]++]);
-    if (heads[q] === queues[q].length) live = live.filter((i) => i !== q);
+    const pick = live[Math.floor(coin() * live.length)];
+    const song = pick?.songs[pick.next++];
+    if (!pick || !song) break;
+    out.push(song);
+    if (pick.next === pick.songs.length) live = live.filter((q) => q !== pick);
   }
   return out;
 }

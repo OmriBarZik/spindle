@@ -1,5 +1,14 @@
 "use client";
 
+import { canAnimate } from "./motion";
+
+const SCROLL_KEYS = ["wheel", "touchstart", "keydown"] as const;
+
+/** For callers that always get a function back. */
+function nothingToStop(): void {
+  // The glide never started.
+}
+
 /**
  * Bring `el` to the middle of the screen with a smooth glide that can't lag.
  *
@@ -19,32 +28,26 @@ export function smoothScrollToCenter(el: HTMLElement): () => void {
   const from = window.scrollY;
   const to = Math.min(maxY, Math.max(0, from + r.top + r.height / 2 - window.innerHeight / 2));
   const distance = to - from;
-  if (Math.abs(distance) < 1) return () => {};
+  if (Math.abs(distance) < 1) return nothingToStop;
 
   window.scrollTo({ top: to, behavior: "instant" });
+  if (!canAnimate()) return nothingToStop;
   const page = document.body;
-  if (
-    typeof page.animate !== "function" ||
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-  ) {
-    return () => {};
-  }
 
   // Longer trips take a little longer, but always end well before the record swipes.
   const duration = Math.min(800, Math.max(500, 350 + Math.abs(distance) * 0.5));
   // Start where the content was before the jump, then glide to where it is now.
-  const glide = page.animate(
-    [{ transform: `translateY(${distance}px)` }, { transform: "none" }],
-    { duration, easing: "cubic-bezier(0.65, 0, 0.35, 1)" },
-  );
+  const glide = page.animate([{ transform: `translateY(${distance}px)` }, { transform: "none" }], {
+    duration,
+    easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+  });
 
   // If the player grabs the page, finish at once rather than fight them.
   const end = () => {
     glide.finish();
-    for (const ev of ["wheel", "touchstart", "keydown"] as const) window.removeEventListener(ev, end);
+    for (const ev of SCROLL_KEYS) window.removeEventListener(ev, end);
   };
-  for (const ev of ["wheel", "touchstart", "keydown"] as const)
-    window.addEventListener(ev, end, { passive: true });
+  for (const ev of SCROLL_KEYS) window.addEventListener(ev, end, { passive: true });
   glide.onfinish = end;
   return end;
 }

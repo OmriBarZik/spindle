@@ -4,6 +4,8 @@ import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import type { Locale } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
+import type { SaveData } from "@/lib/storage";
+import type * as Youtube from "@/lib/youtube";
 import type { HiddenPlayer } from "@/lib/youtube";
 
 /** A stand-in for the YouTube player. Tests change its fields to simulate states. */
@@ -20,9 +22,7 @@ export const fakePlayer: HiddenPlayer = {
 };
 
 /** Mock factory for `@/lib/youtube` (call from `vi.mock`). */
-export async function mockYoutube(
-  importOriginal: () => Promise<typeof import("@/lib/youtube")>,
-) {
+export async function mockYoutube(importOriginal: () => Promise<typeof Youtube>) {
   const real = await importOriginal();
   return {
     ...real,
@@ -49,8 +49,9 @@ export function renderIn(lang: Locale, ui: ReactElement) {
   return render(<I18nProvider lang={lang}>{ui}</I18nProvider>);
 }
 
-export function savedData() {
-  return JSON.parse(window.localStorage.getItem("spindle:v1") ?? "null");
+/** The save as the game wrote it. */
+export function savedData(): SaveData {
+  return JSON.parse(window.localStorage.getItem("spindle:v1") ?? "null") as SaveData;
 }
 
 /** Fails with a readable list if axe finds accessibility problems. */

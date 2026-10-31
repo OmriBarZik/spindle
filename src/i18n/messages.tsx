@@ -32,6 +32,8 @@ export type Messages = {
     cantPlay: string;
     differentSong: string;
     watch: string;
+    /** Read to screen readers after links that open in a new tab. */
+    newTab: string;
     startingYear: string;
     shareResult: string;
     copied: string;
@@ -126,6 +128,7 @@ const en: Messages = {
     cantPlay: "This song can't be played here (YouTube blocked or removed it).",
     differentSong: "Give me a different song",
     watch: "watch",
+    newTab: "(opens in a new tab)",
     startingYear: "Starting year",
     shareResult: "Share result",
     copied: "Copied!",
@@ -160,9 +163,9 @@ const en: Messages = {
       </>,
       <>
         <b className="text-white">Daily Timeline:</b> a new timeline starts with a free year (say,
-        1997). Day 1: is the song <i>before 1997</i> or <i>after 1997</i>? Get it right and it
-        joins your timeline — day 2 might be <i>before 1997</i>, <i>1997–2000</i> or{" "}
-        <i>after 2000</i>, and so on.
+        1997). Day 1: is the song <i>before 1997</i> or <i>after 1997</i>? Get it right and it joins
+        your timeline — day 2 might be <i>before 1997</i>, <i>1997–2000</i> or <i>after 2000</i>,
+        and so on.
       </>,
       "A wrong guess — or a missed day — ends your timeline and a new one starts. Songs from the same year count either way.",
       "Everything is saved in your browser. A new day starts at your local midnight.",
@@ -263,6 +266,7 @@ const he: Messages = {
     cantPlay: "אי אפשר לנגן את השיר הזה כאן (YouTube חסם או הסיר אותו).",
     differentSong: "תנו לי שיר אחר",
     watch: "לצפייה",
+    newTab: "(נפתח בכרטיסייה חדשה)",
     startingYear: "שנת ההתחלה",
     shareResult: "שיתוף התוצאה",
     copied: "הועתק!",
@@ -280,25 +284,23 @@ const he: Messages = {
     between: (a, b) => `${a} – ${b}`,
   },
   home: {
-    tagline:
-      "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ונחשו מתי הם יצאו.",
-    sortDesc:
-      "מתחילים משנה אחת, ואז משבצים חמישה שירים על הציר, אחד אחרי השני. אותם שירים לכולם.",
+    tagline: "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ונחשו מתי הם יצאו.",
+    sortDesc: "מתחילים משנה אחת, ואז משבצים חמישה שירים על הציר, אחד אחרי השני. אותם שירים לכולם.",
     timelineDesc:
       "שיר אחד ביום. שבצו אותו בציר הזמן שלכם, שהולך וגדל. כל יום שהוא שורד, זה נהיה קשה יותר.",
     playCta: "לשחק ←",
     howTo: "איך משחקים",
     rules: [
       <>
-        <b className="text-white">החמישייה היומית:</b> הציר שלכם מתחיל בשנה אחת (נגיד 1980).
-        האזינו לשיר הראשון ובחרו <i>לפני 1980</i> או <i>אחרי 1980</i>. הוא מצטרף לציר, ולשיר הבא
-        יש עוד רווח אחד לבחור ממנו. חמישה שירים, אחד בכל פעם — כל שיבוץ נכון הוא 🟩.
+        <b className="text-white">החמישייה היומית:</b> הציר שלכם מתחיל בשנה אחת (נגיד 1980). האזינו
+        לשיר הראשון ובחרו <i>לפני 1980</i> או <i>אחרי 1980</i>. הוא מצטרף לציר, ולשיר הבא יש עוד
+        רווח אחד לבחור ממנו. חמישה שירים, אחד בכל פעם — כל שיבוץ נכון הוא 🟩.
       </>,
       <>
         <b className="text-white">ציר הזמן היומי:</b> ציר זמן חדש מתחיל בשנה חינמית (נגיד 1997).
-        ביום הראשון: השיר יצא <i>לפני 1997</i> או <i>אחרי 1997</i>? צדקתם — והוא מצטרף לציר
-        שלכם. ביום השני האפשרויות יכולות להיות <i>לפני 1997</i>, <i>1997–2000</i> או{" "}
-        <i>אחרי 2000</i>, וכן הלאה.
+        ביום הראשון: השיר יצא <i>לפני 1997</i> או <i>אחרי 1997</i>? צדקתם — והוא מצטרף לציר שלכם.
+        ביום השני האפשרויות יכולות להיות <i>לפני 1997</i>, <i>1997–2000</i> או <i>אחרי 2000</i>, וכן
+        הלאה.
       </>,
       "ניחוש שגוי — או יום שפספסתם — מסיים את ציר הזמן, ומתחיל ציר חדש. שירים מאותה שנה נחשבים נכונים בשני הצדדים.",
       "הכול נשמר בדפדפן שלכם. יום חדש מתחיל בחצות לפי השעה המקומית שלכם.",
@@ -363,8 +365,8 @@ const he: Messages = {
       `בציר הזמן שלכם יש עכשיו ${heSongs(songs)}. כל יום מוסיף רווח ונהיה קשה יותר — אל תפספסו יום!`,
     wrongMsg: (title, year, songs) => (
       <>
-        ״<bdi>{title}</bdi>״ יצא ב־{year}. ציר הזמן שלכם נגמר אחרי {heSongs(songs)}. ציר חדש
-        מתחיל מחר.
+        ״<bdi>{title}</bdi>״ יצא ב־{year}. ציר הזמן שלכם נגמר אחרי {heSongs(songs)}. ציר חדש מתחיל
+        מחר.
       </>
     ),
     stats: { songs: "שירים", best: "שיא", runs: "סבבים", day: "יום" },

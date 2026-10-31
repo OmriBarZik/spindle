@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect } from "react";
+import { type RefObject, useEffect, useLayoutEffect } from "react";
+import { canAnimate, holdHidden } from "./motion";
 
 /**
  * The record "flight" from the home page into a game.
@@ -36,18 +37,12 @@ type Flight = {
 };
 let flight: Flight | null = null;
 
-function canAnimate(): boolean {
-  if (typeof window === "undefined" || typeof document === "undefined") return false;
-  if (typeof document.body?.animate !== "function") return false;
-  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-}
-
 /** Current rotation in degrees (0..360) of an element, from its computed transform. */
 function angleOf(el: Element): number {
   const t = getComputedStyle(el).transform;
-  const m = t && t !== "none" ? t.match(/matrix(?:3d)?\(([^)]+)\)/) : null;
+  const m = t && t !== "none" ? /matrix(?:3d)?\(([^)]+)\)/.exec(t) : null;
   if (!m) return 0;
-  const [a, b] = m[1].split(",").map(Number);
+  const [a = 1, b = 0] = (m[1] ?? "").split(",").map(Number);
   const deg = (Math.atan2(b, a) * 180) / Math.PI;
   return (deg + 360) % 360;
 }
@@ -80,14 +75,6 @@ function surroundings(box: HTMLElement): HTMLElement[] {
   return out;
 }
 
-/**
- * Hold elements at opacity 0. Done with a finished, filled animation rather
- * than inline styles, so React's own styles are untouched; cancel to undo.
- */
-function holdHidden(els: HTMLElement[]): Animation[] {
-  return els.map((el) => el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 0, fill: "forwards" }));
-}
-
 /** Forget the current flight (if it is `f`) and stop its timers and listeners. */
 function endFlight(f: Flight) {
   if (flight === f) flight = null;
@@ -103,7 +90,10 @@ function removeGhost(fade: boolean) {
     f.ghost.remove();
     return;
   }
-  const anim = f.ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 250, fill: "forwards" });
+  const anim = f.ghost.animate([{ opacity: 1 }, { opacity: 0 }], {
+    duration: 250,
+    fill: "forwards",
+  });
   anim.onfinish = () => f.ghost.remove();
 }
 
@@ -171,8 +161,8 @@ export function isRecordFlying(): boolean {
  * or land in the wrong place. Until then the ghost keeps spinning in place.
  */
 export function useRecordLanding(
-  box: React.RefObject<HTMLElement | null>,
-  button: React.RefObject<HTMLElement | null>,
+  box: RefObject<HTMLElement | null>,
+  button: RefObject<HTMLElement | null>,
 ) {
   // Layout effect: hide the Deck before its first paint.
   useLayoutEffect(() => {
@@ -184,7 +174,7 @@ export function useRecordLanding(
     f.landing = true;
     setHidden(boxEl, true);
     const around = surroundings(boxEl);
-    const holds = holdHidden(around);
+    const holds = around.map(holdHidden);
     let anim: Animation | null = null;
     let raf = 0;
 
@@ -192,9 +182,10 @@ export function useRecordLanding(
       endFlight(f);
       f.ghost.remove();
       setHidden(boxEl, false);
-      holds.forEach((h) => h.cancel());
+      holds.forEach((h) => h?.cancel());
       const fadeIn = { duration: FADE_IN, easing: "ease-out" };
-      for (const el of around) el.animate([{ opacity: 0 }, { opacity: getComputedStyle(el).opacity }], fadeIn);
+      for (const el of around)
+        el.animate([{ opacity: 0 }, { opacity: getComputedStyle(el).opacity }], fadeIn);
       const btn = button.current;
       btn?.animate([{ opacity: 0 }, { opacity: getComputedStyle(btn).opacity }], fadeIn);
     };
@@ -202,7 +193,10 @@ export function useRecordLanding(
     const fly = () => {
       const from = boxOf(f.ghost);
       const to = boxOf(boxEl);
-      if (!to.size || !from.size) return land();
+      if (!to.size || !from.size) {
+        land();
+        return;
+      }
       const angle = angleOf(f.ghost);
       // Finish a little over a quarter turn later, on a whole turn, so it
       // matches the Deck's record at 0deg.
@@ -234,7 +228,7 @@ export function useRecordLanding(
         f.ghost.style.animation = "";
       }
       setHidden(boxEl, false);
-      holds.forEach((h) => h.cancel());
+      holds.forEach((h) => h?.cancel());
       f.landing = false;
       // Unmounted mid-flight, e.g. Back to the home page: drop the record
       // right away. Waiting one tick lets React's dev double-mount pick the

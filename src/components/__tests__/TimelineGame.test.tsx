@@ -2,15 +2,10 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import TimelineGame from "@/components/TimelineGame";
+import { MESSAGES } from "@/i18n/messages";
 import { getSong } from "@/lib/songs";
 import { correctSlot, isSlotCorrect, slotLabel } from "@/lib/timeline";
-import {
-  expectAccessible,
-  fakePlayer,
-  renderIn,
-  savedData,
-  setupGameTests,
-} from "@/test/helpers";
+import { expectAccessible, fakePlayer, renderIn, savedData, setupGameTests } from "@/test/helpers";
 
 vi.mock("@/lib/youtube", async (original) =>
   (await import("@/test/helpers")).mockYoutube(original as never),
@@ -19,13 +14,17 @@ setupGameTests();
 
 function today() {
   const t = savedData().timeline;
-  return { cards: t.cards as { year: number }[], song: getSong(t.today.songId)! };
+  return { cards: t.cards, song: getSong(t.today?.songId)! };
 }
 
 function placeAt(slot: number, container: HTMLElement) {
   const { cards } = today();
-  fireEvent.click(screen.getByRole("button", { name: `+ ${slotLabel(cards, slot)}` }));
-  fireEvent.click(screen.getByRole("button", { name: `Place it: ${slotLabel(cards, slot)}` }));
+  fireEvent.click(
+    screen.getByRole("button", { name: `+ ${slotLabel(cards, slot, MESSAGES.en.slots)}` }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: `Place it: ${slotLabel(cards, slot, MESSAGES.en.slots)}` }),
+  );
   expect(fakePlayer.stop).toHaveBeenCalled();
   const swap = container.querySelector(".deck-swap-flash");
   expect(swap).not.toBeNull();
@@ -37,7 +36,7 @@ async function shareAndRead() {
   Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
   fireEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
-  return writeText.mock.calls[0][0] as string;
+  return writeText.mock.calls[0]![0] as string;
 }
 
 describe("Daily Timeline screen", () => {
@@ -46,7 +45,7 @@ describe("Daily Timeline screen", () => {
     const { cards } = today();
     expect(cards).toHaveLength(1);
     expect(container.textContent).toContain(
-      `Day 1 of a new timeline, starting at ${cards[0].year}.`,
+      `Day 1 of a new timeline, starting at ${cards[0]!.year}.`,
     );
     expect(container.textContent).toContain("Starting year");
     expect(screen.getByText("Today")).toBeTruthy();
@@ -102,8 +101,8 @@ describe("Daily Timeline screen", () => {
     // Re-render with the player in its error state.
     const { container } = renderIn("en", <TimelineGame />);
     expect(container.textContent).toContain("This song can't be played here");
-    fireEvent.click(screen.getAllByRole("button", { name: "Give me a different song" })[0]);
-    expect(savedData().timeline.today.skipped).toEqual([song.id]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Give me a different song" })[0]!);
+    expect(savedData().timeline.today?.skipped).toEqual([song.id]);
   });
 
   it("has no accessibility violations", async () => {

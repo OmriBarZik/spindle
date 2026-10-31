@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { addDays } from "../dates";
+import { MESSAGES } from "@/i18n/messages";
 import { anchorYearFor, sortSongsFor, timelineSongFor } from "../daily";
+import { addDays } from "../dates";
 import { getSong, SONGS } from "../songs";
 import {
   emptySave,
@@ -8,11 +9,11 @@ import {
   ensureTimelineDay,
   placeSortSong,
   placeTimelineCard,
+  type SaveData,
   setSongLanguage,
   skipTimelineSong,
   sortDayDone,
   sortLine,
-  type SaveData,
 } from "../storage";
 import { correctSlot, isSlotCorrect, slotLabel, songCount } from "../timeline";
 
@@ -67,9 +68,12 @@ describe("timeline slots", () => {
     expect(correctSlot(cards, 1998)).toBe(2);
   });
   it("labels slots", () => {
-    expect(slotLabel(cards, 0)).toBe("Before 1994");
-    expect(slotLabel(cards, 2)).toBe("1997 – 2000");
-    expect(slotLabel(cards, 3)).toBe("After 2000");
+    const en = MESSAGES.en.slots;
+    expect(slotLabel([], 0, en)).toBe("Anywhere");
+    expect(slotLabel(cards, 0, en)).toBe("Before 1994");
+    expect(slotLabel(cards, 2, en)).toBe("1997 – 2000");
+    expect(slotLabel(cards, 3, en)).toBe("After 2000");
+    expect(slotLabel([{ year: 1997 }, { year: 1997 }], 1, en)).toBe("In 1997");
   });
 });
 
@@ -77,7 +81,7 @@ describe("daily five", () => {
   function playDay(d: SaveData, day: string, rightFor: (i: number) => boolean): SaveData {
     d = ensureSortDay(d, day);
     for (let i = 0; i < 5; i++) {
-      const state = d.sort.days[day];
+      const state = d.sort.days[day]!;
       const line = sortLine(state);
       const song = getSong(state.songIds[i])!;
       const right = correctSlot(line, song.year);
@@ -89,13 +93,13 @@ describe("daily five", () => {
 
   it("starts with only the anchor year", () => {
     const d = ensureSortDay(emptySave(), DAY);
-    expect(sortLine(d.sort.days[DAY])).toEqual([{ kind: "anchor", year: anchorYearFor(DAY) }]);
+    expect(sortLine(d.sort.days[DAY]!)).toEqual([{ kind: "anchor", year: anchorYearFor(DAY) }]);
   });
 
   it("scores a perfect day and tracks streaks", () => {
     let d = playDay(emptySave(), DAY, () => true);
     d = playDay(d, addDays(DAY, 1), () => true);
-    expect(d.sort.days[DAY].placements.every((p) => p.correct)).toBe(true);
+    expect(d.sort.days[DAY]!.placements.every((p) => p.correct)).toBe(true);
     expect(d.sort.stats.streak).toBe(2);
     expect(d.sort.stats.perfect).toBe(2);
     expect(d.sort.stats.played).toBe(2);
@@ -103,7 +107,7 @@ describe("daily five", () => {
 
   it("keeps the line in order even after wrong placements", () => {
     const d = playDay(emptySave(), DAY, (i) => i % 2 === 0);
-    const state = d.sort.days[DAY];
+    const state = d.sort.days[DAY]!;
     expect(sortDayDone(state)).toBe(true);
     expect(state.placements.map((p) => p.correct)).toEqual([true, false, true, false, true]);
     const years = sortLine(state).map((c) => c.year);
@@ -130,8 +134,8 @@ describe("timeline mode", () => {
     const d = ensureTimelineDay(emptySave(), DAY);
     const song = getSong(d.timeline.today!.songId)!;
     expect(d.timeline.cards).toHaveLength(1);
-    expect(d.timeline.cards[0].anchor).toBe(true);
-    expect(d.timeline.cards[0].year).not.toBe(song.year);
+    expect(d.timeline.cards[0]!.anchor).toBe(true);
+    expect(d.timeline.cards[0]!.year).not.toBe(song.year);
     expect(d.timeline.today!.result).toBe("pending");
   });
 
@@ -174,7 +178,7 @@ describe("timeline mode", () => {
     expect(songCount(d.timeline.cards)).toBe(2);
     d = ensureTimelineDay(d, addDays(DAY, 3));
     expect(songCount(d.timeline.cards)).toBe(0);
-    expect(d.timeline.cards[0].anchor).toBe(true);
+    expect(d.timeline.cards[0]!.anchor).toBe(true);
     expect(d.timeline.best).toBe(2);
     expect(d.timeline.runs).toBe(1);
   });
@@ -191,7 +195,7 @@ describe("timeline mode", () => {
     const legacy: SaveData = { ...base, timeline: { ...base.timeline, cards: [] } };
     const d = ensureTimelineDay(legacy, DAY);
     expect(d.timeline.cards).toHaveLength(1);
-    expect(d.timeline.cards[0].anchor).toBe(true);
+    expect(d.timeline.cards[0]!.anchor).toBe(true);
   });
 
   it("can skip an unplayable song", () => {
@@ -209,8 +213,8 @@ describe("song language settings", () => {
   it("defaults to every language and leaves the shared puzzle unchanged", () => {
     const d = ensureSortDay(emptySave(), DAY);
     expect(d.settings.songLanguages).toEqual(["en", "he"]);
-    expect(d.sort.days[DAY].songIds).toEqual(sortSongsFor(DAY).map((s) => s.id));
-    expect(d.sort.days[DAY].anchorYear).toBe(anchorYearFor(DAY));
+    expect(d.sort.days[DAY]!.songIds).toEqual(sortSongsFor(DAY).map((s) => s.id));
+    expect(d.sort.days[DAY]!.anchorYear).toBe(anchorYearFor(DAY));
   });
 
   it("only picks songs in the chosen language", () => {
@@ -219,7 +223,7 @@ describe("song language settings", () => {
       for (let i = 0; i < 20; i++) {
         const day = addDays(DAY, i);
         d = ensureTimelineDay(ensureSortDay(d, day), day);
-        expect(d.sort.days[day].songIds.every((id) => he(id) === (lang === "he"))).toBe(true);
+        expect(d.sort.days[day]!.songIds.every((id) => he(id) === (lang === "he"))).toBe(true);
         expect(he(d.timeline.today!.songId)).toBe(lang === "he");
       }
     }
@@ -233,11 +237,11 @@ describe("song language settings", () => {
 
   it("re-picks today only if it hasn't been started", () => {
     let d = ensureSortDay(emptySave(), DAY);
-    const before = d.sort.days[DAY].songIds;
+    const before = d.sort.days[DAY]!.songIds;
     d = setSongLanguage(d, "en", false);
     const fresh = ensureSortDay(d, DAY);
-    expect(fresh.sort.days[DAY].songIds).not.toEqual(before);
-    expect(fresh.sort.days[DAY].songIds.every(he)).toBe(true);
+    expect(fresh.sort.days[DAY]!.songIds).not.toEqual(before);
+    expect(fresh.sort.days[DAY]!.songIds.every(he)).toBe(true);
 
     const started = placeSortSong(ensureSortDay(emptySave(), DAY), DAY, 0);
     const kept = setSongLanguage(started, "en", false);
@@ -248,7 +252,10 @@ describe("song language settings", () => {
     let d = setSongLanguage(emptySave(), "he", false);
     d = ensureTimelineDay(d, DAY);
     expect(he(d.timeline.today!.songId)).toBe(false);
-    const swapped = ensureTimelineDay(setSongLanguage(setSongLanguage(d, "he", true), "en", false), DAY);
+    const swapped = ensureTimelineDay(
+      setSongLanguage(setSongLanguage(d, "he", true), "en", false),
+      DAY,
+    );
     expect(he(swapped.timeline.today!.songId)).toBe(true);
     // Answered days are left alone.
     const answered = placeTimelineCard(d, DAY, 0);

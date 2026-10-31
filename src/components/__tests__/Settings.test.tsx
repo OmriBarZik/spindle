@@ -5,7 +5,11 @@ import Settings from "@/components/Settings";
 import { expectAccessible, renderIn, savedData, setupGameTests } from "@/test/helpers";
 
 vi.mock("next/link", () => ({
-  default: ({ href, ...rest }: { href: string }) => <a href={href} {...rest} />,
+  default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
 }));
 setupGameTests();
 

@@ -35,8 +35,8 @@ export function songLanguage(song: Pick<Song, "titleHe">): SongLanguage {
 
 export const SONG_BY_ID = new Map(SONGS.map((s) => [s.id, s]));
 
-export function getSong(id: string): Song | undefined {
-  return SONG_BY_ID.get(id);
+export function getSong(id: string | undefined): Song | undefined {
+  return id === undefined ? undefined : SONG_BY_ID.get(id);
 }
 
 /**

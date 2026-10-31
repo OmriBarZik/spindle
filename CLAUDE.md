@@ -10,14 +10,18 @@ It is open source (MIT) and deployed on Vercel from `main` with no environment v
 
 ```bash
 npm run dev             # http://localhost:3000
-npm test                # vitest: game-logic unit tests (src/lib/__tests__)
-npm run lint            # eslint (includes React Compiler rules, see Gotchas)
-npx tsc --noEmit        # typecheck
+npm test                # vitest: logic tests (src/lib/__tests__) and component tests (src/components/__tests__)
+npm run lint            # eslint: Next + React Compiler, strict type-aware TS, strict jsx-a11y, import order
+npm run lint:fix        # eslint --fix
+npm run format          # prettier --write (Tailwind classes are sorted too)
+npm run typecheck       # next typegen + tsc --noEmit
+npm run check           # format check + lint + typecheck + tests (what CI runs, minus the build)
 npm run build           # production build; all routes are static
 npm run validate-songs  # checks every YouTube ID via oEmbed (needs youtube.com access)
 ```
 
-Run lint, test and build before pushing.
+Run `npm run check` and `npm run build` before pushing. CI (`.github/workflows/ci.yml`)
+runs format, lint, typecheck, tests and build on every PR and on `main`.
 
 ## Game modes
 
@@ -103,11 +107,15 @@ is a "default" served without a prefix.
 | `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |
 | `src/lib/timeline.ts` | `TimelineCard`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `slotLabel` |
 | `src/lib/youtube.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
+| `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `timelineShareText`) |
+| `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
 | `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
 | `src/components/Deck.tsx` | Turntable UI: opaque record over the hidden iframe, play/pause, loading ring, status line |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |
-| `src/components/TimelineParts.tsx` | Shared `SlotButton`, `SongCard`, `AnchorCard`, `Stats` |
+| `src/components/TimelineParts.tsx` | Parts both games share: `SlotLine` (the line with its gap buttons), `PlaceButton`, `SongCard`, `AnchorCard`, `ResultCard`, `Stats`, `Announce` (screen-reader live region) |
+| `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
+| `src/test/` | Test setup and helpers (fake YouTube player, `renderIn(lang, ui)`, axe check) |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
 | `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
 | `src/components/Settings.tsx` | Settings page (song-language switches) |
@@ -170,10 +178,27 @@ is a "default" served without a prefix.
 - **Song years** are the original release year of the song (single or album), not the
   video or a remaster.
 
+## Code style
+
+- Prettier formats everything except `songs.json` (one song per line) and Markdown.
+- TypeScript is strict with `noUncheckedIndexedAccess`: indexing an array or record gives
+  `T | undefined`, so handle the missing case (`getSong` accepts `undefined` for this).
+- Lint is strict and type-aware. Don't silence a rule without a comment saying why.
+- Accessibility: every control needs an accessible name; decorative emoji/SVGs get
+  `aria-hidden`; results are announced through `Announce`; the YouTube host is `inert`.
+
 ## Testing tips
 
 - Put logic tests in `src/lib/__tests__/` (vitest, node environment, `@/` alias set in
   `vitest.config.mts`).
+- `src/lib/__tests__/golden.test.ts` snapshots a month of daily picks. If it fails, the
+  daily puzzles changed for everyone: fix the code, don't update the snapshot (unless
+  you added songs on purpose, then run `npx vitest -u`).
+- Component tests live in `src/components/__tests__/` and start with
+  `// @vitest-environment jsdom`. Mock the player with
+  `vi.mock("@/lib/youtube", async (o) => (await import("@/test/helpers")).mockYoutube(o as never))`,
+  render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).
+  Fire `animationEnd` on `.deck-swap` to finish the record animation.
 - For UI checks, use the pre-installed Playwright/Chromium against `next start`. YouTube
   may be blocked in sandboxes, so stub the API with
   `page.route('https://www.youtube.com/iframe_api', r => r.fulfill({ contentType: 'text/javascript', body: FAKE }))`,

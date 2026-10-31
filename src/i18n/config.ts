@@ -33,7 +33,7 @@ export function matchAcceptLanguage(header: string | null): Locale | null {
   const ranked = header
     .split(",")
     .map((part, i) => {
-      const [tag, ...params] = part.trim().split(";");
+      const [tag = "", ...params] = part.trim().split(";");
       const q = params.map((p) => p.trim()).find((p) => p.startsWith("q="));
       return { tag: tag.toLowerCase(), q: q ? Number(q.slice(2)) : 1, i };
     })

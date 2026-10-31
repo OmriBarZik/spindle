@@ -40,8 +40,11 @@ answering, each song gets a "watch" link to YouTube.
 ```bash
 npm install
 npm run dev            # http://localhost:3000
-npm test               # game-logic unit tests (vitest)
-npm run lint
+npm test               # unit + component tests (vitest, Testing Library, axe)
+npm run lint           # eslint (strict TypeScript + accessibility rules)
+npm run format         # prettier
+npm run typecheck
+npm run check          # everything CI runs except the build
 npm run build
 npm run validate-songs # check every video still exists and allows embedding
 ```

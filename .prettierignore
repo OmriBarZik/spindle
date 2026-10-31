@@ -1,0 +1,15 @@
+# Generated or vendored
+.next/
+out/
+build/
+coverage/
+node_modules/
+package-lock.json
+next-env.d.ts
+**/__snapshots__/
+
+# One song per line keeps the catalog easy to diff and review.
+src/data/songs.json
+
+# Prose: formatted by hand (AGENTS.md is written by `next dev`).
+*.md

@@ -30,6 +30,12 @@ body {
   font-family: var(--font-roboto), var(--font-hebrew), system-ui, sans-serif;
 }
 
+/* One visible focus ring for keyboard users, on every control. */
+:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -48,7 +54,9 @@ body {
   background: color-mix(in srgb, #8b5cf6 14%, var(--surface));
 }
 .mode-card {
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
 .mode-card:hover {
   transform: translateY(-2px);
@@ -62,7 +70,9 @@ body {
   color: #000;
   font-weight: 700;
   padding: 0.85rem 1.25rem;
-  transition: transform 0.1s ease, opacity 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    opacity 0.15s ease;
 }
 .btn-primary:hover:not(:disabled) {
   transform: scale(1.01);
@@ -74,31 +84,12 @@ body {
   opacity: 0.4;
 }
 
-.arrow-btn {
-  display: flex;
-  height: 1.75rem;
-  width: 2.25rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid var(--line);
-  font-size: 0.75rem;
-  transition: background 0.15s ease;
-}
-.arrow-btn:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.08);
-}
-.arrow-btn:disabled {
-  opacity: 0.25;
-}
-
 /* Vinyl record — fully opaque so it hides the YouTube player underneath. */
 .record {
   --label: #8b5cf6;
   background:
     radial-gradient(circle, transparent 0 30%, rgb(255 255 255 / 0.04) 30.5%, transparent 31.5%),
-    repeating-radial-gradient(circle, #111 0 2px, #1b1b1b 2px 4px),
-    #111;
+    repeating-radial-gradient(circle, #111 0 2px, #1b1b1b 2px 4px), #111;
   box-shadow:
     0 20px 50px rgb(0 0 0 / 0.6),
     inset 0 0 0 2px #000;

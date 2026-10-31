@@ -37,7 +37,9 @@ async function check(song) {
     }
     const info = await res.json();
     if (!quiet) {
-      console.log(`✅ ${song.youtubeId}  ${song.artist} – ${song.title}\n      ↳ ${info.title}  [${info.author_name}]`);
+      console.log(
+        `✅ ${song.youtubeId}  ${song.artist} – ${song.title}\n      ↳ ${info.title}  [${info.author_name}]`,
+      );
     }
   } catch (err) {
     problems.push({ song, reason: String(err) });
