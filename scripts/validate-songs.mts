@@ -4,8 +4,8 @@
  * - Flags videos that are missing, private, or not embeddable.
  * - Prints the real YouTube title next to our title so mismatches are easy to spot.
  *
- * Usage: npm run validate-songs            (all songs)
- *        npm run validate-songs -- --quiet (only problems)
+ * Usage: pnpm validate-songs          (all songs)
+ *        pnpm validate-songs --quiet  (only problems)
  *
  * Runs as TypeScript directly (Node strips the types).
  */

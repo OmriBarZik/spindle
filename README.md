@@ -38,15 +38,15 @@ answering, each song gets a "watch" link to YouTube.
 ## Development
 
 ```bash
-npm install
-npm run dev            # http://localhost:3000
-npm test               # unit + component tests (vitest, Testing Library, axe)
-npm run lint           # oxlint (React, type-aware TypeScript, accessibility, Next.js rules)
-npm run format         # oxfmt
-npm run typecheck
-npm run check          # everything CI runs except the build
-npm run build
-npm run validate-songs # check every video still exists and allows embedding
+pnpm install
+pnpm dev              # http://localhost:3000
+pnpm test             # unit + component tests (vitest, Testing Library, axe)
+pnpm lint             # oxlint (React, type-aware TypeScript, accessibility, Next.js rules)
+pnpm format           # oxfmt
+pnpm typecheck
+pnpm check            # everything CI runs except the build
+pnpm build
+pnpm validate-songs   # check every video still exists and allows embedding
 ```
 
 Built with Next.js (App Router), React, TypeScript 7 and Tailwind CSS. Linted with oxlint and
@@ -76,7 +76,7 @@ Add an entry to `src/data/songs.json`:
 - Optional `"start": 12` skips a long intro (seconds).
 - For Hebrew songs, add `"titleHe"` and `"artistHe"` (Hebrew script). Hebrew pages show
   those; English pages show the transliterated `title` and `artist`.
-- Run `npm run validate-songs` — videos with embedding disabled won't play.
+- Run `pnpm validate-songs` — videos with embedding disabled won't play.
 
 Daily picks are derived from the catalog, so **changing the catalog changes future (and
 past) puzzles**. Adding songs is fine; avoid editing on a day people are mid-puzzle.

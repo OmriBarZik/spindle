@@ -9,18 +9,19 @@ It is open source (MIT) and deployed on Vercel from `main` with no environment v
 ## Commands
 
 ```bash
-npm run dev             # http://localhost:3000
-npm test                # vitest: logic tests (src/lib/__tests__) and component tests (src/components/__tests__)
-npm run lint            # oxlint (.oxlintrc.json): React Compiler rules, type-aware TS, jsx-a11y, Next.js
-npm run lint:fix        # oxlint --fix
-npm run format          # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind classes
-npm run typecheck       # next typegen + tsc --noEmit (TypeScript 7, the native compiler)
-npm run check           # format check + lint + typecheck + tests (what CI runs, minus the build)
-npm run build           # production build; all routes are static
-npm run validate-songs  # checks every YouTube ID via oEmbed (needs youtube.com access; Node >= 22.18 runs the .mts directly)
+pnpm install            # install dependencies (pnpm is pinned in package.json's packageManager)
+pnpm dev                # http://localhost:3000
+pnpm test               # vitest: logic tests (src/lib/__tests__) and component tests (src/components/__tests__)
+pnpm lint               # oxlint (.oxlintrc.json): React Compiler rules, type-aware TS, jsx-a11y, Next.js
+pnpm lint:fix           # oxlint --fix
+pnpm format             # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind classes
+pnpm typecheck          # next typegen + tsc --noEmit (TypeScript 7, the native compiler)
+pnpm check              # format check + lint + typecheck + tests (what CI runs, minus the build)
+pnpm build              # production build; all routes are static
+pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node >= 22.18 runs the .mts directly)
 ```
 
-Run `npm run check` and `npm run build` before pushing. CI (`.github/workflows/ci.yml`)
+Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
 runs format, lint, typecheck, tests and build on every PR and on `main`.
 
 ## Game modes
@@ -198,7 +199,7 @@ is a "default" served without a prefix.
   `vitest.config.mts`).
 - `src/lib/__tests__/golden.test.ts` snapshots a month of daily picks. If it fails, the
   daily puzzles changed for everyone: fix the code, don't update the snapshot (unless
-  you added songs on purpose, then run `npx vitest -u`).
+  you added songs on purpose, then run `pnpm vitest -u`).
 - Component tests live in `src/components/__tests__/` and start with
   `// @vitest-environment jsdom`. Mock the player with
   `vi.mock("@/lib/youtube", async (o) => (await import("@/test/helpers")).mockYoutube(o as never))`,

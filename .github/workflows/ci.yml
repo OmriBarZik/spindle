@@ -20,24 +20,27 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Installs the pnpm version pinned in package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - name: Format
-        run: npm run format:check
+        run: pnpm format:check
 
       - name: Lint
-        run: npm run lint -- --format github
+        run: pnpm lint --format github
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm typecheck
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
       - name: Build
-        run: npm run build
+        run: pnpm build

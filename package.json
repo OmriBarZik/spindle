@@ -14,7 +14,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "validate-songs": "node scripts/validate-songs.mts"
   },
   "dependencies": {
@@ -38,5 +38,6 @@
     "tailwindcss": "^4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
-  }
+  },
+  "packageManager": "pnpm@12.16.1"
 }
