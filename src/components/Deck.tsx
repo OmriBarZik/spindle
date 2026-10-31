@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useRecordLanding } from "@/lib/recordFlight";
+import { smoothScrollToCenter } from "@/lib/smoothScroll";
 import { formatTime, type HiddenPlayer } from "@/lib/youtube";
 
 /**
@@ -52,8 +53,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
     if (!swapping || !box) return;
     const r = box.getBoundingClientRect();
     if (r.top >= 0 && r.bottom <= window.innerHeight) return;
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    box.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    return smoothScrollToCenter(box);
   }, [swapping]);
 
   return (
