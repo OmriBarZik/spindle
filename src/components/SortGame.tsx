@@ -6,6 +6,7 @@ import ShareButton from "@/components/ShareButton";
 import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
 import { dayKey, puzzleNumber } from "@/lib/dates";
+import { useDropRecordFlight } from "@/lib/recordFlight";
 import { getSong, songNames } from "@/lib/songs";
 import { ensureSortDay, placeSortSong, sortDayDone, sortLine } from "@/lib/storage";
 import { slotLabel } from "@/lib/timeline";
@@ -21,6 +22,8 @@ export default function SortGame() {
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // A finished day has no Deck to land on, so let the home record fade away.
+  useDropRecordFlight();
 
   const state = data.sort.days[day];
   const done = sortDayDone(state);

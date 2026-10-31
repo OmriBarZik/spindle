@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useRecordLanding } from "@/lib/recordFlight";
 import { formatTime, type HiddenPlayer } from "@/lib/youtube";
 
 type Props = {
@@ -27,9 +29,14 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
   const busy = loading || !player.ready;
   const statusText = !player.ready ? t.common.loadingPlayer : loading ? t.common.loadingSong : "";
 
+  // Coming from the home page, the record flies in from where it was there.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  useRecordLanding(boxRef, buttonRef);
+
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="relative aspect-square w-56 sm:w-64">
+      <div ref={boxRef} className="relative aspect-square w-56 sm:w-64">
         {/* Loading ring: always mounted and faded in/out so nothing shifts. */}
         <div
           aria-hidden
@@ -51,6 +58,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
           <div className="record-label" />
         </div>
         <button
+          ref={buttonRef}
           type="button"
           disabled={!player.ready || !videoId}
           onClick={() => videoId && player.toggle(videoId, start)}
