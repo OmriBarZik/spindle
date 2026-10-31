@@ -19,6 +19,8 @@ import { useEffect, useLayoutEffect } from "react";
 
 const DURATION = 650;
 const EASING = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+/** Fade-in of the game screen's text once the record has landed. */
+const FADE_IN = 350;
 /** Give up on a flight that no Deck picks up (slow network, finished game). */
 const TIMEOUT = 10000;
 /** Same as `.spin-slow` in globals.css. */
@@ -53,6 +55,31 @@ function boxOf(el: HTMLElement) {
 /** Hide or show an element without changing layout (also hides iframes inside). */
 function setHidden(el: HTMLElement, hidden: boolean) {
   el.style.visibility = hidden ? "hidden" : "";
+}
+
+/**
+ * Everything on the game screen around the Deck's record: walk up from `box`
+ * to the page's <main> and collect the siblings at each level (the title,
+ * intro, deck label, timeline, …).
+ */
+function surroundings(box: HTMLElement): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  for (let el: HTMLElement | null = box; el && el.tagName !== "MAIN"; el = el.parentElement) {
+    const parent: HTMLElement | null = el.parentElement;
+    if (!parent) break;
+    for (const sib of Array.from(parent.children)) {
+      if (sib !== el && sib instanceof HTMLElement) out.push(sib);
+    }
+  }
+  return out;
+}
+
+/**
+ * Hold elements at opacity 0. Done with a finished, filled animation rather
+ * than inline styles, so React's own styles are untouched; cancel to undo.
+ */
+function holdHidden(els: HTMLElement[]): Animation[] {
+  return els.map((el) => el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 0, fill: "forwards" }));
 }
 
 function removeGhost(fade: boolean) {
@@ -112,7 +139,9 @@ export function isRecordFlying(): boolean {
 
 /**
  * Land a flight on the Deck. `box` is the Deck's record area (record, ring,
- * hidden player and play button) and `button` fades in once the record lands.
+ * hidden player and play button) and `button` fades in once the record lands,
+ * together with the rest of the game screen (title, text, timeline), so the
+ * page doesn't appear in pieces around a record still in the air.
  *
  * The ghost itself flies, and the Deck stays hidden (`visibility`, which also
  * hides the YouTube iframe) until it lands. The flight starts a couple of
@@ -133,6 +162,8 @@ export function useRecordLanding(
     clearTimeout(f.timer);
     f.landing = true;
     setHidden(boxEl, true);
+    const around = surroundings(boxEl);
+    const holds = holdHidden(around);
     let anim: Animation | null = null;
     let raf = 0;
 
@@ -140,10 +171,11 @@ export function useRecordLanding(
       if (flight === f) flight = null;
       f.ghost.remove();
       setHidden(boxEl, false);
-      button.current?.animate([{ opacity: 0 }, { opacity: getComputedStyle(button.current).opacity }], {
-        duration: 200,
-        easing: "ease-out",
-      });
+      holds.forEach((h) => h.cancel());
+      const fadeIn = { duration: FADE_IN, easing: "ease-out" };
+      for (const el of around) el.animate([{ opacity: 0 }, { opacity: getComputedStyle(el).opacity }], fadeIn);
+      const btn = button.current;
+      btn?.animate([{ opacity: 0 }, { opacity: getComputedStyle(btn).opacity }], fadeIn);
     };
 
     const fly = () => {
@@ -181,6 +213,7 @@ export function useRecordLanding(
         f.ghost.style.animation = "";
       }
       setHidden(boxEl, false);
+      holds.forEach((h) => h.cancel());
       f.landing = false;
       if (flight === f) f.timer = setTimeout(() => removeGhost(true), TIMEOUT);
     };
