@@ -6,7 +6,7 @@ import ShareButton from "@/components/ShareButton";
 import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
 import { dayKey, puzzleNumber } from "@/lib/dates";
-import { getSong } from "@/lib/songs";
+import { getSong, songNames } from "@/lib/songs";
 import { ensureSortDay, placeSortSong, sortDayDone, sortLine } from "@/lib/storage";
 import { slotLabel } from "@/lib/timeline";
 import { useSave } from "@/lib/useSave";
@@ -16,7 +16,7 @@ import { useHiddenPlayer } from "@/lib/youtube";
  * Daily Five: start from a single year, then place five songs one at a time.
  */
 export default function SortGame() {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const [day] = useState(() => dayKey());
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
@@ -71,7 +71,7 @@ export default function SortGame() {
             lastCorrect ? "bg-green-500/15 text-green-300" : "bg-red-500/15 text-red-300"
           }`}
         >
-          {lastCorrect ? t.sort.correct : t.sort.wrong} {t.sort.reveal(last.title, last.artist, last.year)}
+          {lastCorrect ? t.sort.correct : t.sort.wrong} {t.sort.reveal(songNames(last, lang).title, songNames(last, lang).artist, last.year)}
         </p>
       )}
 

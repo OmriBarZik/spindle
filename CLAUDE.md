@@ -51,6 +51,8 @@ is a "default" served without a prefix.
   `src/i18n/server.ts`; client components use `useI18n()` from `src/i18n/I18nProvider.tsx`.
   **Never hard-code UI text in components**; add it to both languages.
 - `slotLabel(cards, slot, t.slots)` takes the language's slot labels.
+- Song names: use `songNames(song, lang)` (`src/lib/songs.ts`). It returns `titleHe`/`artistHe`
+  on Hebrew pages, looked up by `youtubeId` because saved timeline cards only store English names.
 - Saves are shared between languages, so switching language keeps progress.
 - **RTL layout:** use logical utilities (`ms-*`, `ps-*`, `text-start`/`text-end`, `start-*`)
   instead of `ml`/`pl`/`text-left`, and the `rtl:` variant where needed (e.g.
@@ -85,7 +87,7 @@ is a "default" served without a prefix.
 
 | Path | What |
 | --- | --- |
-| `src/data/songs.json` | Song catalog: `{ artist, title, year, youtubeId, start? }`. The `id` is the `youtubeId`. |
+| `src/data/songs.json` | Song catalog: `{ artist, title, year, youtubeId, start?, titleHe?, artistHe? }`. The `id` is the `youtubeId`. One shared pool: Israeli songs (with Hebrew names) sit alongside the rest, so both languages get the same daily puzzle. |
 | `src/lib/songs.ts` | Loads the catalog; `getSong(id)` |
 | `src/lib/daily.ts` | Daily song and starting-year selection |
 | `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |

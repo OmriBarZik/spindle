@@ -70,6 +70,8 @@ Add an entry to `src/data/songs.json`:
 - `youtubeId` is the `v=` part of the YouTube URL. Prefer the artist's official upload.
 - `year` is the original release year of the song (not the video or a remaster).
 - Optional `"start": 12` skips a long intro (seconds).
+- For Hebrew songs, add `"titleHe"` and `"artistHe"` (Hebrew script). Hebrew pages show
+  those; English pages show the transliterated `title` and `artist`.
 - Run `npm run validate-songs` — videos with embedding disabled won't play.
 
 Daily picks are derived from the catalog, so **changing the catalog changes future (and
