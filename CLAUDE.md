@@ -103,7 +103,7 @@ is a "default" served without a prefix.
 | `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |
 | `src/lib/timeline.ts` | `TimelineCard`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `slotLabel` |
 | `src/lib/youtube.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
-| `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: eased scroll used to bring the record into view after a guess |
+| `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
 | `src/components/Deck.tsx` | Turntable UI: opaque record over the hidden iframe, play/pause, loading ring, status line |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useRecordLanding } from "@/lib/recordFlight";
 import { smoothScrollToCenter } from "@/lib/smoothScroll";
@@ -47,8 +47,9 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
 
   // After a guess the player is usually down at the "Place it" button, below a
   // long timeline. Bring the record into view so they see it glow and swipe.
+  // A layout effect, so the glide starts in the same frame as the guess.
   const swapping = !!swap;
-  useEffect(() => {
+  useLayoutEffect(() => {
     const box = boxRef.current;
     if (!swapping || !box) return;
     const r = box.getBoundingClientRect();
