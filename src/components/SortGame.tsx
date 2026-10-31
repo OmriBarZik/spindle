@@ -53,6 +53,7 @@ export default function SortGame() {
         <p className="mt-1 text-sm text-muted">{t.sort.intro(state.anchorYear)}</p>
         <div
           className="mt-3 flex justify-center gap-1.5"
+          role="img"
           aria-label={t.sort.progress(Math.min(turn + 1, total), total)}
         >
           {state.songIds.map((id, i) => (
