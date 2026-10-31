@@ -150,6 +150,132 @@ body {
     transform: rotate(360deg);
   }
 }
+/* After a guess the record glows green (right) or red (wrong), then swipes out in the
+   reading direction (left to right in English, right to left in Hebrew) and the next
+   record slides in from the other side. */
+.deck-glow {
+  opacity: 0;
+}
+.deck-glow-good {
+  --glow: var(--good);
+}
+.deck-glow-bad {
+  --glow: var(--bad);
+}
+.deck-glow-good,
+.deck-glow-bad {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glow) 35%, transparent) 0 40%,
+    color-mix(in srgb, var(--glow) 60%, transparent) 100%
+  );
+  box-shadow:
+    0 0 0 4px var(--glow),
+    0 0 48px color-mix(in srgb, var(--glow) 70%, transparent);
+}
+.deck-swap {
+  --dir: 1;
+  /* Longhands: the minifier turns a shorthand without a name into "none". */
+  animation-duration: 1.6s;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+[dir="rtl"] .deck-swap {
+  --dir: -1;
+}
+.deck-swap-next {
+  animation-name: deck-swap-next;
+}
+.deck-swap-next .deck-glow {
+  animation: deck-glow-next 1.6s ease-in-out both;
+}
+.deck-swap-last {
+  animation-name: deck-swap-last;
+  animation-duration: 1.2s;
+}
+.deck-swap-last .deck-glow {
+  animation: deck-glow-hold 1.2s ease-in-out both;
+}
+.deck-swap-flash {
+  animation-name: deck-flash;
+}
+.deck-swap-flash .deck-glow {
+  animation: deck-glow-flash 1.6s ease-in-out both;
+}
+@keyframes deck-swap-next {
+  0%,
+  40% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  68% {
+    transform: translateX(calc(var(--dir) * 130%)) rotate(calc(var(--dir) * 90deg));
+    opacity: 0;
+  }
+  68.01% {
+    transform: translateX(calc(var(--dir) * -130%)) rotate(calc(var(--dir) * -90deg));
+    opacity: 0;
+    animation-timing-function: ease-out;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes deck-swap-last {
+  0%,
+  55% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateX(calc(var(--dir) * 130%)) rotate(calc(var(--dir) * 90deg));
+    opacity: 0;
+  }
+}
+/* Does nothing visible; it only times the end of the glow. */
+@keyframes deck-flash {
+  to {
+    transform: none;
+  }
+}
+@keyframes deck-glow-next {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  68% {
+    opacity: 1;
+  }
+  68.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes deck-glow-hold {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes deck-glow-flash {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Thin arc that spins around the record while a song loads. */
 .loading-ring {
   border: 3px solid rgb(255 255 255 / 0.08);
@@ -165,6 +291,13 @@ body {
   .spin,
   .spin-slow {
     animation: none;
+  }
+  /* Keep the glow and the timing, but don't move the record. */
+  .deck-swap {
+    animation-name: deck-flash;
+  }
+  .deck-swap .deck-glow {
+    animation-name: deck-glow-flash;
   }
 }
 
