@@ -5,6 +5,8 @@
 Spindle is a daily music game that combines Hitster and Wordle. Players hear songs
 (played from YouTube with the title hidden) and place them on a timeline by release year.
 It is open source (MIT) and deployed on Vercel from `main` with no environment variables.
+Production runs **Node 26**: `engines.node` in `package.json` (`26.x`) sets it for Vercel and
+CI (`node-version-file`), and `@types/node` matches it. Change all of them together.
 
 ## Commands
 
@@ -18,7 +20,7 @@ pnpm format             # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind
 pnpm typecheck          # next typegen + tsc --noEmit (TypeScript 7, the native compiler)
 pnpm check              # format check + lint + typecheck + tests (what CI runs, minus the build)
 pnpm build              # production build; all routes are static
-pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node >= 22.18 runs the .mts directly)
+pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node runs the .mts directly)
 ```
 
 Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
