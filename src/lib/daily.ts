@@ -4,8 +4,8 @@ import { SONGS, type Song } from "./songs";
 export const SORT_SIZE = 5;
 
 /**
- * The 5 songs for the daily "Sort" puzzle. Everyone gets the same songs on the
- * same calendar day. Years are kept distinct so there is exactly one right order.
+ * The 5 songs for the "Daily Five" puzzle, in the order they are played. Everyone
+ * gets the same songs on the same calendar day. Years are kept distinct.
  */
 export function sortSongsFor(day: string): Song[] {
   const picked: Song[] = [];
@@ -19,21 +19,14 @@ export function sortSongsFor(day: string): Song[] {
   return picked;
 }
 
-/** Starting order shown to the player — never already solved. */
-export function initialSortOrder(day: string): string[] {
-  const songs = sortSongsFor(day);
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const order = seededShuffle(songs, `sort-order:${day}:${attempt}`);
-    if (!isSorted(order)) return order.map((s) => s.id);
-  }
-  return songs
-    .slice()
-    .sort((a, b) => b.year - a.year)
-    .map((s) => s.id);
-}
-
-function isSorted(songs: Song[]): boolean {
-  return songs.every((s, i) => i === 0 || songs[i - 1].year <= s.year);
+/**
+ * The starting year card for the daily five, e.g. 1980. Taken from another song
+ * in the catalog (so it's a realistic year) whose year differs from all five.
+ */
+export function anchorYearFor(day: string): number {
+  const used = new Set(sortSongsFor(day).map((s) => s.year));
+  const pick = seededShuffle(SONGS, `anchor:${day}`).find((s) => !used.has(s.year));
+  return pick?.year ?? 1990;
 }
 
 /**

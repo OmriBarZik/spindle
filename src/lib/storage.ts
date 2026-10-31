@@ -1,16 +1,25 @@
 import { addDays } from "./dates";
-import { initialSortOrder, sortSongsFor, timelineSongFor } from "./daily";
+import { anchorYearFor, sortSongsFor, timelineSongFor } from "./daily";
 import { getSong } from "./songs";
 import { correctSlot, isSlotCorrect, type TimelineCard } from "./timeline";
 
 const STORAGE_KEY = "spindle:v1";
 
+export type SortPlacement = { slot: number; correct: boolean };
+
 export type SortDay = {
-  order: string[];
-  submitted: boolean;
-  /** Per position: was the right song in that spot? */
-  correct?: boolean[];
+  /** The year card the day's line starts with. */
+  anchorYear: number;
+  /** The five songs, in the order they're played. */
+  songIds: string[];
+  /** One entry per song placed so far (same order as songIds). */
+  placements: SortPlacement[];
 };
+
+/** One card on the Daily Five line. */
+export type SortLineCard =
+  | { kind: "anchor"; year: number }
+  | { kind: "song"; id: string; year: number; correct: boolean };
 
 export type SortStats = {
   played: number;
@@ -19,7 +28,7 @@ export type SortStats = {
   streak: number;
   maxStreak: number;
   lastPerfect: string | null;
-  /** distribution[n] = days with n songs in the right spot. */
+  /** distribution[n] = days with n songs placed correctly. */
   distribution: number[];
 };
 
@@ -113,62 +122,78 @@ export function writeSave(data: SaveData): void {
 /* Sort mode                                                           */
 /* ------------------------------------------------------------------ */
 
+function isValidSortDay(d: Partial<SortDay> | undefined): d is SortDay {
+  return !!d && typeof d.anchorYear === "number" && Array.isArray(d.placements);
+}
+
 export function ensureSortDay(data: SaveData, day: string): SaveData {
-  if (data.sort.days[day]) return data;
+  if (isValidSortDay(data.sort.days[day])) return data;
   return {
     ...data,
     sort: {
       ...data.sort,
       days: {
         ...data.sort.days,
-        [day]: { order: initialSortOrder(day), submitted: false },
+        [day]: {
+          anchorYear: anchorYearFor(day),
+          songIds: sortSongsFor(day).map((s) => s.id),
+          placements: [],
+        },
       },
     },
   };
 }
 
-export function moveSortItem(data: SaveData, day: string, from: number, to: number): SaveData {
-  const current = data.sort.days[day];
-  if (!current || current.submitted) return data;
-  if (to < 0 || to >= current.order.length || from === to) return data;
-  const order = current.order.slice();
-  const [item] = order.splice(from, 1);
-  order.splice(to, 0, item);
-  return {
-    ...data,
-    sort: { ...data.sort, days: { ...data.sort.days, [day]: { ...current, order } } },
-  };
+export function sortDayDone(d: SortDay): boolean {
+  return d.placements.length >= d.songIds.length;
 }
 
-export function submitSort(data: SaveData, day: string): SaveData {
+/**
+ * The line as it stands: the anchor year plus every placed song. A song placed
+ * in the wrong spot is still added — at its real position — so the line stays
+ * accurate for the next song.
+ */
+export function sortLine(d: SortDay): SortLineCard[] {
+  const line: SortLineCard[] = [{ kind: "anchor", year: d.anchorYear }];
+  d.placements.forEach((p, i) => {
+    const song = getSong(d.songIds[i]);
+    if (!song) return;
+    const at = p.correct ? p.slot : correctSlot(line, song.year);
+    line.splice(at, 0, { kind: "song", id: song.id, year: song.year, correct: p.correct });
+  });
+  return line;
+}
+
+/** Place the current song into `slot` (0 = before the first card). */
+export function placeSortSong(data: SaveData, day: string, slot: number): SaveData {
   const current = data.sort.days[day];
-  if (!current || current.submitted) return data;
-  const sortedYears = sortSongsFor(day)
-    .map((s) => s.year)
-    .sort((a, b) => a - b);
-  const correct = current.order.map((id, i) => getSong(id)?.year === sortedYears[i]);
-  const hits = correct.filter(Boolean).length;
-  const perfect = hits === correct.length;
+  if (!isValidSortDay(current) || sortDayDone(current)) return data;
+  const song = getSong(current.songIds[current.placements.length]);
+  if (!song) return data;
+  const line = sortLine(current);
+  if (slot < 0 || slot > line.length) return data;
 
-  const stats = { ...data.sort.stats, distribution: data.sort.stats.distribution.slice() };
-  stats.played += 1;
-  stats.distribution[hits] = (stats.distribution[hits] ?? 0) + 1;
-  if (perfect) {
-    stats.perfect += 1;
-    stats.streak = stats.lastPerfect === addDays(day, -1) ? stats.streak + 1 : 1;
-    stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
-    stats.lastPerfect = day;
-  } else {
-    stats.streak = 0;
+  const placements = [...current.placements, { slot, correct: isSlotCorrect(line, slot, song.year) }];
+  const next: SortDay = { ...current, placements };
+  let sort = { ...data.sort, days: { ...data.sort.days, [day]: next } };
+
+  if (sortDayDone(next)) {
+    const hits = placements.filter((p) => p.correct).length;
+    const perfect = hits === placements.length;
+    const stats = { ...sort.stats, distribution: sort.stats.distribution.slice() };
+    stats.played += 1;
+    stats.distribution[hits] = (stats.distribution[hits] ?? 0) + 1;
+    if (perfect) {
+      stats.perfect += 1;
+      stats.streak = stats.lastPerfect === addDays(day, -1) ? stats.streak + 1 : 1;
+      stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+      stats.lastPerfect = day;
+    } else {
+      stats.streak = 0;
+    }
+    sort = { ...sort, stats };
   }
-
-  return {
-    ...data,
-    sort: {
-      stats,
-      days: { ...data.sort.days, [day]: { ...current, submitted: true, correct } },
-    },
-  };
+  return { ...data, sort };
 }
 
 /* ------------------------------------------------------------------ */

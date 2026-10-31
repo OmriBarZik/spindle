@@ -20,9 +20,10 @@ export default function Home() {
         <section className="grid gap-4 sm:grid-cols-2">
           <Link href="/sort" className="card mode-card group p-5">
             <div className="text-3xl">🎚️</div>
-            <h2 className="mt-2 text-xl font-bold">Daily Sort</h2>
+            <h2 className="mt-2 text-xl font-bold">Daily Five</h2>
             <p className="mt-1 text-sm text-muted">
-              Five songs. Put them in order from oldest to newest. Same songs for everyone.
+              Start from one year, then place five songs on the line, one at a time. Same songs
+              for everyone.
             </p>
             <span className="mt-4 inline-block text-sm font-semibold group-hover:underline">
               Play →
@@ -45,8 +46,10 @@ export default function Home() {
           <h2 className="text-lg font-bold">How to play</h2>
           <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-sm text-muted">
             <li>
-              <b className="text-white">Daily Sort:</b> tap each song to listen, use ▲▼ to order
-              them oldest → newest, then lock it in. Each song in the right spot is a 🟩.
+              <b className="text-white">Daily Five:</b> your line starts with a single year (say
+              1980). Listen to the first song and choose <i>before 1980</i> or <i>after 1980</i>.
+              It joins the line, and the next song has one more gap to choose from. Five songs, one
+              at a time — each right placement is a 🟩.
             </li>
             <li>
               <b className="text-white">Daily Timeline:</b> on day 1 you get a free card (say,
