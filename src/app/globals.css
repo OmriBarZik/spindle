@@ -150,7 +150,18 @@ body {
     transform: rotate(360deg);
   }
 }
+/* Thin arc that spins around the record while a song loads. */
+.loading-ring {
+  border: 3px solid rgb(255 255 255 / 0.08);
+  border-top-color: #a78bfa;
+  border-right-color: #a78bfa;
+  animation: spin 0.9s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .loading-ring {
+    animation-duration: 2.5s;
+  }
   .spin,
   .spin-slow {
     animation: none;

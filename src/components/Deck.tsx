@@ -26,6 +26,14 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative aspect-square w-56 sm:w-64">
+        {/* Loading ring around the record while the player or video loads. */}
+        {(loading || !player.ready) && (
+          <div
+            role="status"
+            aria-label={player.ready ? "Loading song" : "Loading player"}
+            className="loading-ring pointer-events-none absolute -inset-2.5 rounded-full"
+          />
+        )}
         {/* Hidden player — must stay mounted and must stay covered. */}
         <div
           ref={hostRef}
@@ -43,12 +51,10 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
           type="button"
           disabled={!player.ready || !videoId}
           onClick={() => videoId && player.toggle(videoId, start)}
-          aria-label={playing ? "Pause" : "Play"}
+          aria-label={playing || loading ? "Pause" : "Play"}
           className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40"
         >
-          {loading ? (
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-black/20 border-t-black" />
-          ) : playing ? (
+          {playing || loading ? (
             <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor">
               <rect x="6" y="5" width="4" height="14" rx="1" />
               <rect x="14" y="5" width="4" height="14" rx="1" />
