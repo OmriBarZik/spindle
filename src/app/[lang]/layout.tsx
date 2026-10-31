@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Heebo } from "next/font/google";
+import { Heebo, Roboto, Roboto_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { lang as langParam } from "next/root-params";
 import { dirOf, hasLocale, LOCALES } from "@/i18n/config";
@@ -7,17 +7,18 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 import { MESSAGES } from "@/i18n/messages";
 import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const roboto = Roboto({
+  variable: "--font-roboto",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const robotoMono = Roboto_Mono({
+  variable: "--font-roboto-mono",
   subsets: ["latin"],
 });
 
-// Hebrew glyphs. Listed after Geist in the font stack, so Latin text keeps Geist.
+// Roboto has no Hebrew glyphs. Heebo is Roboto's Hebrew companion design, listed after
+// Roboto in the font stack so Latin text keeps Roboto and Hebrew text uses Heebo.
 const heebo = Heebo({
   variable: "--font-hebrew",
   subsets: ["hebrew"],
@@ -51,7 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
     <html
       lang={lang}
       dir={dirOf(lang)}
-      className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} h-full antialiased`}
+      className={`${roboto.variable} ${robotoMono.variable} ${heebo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <I18nProvider lang={lang}>{children}</I18nProvider>

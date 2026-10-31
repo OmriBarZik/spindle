@@ -57,7 +57,8 @@ is a "default" served without a prefix.
   `rtl:tracking-normal`, since wide letter-spacing breaks Hebrew). Wrap Latin song
   titles and artists in `<bdi>` inside sentences. Media icons (the play triangle) and
   the clock stay left-to-right.
-- Fonts: Geist for Latin, with Heebo (`--font-hebrew`) as the fallback for Hebrew glyphs.
+- Fonts: Roboto (and Roboto Mono) for Latin. Roboto has no Hebrew, so Heebo
+  (`--font-hebrew`, Roboto's Hebrew companion) is the fallback for Hebrew glyphs.
 
 ## Architecture
 
