@@ -11,13 +11,13 @@ It is open source (MIT) and deployed on Vercel from `main` with no environment v
 ```bash
 npm run dev             # http://localhost:3000
 npm test                # vitest: logic tests (src/lib/__tests__) and component tests (src/components/__tests__)
-npm run lint            # eslint: Next + React Compiler, strict type-aware TS, strict jsx-a11y, import order
-npm run lint:fix        # eslint --fix
-npm run format          # prettier --write (Tailwind classes are sorted too)
-npm run typecheck       # next typegen + tsc --noEmit
+npm run lint            # oxlint (.oxlintrc.json): React Compiler rules, type-aware TS, jsx-a11y, Next.js
+npm run lint:fix        # oxlint --fix
+npm run format          # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind classes
+npm run typecheck       # next typegen + tsc --noEmit (TypeScript 7, the native compiler)
 npm run check           # format check + lint + typecheck + tests (what CI runs, minus the build)
 npm run build           # production build; all routes are static
-npm run validate-songs  # checks every YouTube ID via oEmbed (needs youtube.com access)
+npm run validate-songs  # checks every YouTube ID via oEmbed (needs youtube.com access; Node >= 22.18 runs the .mts directly)
 ```
 
 Run `npm run check` and `npm run build` before pushing. CI (`.github/workflows/ci.yml`)
@@ -122,7 +122,7 @@ is a "default" served without a prefix.
 | `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
 | `src/app/[lang]/opengraph-image.tsx` | Link preview image (the record + "Spindle"), drawn with `next/og` as SVG and prerendered per language |
 | `src/app/globals.css` | Theme tokens and custom classes (`.card`, `.btn-primary`, `.record`, `.loading-ring`, …) |
-| `scripts/validate-songs.mjs` | oEmbed check for missing or non-embeddable videos |
+| `scripts/validate-songs.mts` | oEmbed check for missing or non-embeddable videos |
 
 ## Save format (`spindle:v1`)
 
@@ -164,7 +164,8 @@ is a "default" served without a prefix.
 
 - **Next.js 16** with `cacheComponents` enabled. APIs differ from older versions, so read
   `node_modules/next/dist/docs/` before using unfamiliar APIs (see AGENTS.md).
-- The **React Compiler lint rules** are strict. Avoid `setState` inside effects and ref
+- The **React Compiler lint rules** (oxlint's `react/refs`, `react/set-state-in-effect`,
+  `react/purity`, …) are strict. Avoid `setState` inside effects and ref
   access during render. Prefer lazy `useState(() => ...)` initialisers in `ssr: false`
   components.
 - **Tailwind v4.** `.card` and the other classes in `globals.css` are unlayered, so they
@@ -180,7 +181,11 @@ is a "default" served without a prefix.
 
 ## Code style
 
-- Prettier formats everything except `songs.json` (one song per line) and Markdown.
+- No ESLint or Prettier: oxlint lints (type-aware rules come from `oxlint-tsgolint`, built
+  on TypeScript 7) and oxfmt formats everything except `songs.json` (one song per line)
+  and Markdown. Disable comments use `// oxlint-disable-next-line <rule>` plus a reason.
+- **TypeScript 7** is the native (Go) compiler. It has no JavaScript API yet, so `next build`
+  type-checks by running the local `tsc` CLI (Next's default `experimental.useTypeScriptCli`).
 - TypeScript is strict with `noUncheckedIndexedAccess`: indexing an array or record gives
   `T | undefined`, so handle the missing case (`getSong` accepts `undefined` for this).
 - Lint is strict and type-aware. Don't silence a rule without a comment saying why.

@@ -38,7 +38,7 @@ export function matchAcceptLanguage(header: string | null): Locale | null {
       return { tag: tag.toLowerCase(), q: q ? Number(q.slice(2)) : 1, i };
     })
     .filter((x) => x.tag && x.q > 0)
-    .sort((a, b) => b.q - a.q || a.i - b.i);
+    .toSorted((a, b) => b.q - a.q || a.i - b.i);
   for (const { tag } of ranked) {
     const base = tag.split("-")[0];
     // "iw" is the legacy code for Hebrew that some browsers still send.

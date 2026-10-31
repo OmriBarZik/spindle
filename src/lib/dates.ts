@@ -20,11 +20,12 @@ export function addDays(key: string, n: number): string {
 const LAUNCH = "2026-11-01";
 const DAY_MS = 86_400_000;
 
+function toUtc(key: string): number {
+  const [y, m, d] = parseDayKey(key);
+  return Date.UTC(y, m - 1, d);
+}
+
 /** Puzzle number shown in share text (#1 on launch day). */
 export function puzzleNumber(key: string): number {
-  const toUtc = (k: string) => {
-    const [y, m, d] = parseDayKey(k);
-    return Date.UTC(y, m - 1, d);
-  };
   return Math.round((toUtc(key) - toUtc(LAUNCH)) / DAY_MS) + 1;
 }

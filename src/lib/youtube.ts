@@ -32,7 +32,7 @@ type YTNamespace = {
 
 declare global {
   // An interface, so it merges with the DOM's own Window type.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  // oxlint-disable-next-line typescript/consistent-type-definitions
   interface Window {
     YT?: YTNamespace;
     onYouTubeIframeAPIReady?: () => void;

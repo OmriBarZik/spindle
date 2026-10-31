@@ -112,7 +112,7 @@ describe("daily five", () => {
     expect(state.placements.map((p) => p.correct)).toEqual([true, false, true, false, true]);
     const years = sortLine(state).map((c) => c.year);
     expect(years).toHaveLength(6);
-    expect(years).toEqual([...years].sort((a, b) => a - b));
+    expect(years).toEqual(years.toSorted((a, b) => a - b));
     expect(d.sort.stats.streak).toBe(0);
     expect(d.sort.stats.distribution[3]).toBe(1);
   });
@@ -153,7 +153,7 @@ describe("timeline mode", () => {
     expect(songCount(d.timeline.cards)).toBe(6);
     expect(d.timeline.best).toBe(6);
     const years = d.timeline.cards.map((c) => c.year);
-    expect(years).toEqual([...years].sort((a, b) => a - b));
+    expect(years).toEqual(years.toSorted((a, b) => a - b));
     expect(new Set(d.timeline.cards.map((c) => c.id)).size).toBe(7);
   });
 

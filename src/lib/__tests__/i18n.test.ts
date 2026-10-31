@@ -34,7 +34,7 @@ describe("messages", () => {
           ? shape(v as Record<string, unknown>).map((s) => `${k}.${s}`)
           : [k],
       );
-    expect(shape(MESSAGES.he).sort()).toEqual(shape(MESSAGES.en).sort());
+    expect(shape(MESSAGES.he).toSorted()).toEqual(shape(MESSAGES.en).toSorted());
     expect(MESSAGES.he.home.rules.length).toBe(MESSAGES.en.home.rules.length);
   });
   it("labels slots in Hebrew", () => {

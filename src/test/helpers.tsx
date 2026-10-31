@@ -14,11 +14,11 @@ export const fakePlayer: HiddenPlayer = {
   currentId: null,
   status: "idle",
   time: 0,
-  play: vi.fn(),
-  pause: vi.fn(),
-  toggle: vi.fn(),
-  restart: vi.fn(),
-  stop: vi.fn(),
+  play: vi.fn<HiddenPlayer["play"]>(),
+  pause: vi.fn<HiddenPlayer["pause"]>(),
+  toggle: vi.fn<HiddenPlayer["toggle"]>(),
+  restart: vi.fn<HiddenPlayer["restart"]>(),
+  stop: vi.fn<HiddenPlayer["stop"]>(),
 };
 
 /** Mock factory for `@/lib/youtube` (call from `vi.mock`). */
@@ -43,6 +43,13 @@ export function setupGameTests(now = "2026-11-01T10:00:00") {
     cleanup();
     vi.useRealTimers();
   });
+}
+
+/** Replaces the clipboard with a mock and returns its `writeText`. */
+export function mockClipboard() {
+  const writeText = vi.fn<Clipboard["writeText"]>().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  return writeText;
 }
 
 export function renderIn(lang: Locale, ui: ReactElement) {

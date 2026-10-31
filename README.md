@@ -41,15 +41,16 @@ answering, each song gets a "watch" link to YouTube.
 npm install
 npm run dev            # http://localhost:3000
 npm test               # unit + component tests (vitest, Testing Library, axe)
-npm run lint           # eslint (strict TypeScript + accessibility rules)
-npm run format         # prettier
+npm run lint           # oxlint (React, type-aware TypeScript, accessibility, Next.js rules)
+npm run format         # oxfmt
 npm run typecheck
 npm run check          # everything CI runs except the build
 npm run build
 npm run validate-songs # check every video still exists and allows embedding
 ```
 
-Built with Next.js (App Router), React, TypeScript and Tailwind CSS.
+Built with Next.js (App Router), React, TypeScript 7 and Tailwind CSS. Linted with oxlint and
+formatted with oxfmt.
 
 ### Project layout
 

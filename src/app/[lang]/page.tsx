@@ -46,7 +46,7 @@ export default async function Home() {
           <ul className="mt-3 flex list-disc flex-col gap-2 ps-5 text-sm text-muted">
             {t.home.rules.map((rule, i) => (
               // A fixed list that never reorders, so the index is a stable key.
-              // eslint-disable-next-line react/no-array-index-key
+              // oxlint-disable-next-line react/no-array-index-key
               <li key={i}>{rule}</li>
             ))}
           </ul>

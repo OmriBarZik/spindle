@@ -1,0 +1,115 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "typescript",
+    "unicorn",
+    "oxc",
+    "react",
+    "jsx-a11y",
+    "nextjs",
+    "import",
+    "promise",
+    "vitest"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "error",
+    "respectEslintDisableDirectives": false
+  },
+  "env": { "browser": true, "node": true, "es2024": true },
+  "settings": {
+    "react": { "version": "19.3" },
+    "next": { "rootDir": "." }
+  },
+  "rules": {
+    "eqeqeq": ["error", "always"],
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-implicit-coercion": "error",
+    "no-param-reassign": "error",
+    "no-var": "error",
+    "no-empty-function": "error",
+    "object-shorthand": "error",
+    "prefer-const": "error",
+    "prefer-template": "error",
+
+    "react/rules-of-hooks": "error",
+    "react/no-array-index-key": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "react/self-closing-comp": "error",
+    "react/jsx-boolean-value": "error",
+    "react/jsx-no-target-blank": "error",
+    // Typographic quotes in messages.tsx are intended.
+    "react/no-unescaped-entities": "off",
+    "react/react-in-jsx-scope": "off",
+
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+    "import/no-cycle": "error",
+    "import/no-self-import": "error",
+
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "typescript/consistent-type-imports": ["error", { "fixStyle": "inline-type-imports" }],
+    "typescript/no-import-type-side-effects": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-inferrable-types": "error",
+    "typescript/array-type": "error",
+    "typescript/prefer-for-of": "error",
+
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-misused-promises": ["error", { "checksVoidReturn": { "attributes": false } }],
+    "typescript/no-confusing-void-expression": ["error", { "ignoreArrowShorthand": true }],
+    "typescript/restrict-template-expressions": ["error", { "allowNumber": true }],
+    "typescript/restrict-plus-operands": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-optional-chain": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unnecessary-template-expression": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/prefer-includes": "error",
+    "typescript/require-await": "error",
+    "typescript/return-await": "error",
+
+    // `<p role="status">` is announced more reliably than `<output>`, and the progress
+    // dots are a `role="img"` group that an <img> can't replace.
+    "jsx-a11y/prefer-tag-over-role": "off",
+    // React effects return a cleanup on some paths only; that's the API.
+    "typescript/consistent-return": "off",
+    // Too strict for JSON.parse and test mocks; type guards are used where it matters.
+    "typescript/no-unsafe-type-assertion": "off",
+    // Fire-and-forget `.then` callbacks with early returns are fine.
+    "promise/always-return": ["error", { "ignoreLastCallback": true }],
+    "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "expectAccessible"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**", "src/test/**"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off",
+        "no-param-reassign": "off",
+        // Helpers next to the tests that use them read better than hoisted ones.
+        "unicorn/consistent-function-scoping": "off"
+      }
+    },
+    {
+      "files": ["scripts/**"],
+      "rules": { "no-console": "off" }
+    }
+  ],
+  "ignorePatterns": [".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]
+}

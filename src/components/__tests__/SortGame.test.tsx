@@ -6,7 +6,14 @@ import { MESSAGES } from "@/i18n/messages";
 import { anchorYearFor, sortSongsFor } from "@/lib/daily";
 import { getSong } from "@/lib/songs";
 import { correctSlot, slotLabel } from "@/lib/timeline";
-import { expectAccessible, fakePlayer, renderIn, savedData, setupGameTests } from "@/test/helpers";
+import {
+  expectAccessible,
+  fakePlayer,
+  mockClipboard,
+  renderIn,
+  savedData,
+  setupGameTests,
+} from "@/test/helpers";
 
 vi.mock("@/lib/youtube", async (original) =>
   (await import("@/test/helpers")).mockYoutube(original as never),
@@ -47,7 +54,7 @@ function place(i: number, right: boolean, container: HTMLElement) {
   expect(fakePlayer.stop).toHaveBeenCalled();
   // Locked until the record's result animation ends (the last song has no button left).
   const locked = screen.queryByRole("button", { name: /^(Pick a spot|Place it)/ });
-  if (locked) expect(locked).toHaveProperty("disabled", true);
+  expect(locked?.hasAttribute("disabled") ?? true).toBe(true);
   const swap = container.querySelector(".deck-swap");
   expect(swap).not.toBeNull();
   fireEvent.animationEnd(swap!);
@@ -67,19 +74,17 @@ describe("Daily Five screen", () => {
   });
 
   it("plays a whole day, revealing each song and keeping score", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const writeText = mockClipboard();
     const { container } = renderIn("en", <SortGame />);
     const songs = sortSongsFor(DAY);
     const right = [true, false, true, true, false];
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       place(i, right[i]!, container);
-      if (i < 4) {
-        expect(container.textContent).toContain(right[i]! ? "✅ Correct!" : "❌ Not quite.");
-        expect(container.textContent).toContain(`“${songs[i]!.title}” by ${songs[i]!.artist}`);
-      }
+      expect(container.textContent).toContain(right[i]! ? "✅ Correct!" : "❌ Not quite.");
+      expect(container.textContent).toContain(`“${songs[i]!.title}” by ${songs[i]!.artist}`);
     }
+    place(4, right[4]!, container);
 
     expect(container.textContent).toContain("3 / 5 placed right");
     expect(container.textContent).toContain("🟩🟥🟩🟩🟥");
@@ -100,8 +105,7 @@ describe("Daily Five screen", () => {
       "spindle:v1",
       JSON.stringify({ version: 1, settings: { songLanguages: ["he"] } }),
     );
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const writeText = mockClipboard();
     const { container } = renderIn("he", <SortGame />);
     const songs = sortSongsFor(DAY, ["he"]);
     // Hebrew pages show Hebrew names.

@@ -27,7 +27,8 @@ export type SortDay = {
 
 /** One card on the Daily Five line. */
 export type SortLineCard =
-  { kind: "anchor"; year: number } | { kind: "song"; song: Song; year: number; correct: boolean };
+  | { kind: "anchor"; year: number }
+  | { kind: "song"; song: Song; year: number; correct: boolean };
 
 export type SortStats = {
   played: number;

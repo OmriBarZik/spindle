@@ -16,6 +16,8 @@ export type Song = {
 
 type RawSong = Omit<Song, "id">;
 
+// Runs once at load; a fresh object per song keeps the JSON module untouched.
+// oxlint-disable-next-line oxc/no-map-spread
 export const SONGS: Song[] = (songsData as RawSong[]).map((s) => ({
   ...s,
   id: s.youtubeId,

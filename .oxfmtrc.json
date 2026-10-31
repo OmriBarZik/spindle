@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "sortImports": {
+    "newlinesBetween": false,
+    "groups": [
+      "side_effect",
+      ["builtin", "external"],
+      "internal",
+      ["parent", "sibling", "index"],
+      "unknown"
+    ]
+  },
+  "sortTailwindcss": {
+    "stylesheet": "./src/app/globals.css",
+    "functions": ["clsx"]
+  },
+  "ignorePatterns": [
+    ".next/",
+    "out/",
+    "build/",
+    "coverage/",
+    "node_modules/",
+    "package-lock.json",
+    "next-env.d.ts",
+    "**/__snapshots__/",
+    "src/data/songs.json",
+    "*.md"
+  ]
+}

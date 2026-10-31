@@ -51,7 +51,7 @@ describe("random", () => {
     const items = Array.from({ length: 20 }, (_, i) => i);
     const out = seededShuffle(items, "seed");
     expect(out).not.toBe(items);
-    expect([...out].sort((x, y) => x - y)).toEqual(items);
+    expect(out.toSorted((x, y) => x - y)).toEqual(items);
     expect(seededShuffle(items, "seed")).toEqual(out);
     expect(out).toMatchSnapshot();
   });

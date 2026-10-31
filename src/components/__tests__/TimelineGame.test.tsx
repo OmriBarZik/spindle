@@ -5,7 +5,14 @@ import TimelineGame from "@/components/TimelineGame";
 import { MESSAGES } from "@/i18n/messages";
 import { getSong } from "@/lib/songs";
 import { correctSlot, isSlotCorrect, slotLabel } from "@/lib/timeline";
-import { expectAccessible, fakePlayer, renderIn, savedData, setupGameTests } from "@/test/helpers";
+import {
+  expectAccessible,
+  fakePlayer,
+  mockClipboard,
+  renderIn,
+  savedData,
+  setupGameTests,
+} from "@/test/helpers";
 
 vi.mock("@/lib/youtube", async (original) =>
   (await import("@/test/helpers")).mockYoutube(original as never),
@@ -32,11 +39,10 @@ function placeAt(slot: number, container: HTMLElement) {
 }
 
 async function shareAndRead() {
-  const writeText = vi.fn().mockResolvedValue(undefined);
-  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  const writeText = mockClipboard();
   fireEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
-  return writeText.mock.calls[0]![0] as string;
+  return writeText.mock.calls[0]![0];
 }
 
 describe("Daily Timeline screen", () => {
