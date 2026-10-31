@@ -22,18 +22,19 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
   const playing = isCurrent && player.status === "playing";
   const loading = isCurrent && player.status === "loading";
   const errored = isCurrent && player.status === "error";
+  const busy = loading || !player.ready;
+  const statusText = !player.ready ? "Loading player…" : loading ? "Loading song…" : "";
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative aspect-square w-56 sm:w-64">
-        {/* Loading ring around the record while the player or video loads. */}
-        {(loading || !player.ready) && (
-          <div
-            role="status"
-            aria-label={player.ready ? "Loading song" : "Loading player"}
-            className="loading-ring pointer-events-none absolute -inset-2.5 rounded-full"
-          />
-        )}
+        {/* Loading ring: always mounted and faded in/out so nothing shifts. */}
+        <div
+          aria-hidden
+          className={`loading-ring pointer-events-none absolute -inset-2.5 rounded-full transition-opacity duration-300 ${
+            busy ? "opacity-100" : "opacity-0 [animation-play-state:paused]"
+          }`}
+        />
         {/* Hidden player — must stay mounted and must stay covered. */}
         <div
           ref={hostRef}
@@ -68,7 +69,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
       </div>
 
       {label && (
-        <div className="-mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted">{label}</div>
+        <div className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted">{label}</div>
       )}
       <div className="flex items-center gap-3 text-sm text-muted">
         <span className="w-12 text-right font-mono tabular-nums">
@@ -84,7 +85,12 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
         </button>
       </div>
 
-      {!player.ready && <p className="text-sm text-muted">Loading player…</p>}
+      {/* Fixed-height status line so the page doesn't jump when loading ends. */}
+      {!errored && (
+        <p role="status" aria-live="polite" className="h-5 text-sm leading-5 text-muted">
+          {statusText}
+        </p>
+      )}
       {errored && (
         <div className="max-w-xs text-center text-sm text-amber-300">
           This song can&apos;t be played here (YouTube blocked or removed it).

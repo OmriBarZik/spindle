@@ -14,13 +14,13 @@ in red and moved to its real spot so the line stays accurate. Perfect days build
 ### 📈 Daily Timeline
 One song per day, and a timeline that grows the longer you keep playing:
 
-- **Day 1** – you get a free card, e.g. *1997*.
-- **Day 2** – is today's song *before 1997* or *after 1997*? Get it right and it joins
+- A new timeline starts with a free **starting year**, e.g. *1997*.
+- **Day 1** – is today's song *before 1997* or *after 1997*? Get it right and it joins
   the timeline (say *2000*).
-- **Day 3** – *before 1997*, *1997–2000*, or *after 2000*… and so on. More cards = more,
+- **Day 2** – *before 1997*, *1997–2000*, or *after 2000*… and so on. More songs = more,
   narrower gaps = harder.
 - A **wrong guess** or a **missed day** ends the timeline; a fresh one starts the next day.
-  Your best length is kept.
+  Your best length (in songs) is kept.
 - Songs with the same year as a neighbour count as correct on either side.
 
 Progress is stored in the browser (`localStorage`) — no accounts, no backend. A new day

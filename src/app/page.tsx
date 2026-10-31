@@ -52,9 +52,9 @@ export default function Home() {
               at a time — each right placement is a 🟩.
             </li>
             <li>
-              <b className="text-white">Daily Timeline:</b> on day 1 you get a free card (say,
-              1997). On day 2 you choose <i>before 1997</i> or <i>after 1997</i>. Get it right
-              and the card joins your timeline — day 3 might be <i>before 1997</i>,{" "}
+              <b className="text-white">Daily Timeline:</b> a new timeline starts with a free
+              year (say, 1997). Day 1: is the song <i>before 1997</i> or <i>after 1997</i>? Get it
+              right and it joins your timeline — day 2 might be <i>before 1997</i>,{" "}
               <i>1997–2000</i> or <i>after 2000</i>, and so on.
             </li>
             <li>

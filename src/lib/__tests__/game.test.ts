@@ -8,13 +8,12 @@ import {
   ensureTimelineDay,
   placeSortSong,
   placeTimelineCard,
-  revealAnchor,
   skipTimelineSong,
   sortDayDone,
   sortLine,
   type SaveData,
 } from "../storage";
-import { correctSlot, isSlotCorrect, slotLabel } from "../timeline";
+import { correctSlot, isSlotCorrect, slotLabel, songCount } from "../timeline";
 
 const DAY = "2026-11-01";
 
@@ -123,26 +122,41 @@ describe("timeline mode", () => {
   function playCorrect(d: SaveData, day: string): SaveData {
     d = ensureTimelineDay(d, day);
     const song = getSong(d.timeline.today!.songId)!;
-    if (d.timeline.cards.length === 0) return revealAnchor(d, day);
     return placeTimelineCard(d, day, correctSlot(d.timeline.cards, song.year));
   }
+
+  it("starts a new timeline with a free starting year to guess against", () => {
+    const d = ensureTimelineDay(emptySave(), DAY);
+    const song = getSong(d.timeline.today!.songId)!;
+    expect(d.timeline.cards).toHaveLength(1);
+    expect(d.timeline.cards[0].anchor).toBe(true);
+    expect(d.timeline.cards[0].year).not.toBe(song.year);
+    expect(d.timeline.today!.result).toBe("pending");
+  });
+
+  it("counts day 1 as a real guess", () => {
+    const d = playCorrect(emptySave(), DAY);
+    expect(d.timeline.today!.result).toBe("correct");
+    expect(songCount(d.timeline.cards)).toBe(1);
+    expect(d.timeline.best).toBe(1);
+  });
 
   it("grows the timeline on consecutive correct days", () => {
     let d = emptySave();
     for (let i = 0; i < 6; i++) d = playCorrect(d, addDays(DAY, i));
-    expect(d.timeline.cards).toHaveLength(6);
+    expect(d.timeline.cards).toHaveLength(7);
+    expect(songCount(d.timeline.cards)).toBe(6);
     expect(d.timeline.best).toBe(6);
     const years = d.timeline.cards.map((c) => c.year);
     expect(years).toEqual([...years].sort((a, b) => a - b));
-    expect(new Set(d.timeline.cards.map((c) => c.id)).size).toBe(6);
+    expect(new Set(d.timeline.cards.map((c) => c.id)).size).toBe(7);
   });
 
   it("is idempotent within a day", () => {
     let d = playCorrect(emptySave(), DAY);
-    const again = ensureTimelineDay(d, DAY);
-    expect(again).toBe(d);
-    d = revealAnchor(d, DAY);
-    expect(d.timeline.cards).toHaveLength(1);
+    expect(ensureTimelineDay(d, DAY)).toBe(d);
+    d = placeTimelineCard(d, DAY, 0);
+    expect(songCount(d.timeline.cards)).toBe(1);
   });
 
   it("ends the run on a wrong guess and restarts next day", () => {
@@ -152,13 +166,14 @@ describe("timeline mode", () => {
     d = ensureTimelineDay(d, day3);
     const song = getSong(d.timeline.today!.songId)!;
     const right = correctSlot(d.timeline.cards, song.year);
-    const wrong = [0, 1, 2].find((s) => !isSlotCorrect(d.timeline.cards, s, song.year))!;
+    const wrong = [0, 1, 2, 3].find((s) => !isSlotCorrect(d.timeline.cards, s, song.year))!;
     expect(wrong).not.toBe(right);
     d = placeTimelineCard(d, day3, wrong);
     expect(d.timeline.runOver).toBe(true);
-    expect(d.timeline.cards).toHaveLength(2);
+    expect(songCount(d.timeline.cards)).toBe(2);
     d = ensureTimelineDay(d, addDays(DAY, 3));
-    expect(d.timeline.cards).toHaveLength(0);
+    expect(songCount(d.timeline.cards)).toBe(0);
+    expect(d.timeline.cards[0].anchor).toBe(true);
     expect(d.timeline.best).toBe(2);
     expect(d.timeline.runs).toBe(1);
   });
@@ -167,7 +182,15 @@ describe("timeline mode", () => {
     let d = playCorrect(emptySave(), DAY);
     d = playCorrect(d, addDays(DAY, 1));
     d = ensureTimelineDay(d, addDays(DAY, 3));
-    expect(d.timeline.cards).toHaveLength(0);
+    expect(songCount(d.timeline.cards)).toBe(0);
+  });
+
+  it("gives an old in-progress save a starting year", () => {
+    const base = ensureTimelineDay(emptySave(), DAY);
+    const legacy: SaveData = { ...base, timeline: { ...base.timeline, cards: [] } };
+    const d = ensureTimelineDay(legacy, DAY);
+    expect(d.timeline.cards).toHaveLength(1);
+    expect(d.timeline.cards[0].anchor).toBe(true);
   });
 
   it("can skip an unplayable song", () => {
