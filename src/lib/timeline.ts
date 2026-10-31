@@ -4,7 +4,18 @@ export type TimelineCard = {
   artist: string;
   year: number;
   youtubeId: string;
+  /** The free starting-year card a timeline begins with (not a song). */
+  anchor?: boolean;
 };
+
+export function anchorCard(year: number): TimelineCard {
+  return { id: `anchor:${year}`, title: "", artist: "", year, youtubeId: "", anchor: true };
+}
+
+/** Number of songs (not counting the starting year) on a timeline. */
+export function songCount(cards: readonly TimelineCard[]): number {
+  return cards.filter((c) => !c.anchor).length;
+}
 
 /**
  * Slot `i` means "insert before cards[i]" (slot === cards.length is the end).

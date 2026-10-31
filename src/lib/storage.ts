@@ -1,7 +1,13 @@
 import { addDays } from "./dates";
-import { anchorYearFor, sortSongsFor, timelineSongFor } from "./daily";
+import { anchorYearFor, sortSongsFor, timelineAnchorYearFor, timelineSongFor } from "./daily";
 import { getSong } from "./songs";
-import { correctSlot, isSlotCorrect, type TimelineCard } from "./timeline";
+import {
+  anchorCard,
+  correctSlot,
+  isSlotCorrect,
+  songCount,
+  type TimelineCard,
+} from "./timeline";
 
 const STORAGE_KEY = "spindle:v1";
 
@@ -39,10 +45,9 @@ export type TimelineToday = {
   skipped: string[];
   /**
    * pending: not answered yet
-   * anchor:  first card of a new timeline (just revealed)
    * correct / wrong: result of today's placement
    */
-  result: "pending" | "anchor" | "correct" | "wrong";
+  result: "pending" | "correct" | "wrong";
   slot?: number;
 };
 
@@ -207,25 +212,40 @@ export function runContinues(t: TimelineState, day: string): boolean {
 
 /**
  * Prepare today's turn: keep the timeline if the player played yesterday and
- * didn't miss, otherwise start a fresh one. Then lock in today's song.
+ * didn't miss, otherwise start a fresh one from a free starting year. Then
+ * lock in today's song.
  */
 export function ensureTimelineDay(data: SaveData, day: string): SaveData {
   const t = data.timeline;
-  if (t.today?.date === day) return data;
+  if (t.today?.date === day) {
+    // Saves from before starting years existed: give today's turn one.
+    if (t.today.result === "pending" && t.cards.length === 0) {
+      const song = getSong(t.today.songId);
+      if (!song) return data;
+      return {
+        ...data,
+        timeline: { ...t, cards: [anchorCard(timelineAnchorYearFor(day, song.year))] },
+      };
+    }
+    return data;
+  }
+
+  const continuing = runContinues(t, day);
+  const exclude = new Set(continuing ? t.cards.map((c) => c.id) : []);
+  const song = timelineSongFor(day, exclude);
+  if (!song) return data;
 
   let next: TimelineState = { ...t };
-  if (!runContinues(t, day)) {
+  if (!continuing) {
     next = {
       ...next,
-      cards: [],
+      cards: [anchorCard(timelineAnchorYearFor(day, song.year))],
       runStart: day,
       runOver: false,
       lastDate: null,
-      runs: t.cards.length > 0 ? t.runs + 1 : t.runs,
+      runs: t.runStart ? t.runs + 1 : t.runs,
     };
   }
-  const song = timelineSongFor(day, new Set(next.cards.map((c) => c.id)));
-  if (!song) return data;
   next.today = { date: day, songId: song.id, skipped: [], result: "pending" };
   return { ...data, timeline: next };
 }
@@ -251,31 +271,10 @@ function toCard(id: string): TimelineCard | null {
     : null;
 }
 
-/** First day of a run: reveal the song and make it the first card. */
-export function revealAnchor(data: SaveData, day: string): SaveData {
-  const t = data.timeline;
-  if (!t.today || t.today.date !== day || t.today.result !== "pending" || t.cards.length) {
-    return data;
-  }
-  const card = toCard(t.today.songId);
-  if (!card) return data;
-  return {
-    ...data,
-    timeline: {
-      ...t,
-      cards: [card],
-      lastDate: day,
-      best: Math.max(t.best, 1),
-      today: { ...t.today, result: "anchor" },
-    },
-  };
-}
-
 export function placeTimelineCard(data: SaveData, day: string, slot: number): SaveData {
   const t = data.timeline;
-  if (!t.today || t.today.date !== day || t.today.result !== "pending" || !t.cards.length) {
-    return data;
-  }
+  if (!t.today || t.today.date !== day || t.today.result !== "pending") return data;
+  if (slot < 0 || slot > t.cards.length) return data;
   const card = toCard(t.today.songId);
   if (!card) return data;
 
@@ -288,7 +287,7 @@ export function placeTimelineCard(data: SaveData, day: string, slot: number): Sa
         ...t,
         cards,
         lastDate: day,
-        best: Math.max(t.best, cards.length),
+        best: Math.max(t.best, songCount(cards)),
         today: { ...t.today, result: "correct", slot },
       },
     };

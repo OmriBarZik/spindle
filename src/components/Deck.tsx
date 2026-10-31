@@ -68,7 +68,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
       </div>
 
       {label && (
-        <div className="-mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted">{label}</div>
+        <div className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted">{label}</div>
       )}
       <div className="flex items-center gap-3 text-sm text-muted">
         <span className="w-12 text-right font-mono tabular-nums">

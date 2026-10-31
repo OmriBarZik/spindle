@@ -3,17 +3,16 @@
 import { Fragment, useState } from "react";
 import Deck from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
-import { SlotButton, SongCard, Stats } from "@/components/TimelineParts";
+import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { dayKey, puzzleNumber } from "@/lib/dates";
 import { getSong } from "@/lib/songs";
 import {
   correctSlot,
   ensureTimelineDay,
   placeTimelineCard,
-  revealAnchor,
   skipTimelineSong,
 } from "@/lib/storage";
-import { slotLabel, type TimelineCard } from "@/lib/timeline";
+import { slotLabel, songCount, type TimelineCard } from "@/lib/timeline";
 import { useSave } from "@/lib/useSave";
 import { useHiddenPlayer } from "@/lib/youtube";
 
@@ -31,8 +30,11 @@ export default function TimelineGame() {
   }
 
   const pending = today.result === "pending";
-  const isAnchorDay = pending && t.cards.length === 0;
-  const dayNumber = t.cards.length + (pending || today.result === "wrong" ? 1 : 0);
+  const songs = songCount(t.cards);
+  const firstDay = pending && songs === 0;
+  const startYear = t.cards.find((c) => c.anchor)?.year;
+  const dayNumber = songs + (pending || today.result === "wrong" ? 1 : 0);
+  const plural = (n: number) => `${n} song${n === 1 ? "" : "s"}`;
   const mystery: TimelineCard = {
     id: song.id,
     title: song.title,
@@ -48,8 +50,8 @@ export default function TimelineGame() {
     const head = `Spindle Timeline #${puzzleNumber(day)}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     if (today.result === "wrong")
-      return `${head}\n❌ Timeline ended at ${t.cards.length} card${t.cards.length === 1 ? "" : "s"}\n${"🟩".repeat(Math.max(0, t.cards.length - 1))}🟥\n${origin}`;
-    return `${head}\n🔥 ${t.cards.length} card${t.cards.length === 1 ? "" : "s"} and counting\n${"🟩".repeat(Math.max(0, t.cards.length - 1))}\n${origin}`;
+      return `${head}\n❌ Timeline ended at ${plural(songs)}\n${"🟩".repeat(songs)}🟥\n${origin}`;
+    return `${head}\n🔥 ${plural(songs)} and counting\n${"🟩".repeat(songs)}\n${origin}`;
   })();
 
   return (
@@ -57,8 +59,8 @@ export default function TimelineGame() {
       <section className="text-center">
         <h1 className="text-2xl font-bold">Daily Timeline</h1>
         <p className="mt-1 text-sm text-muted">
-          {isAnchorDay
-            ? "Day 1 of a new timeline. Listen, then reveal your first card."
+          {firstDay && startYear !== undefined
+            ? `Day 1 of a new timeline, starting at ${startYear}. Is today's song from before or after?`
             : pending
               ? "Listen to today's song and drop it where it belongs on your timeline."
               : "Come back tomorrow for your next song."}
@@ -77,59 +79,42 @@ export default function TimelineGame() {
         onSkip={pending ? () => update((d) => skipTimelineSong(d, day)) : undefined}
       />
 
-      {isAnchorDay && (
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => {
-            player.stop();
-            update((d) => revealAnchor(d, day));
-          }}
-        >
-          Reveal &amp; start my timeline
-        </button>
-      )}
-
-      {!isAnchorDay && (
-        <ol className="flex flex-col gap-2">
-          <li className="text-xs uppercase tracking-widest text-muted">▲ Oldest</li>
-          {t.cards.map((card, i) => (
-            <Fragment key={card.id}>
-              {pending && (
-                <SlotButton
-                  label={slotLabel(t.cards, i)}
-                  selected={slot === i}
-                  onClick={() => setSlot(i)}
-                />
-              )}
-              {wrongAt === i && <SongCard song={mystery} variant="bad" note="belongs here" />}
+      <ol className="flex flex-col gap-2">
+        <li className="text-xs uppercase tracking-widest text-muted">▲ Oldest</li>
+        {t.cards.map((card, i) => (
+          <Fragment key={card.id}>
+            {pending && (
+              <SlotButton
+                label={slotLabel(t.cards, i)}
+                selected={slot === i}
+                onClick={() => setSlot(i)}
+              />
+            )}
+            {wrongAt === i && <SongCard song={mystery} variant="bad" note="belongs here" />}
+            {card.anchor ? (
+              <AnchorCard year={card.year} />
+            ) : (
               <SongCard
                 song={card}
-                variant={
-                  today.result === "correct" && card.id === song.id
-                    ? "good"
-                    : today.result === "anchor"
-                      ? "good"
-                      : "plain"
-                }
+                variant={today.result === "correct" && card.id === song.id ? "good" : "plain"}
               />
-            </Fragment>
-          ))}
-          {pending && (
-            <SlotButton
-              label={slotLabel(t.cards, t.cards.length)}
-              selected={slot === t.cards.length}
-              onClick={() => setSlot(t.cards.length)}
-            />
-          )}
-          {wrongAt === t.cards.length && (
-            <SongCard song={mystery} variant="bad" note="belongs here" />
-          )}
-          <li className="text-xs uppercase tracking-widest text-muted">▼ Newest</li>
-        </ol>
-      )}
+            )}
+          </Fragment>
+        ))}
+        {pending && (
+          <SlotButton
+            label={slotLabel(t.cards, t.cards.length)}
+            selected={slot === t.cards.length}
+            onClick={() => setSlot(t.cards.length)}
+          />
+        )}
+        {wrongAt === t.cards.length && (
+          <SongCard song={mystery} variant="bad" note="belongs here" />
+        )}
+        <li className="text-xs uppercase tracking-widest text-muted">▼ Newest</li>
+      </ol>
 
-      {pending && !isAnchorDay && (
+      {pending && (
         <button
           type="button"
           className="btn-primary"
@@ -147,27 +132,24 @@ export default function TimelineGame() {
       {!pending && (
         <section className="card flex flex-col items-center gap-4 p-5 text-center">
           <div className="text-2xl font-bold">
-            {today.result === "anchor" && "Your timeline has begun! 🎶"}
             {today.result === "correct" && "Nailed it! ✅"}
             {today.result === "wrong" && "Not quite ❌"}
           </div>
           <p className="text-sm text-muted">
-            {today.result === "anchor" &&
-              `Tomorrow you'll place a new song before or after ${song.year}.`}
             {today.result === "correct" &&
-              `Your timeline now has ${t.cards.length} cards. Each day gets harder — don't miss a day!`}
+              `Your timeline now has ${plural(songs)}. Each day adds a gap and gets harder — don't miss a day!`}
             {today.result === "wrong" &&
-              `"${song.title}" came out in ${song.year}. Your timeline ended at ${t.cards.length} card${t.cards.length === 1 ? "" : "s"}. A fresh one starts tomorrow.`}
+              `"${song.title}" came out in ${song.year}. Your timeline ended at ${plural(songs)}. A fresh one starts tomorrow.`}
           </p>
           <Stats
             items={[
-              ["Cards", t.cards.length],
+              ["Songs", songs],
               ["Best", t.best],
               ["Runs", t.runs + 1],
               ["Day", Math.max(1, dayNumber)],
             ]}
           />
-          {today.result !== "anchor" && <ShareButton text={shareText} />}
+          <ShareButton text={shareText} />
         </section>
       )}
     </main>

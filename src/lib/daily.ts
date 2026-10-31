@@ -29,6 +29,12 @@ export function anchorYearFor(day: string): number {
   return pick?.year ?? 1990;
 }
 
+/** Starting year for a new Daily Timeline, different from the first song's year. */
+export function timelineAnchorYearFor(day: string, songYear: number): number {
+  const pick = seededShuffle(SONGS, `timeline-anchor:${day}`).find((s) => s.year !== songYear);
+  return pick?.year ?? 1990;
+}
+
 /**
  * Pick the daily "Timeline" song. The day's sort songs are excluded (no spoilers),
  * as are songs already on the player's timeline and any songs they skipped
