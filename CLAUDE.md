@@ -13,7 +13,7 @@ CI (`node-version-file`), and `@types/node` matches it. Change all of them toget
 ```bash
 pnpm install            # install dependencies (pnpm is pinned in package.json's packageManager)
 pnpm dev                # http://localhost:3000
-pnpm test               # vitest: logic tests (src/lib/__tests__) and component tests (src/components/__tests__)
+pnpm test               # vitest: logic tests in node (src/lib/__tests__) and component tests in Chromium (src/components/__tests__)
 pnpm lint               # oxlint (.oxlintrc.json): React Compiler rules, type-aware TS, jsx-a11y, Next.js
 pnpm lint:fix           # oxlint --fix
 pnpm format             # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind classes
@@ -202,8 +202,11 @@ is a "default" served without a prefix.
 - `src/lib/__tests__/golden.test.ts` snapshots a month of daily picks. If it fails, the
   daily puzzles changed for everyone: fix the code, don't update the snapshot (unless
   you added songs on purpose, then run `pnpm vitest -u`).
-- Component tests live in `src/components/__tests__/` and start with
-  `// @vitest-environment jsdom`. Mock the player with
+- Component tests live in `src/components/__tests__/` and run in **Vitest Browser Mode**
+  (headless Chromium through `@vitest/browser-playwright`; the `browser` project in
+  `vitest.config.mts`). The site CSS isn't loaded there. Click with `await userEvent.click(el)`
+  from `vitest/browser` (real pointer events), so helpers that click are `async`. Locally,
+  a fresh machine needs `pnpm exec playwright install chromium` once. Mock the player with
   `vi.mock("@/lib/youtube", async (o) => (await import("@/test/helpers")).mockYoutube(o as never))`,
   render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).
   Fire `animationEnd` on `.deck-swap` to finish the record animation.

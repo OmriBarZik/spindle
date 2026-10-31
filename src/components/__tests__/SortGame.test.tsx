@@ -1,6 +1,8 @@
-// @vitest-environment jsdom
+// Each move depends on the previous one, so the loops click one step at a time.
+/* oxlint-disable no-await-in-loop */
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import SortGame from "@/components/SortGame";
 import { MESSAGES } from "@/i18n/messages";
 import { anchorYearFor, sortSongsFor } from "@/lib/daily";
@@ -38,19 +40,19 @@ function placeButton() {
 }
 
 /** Place song `i` (0-based) right or wrong, then let the record animation end. */
-function place(i: number, right: boolean, container: HTMLElement) {
+async function place(i: number, right: boolean, container: HTMLElement) {
   const line = currentLine();
   const year = sortSongsFor(DAY)[i]!.year;
   const good = correctSlot(line, year);
   const slot = right ? good : good === 0 ? line.length : 0;
-  fireEvent.click(
+  await userEvent.click(
     screen.getByRole("button", { name: `+ ${slotLabel(line, slot, MESSAGES.en.slots)}` }),
   );
   expect(placeButton()).toHaveProperty(
     "textContent",
     `Place it: ${slotLabel(line, slot, MESSAGES.en.slots)}`,
   );
-  fireEvent.click(placeButton());
+  await userEvent.click(placeButton());
   expect(fakePlayer.stop).toHaveBeenCalled();
   // Locked until the record's result animation ends (the last song has no button left).
   const locked = screen.queryByRole("button", { name: /^(Pick a spot|Place it)/ });
@@ -80,11 +82,11 @@ describe("Daily Five screen", () => {
     const right = [true, false, true, true, false];
 
     for (let i = 0; i < 4; i++) {
-      place(i, right[i]!, container);
+      await place(i, right[i]!, container);
       expect(container.textContent).toContain(right[i]! ? "✅ Correct!" : "❌ Not quite.");
       expect(container.textContent).toContain(`“${songs[i]!.title}” by ${songs[i]!.artist}`);
     }
-    place(4, right[4]!, container);
+    await place(4, right[4]!, container);
 
     expect(container.textContent).toContain("3 / 5 placed right");
     expect(container.textContent).toContain("🟩🟥🟩🟩🟥");
@@ -92,7 +94,7 @@ describe("Daily Five screen", () => {
     expect(screen.queryByRole("button", { name: /^\+/ })).toBeNull();
     expect(savedData().sort.stats.played).toBe(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Share result" }));
+    await userEvent.click(screen.getByRole("button", { name: "Share result" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(writeText).toHaveBeenCalledWith(
       `Spindle Daily Five #1 3/5\n🟩🟥🟩🟩🟥\n${window.location.origin}`,
@@ -113,12 +115,12 @@ describe("Daily Five screen", () => {
       const line = currentLine();
       const slot = correctSlot(line, songs[i]!.year);
       const slots = screen.getAllByRole("button").filter((b) => b.textContent.startsWith("+ "));
-      fireEvent.click(slots[slot]!);
-      fireEvent.click(screen.getByRole("button", { name: /^לשבץ/ }));
+      await userEvent.click(slots[slot]!);
+      await userEvent.click(screen.getByRole("button", { name: /^לשבץ/ }));
       fireEvent.animationEnd(container.querySelector(".deck-swap")!);
     }
     expect(container.textContent).toContain("מושלם! 🎉");
-    fireEvent.click(screen.getByRole("button", { name: "שיתוף התוצאה" }));
+    await userEvent.click(screen.getByRole("button", { name: "שיתוף התוצאה" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(writeText).toHaveBeenCalledWith(
       `Spindle החמישייה היומית #1 5/5 · רק שירים ישראליים\n🟩🟩🟩🟩🟩\n${window.location.origin}`,
@@ -126,25 +128,25 @@ describe("Daily Five screen", () => {
     expect(container.textContent).toContain(songs[0]!.titleHe);
   });
 
-  it("restores a day in progress", () => {
+  it("restores a day in progress", async () => {
     const first = renderIn("en", <SortGame />);
-    place(0, true, first.container);
+    await place(0, true, first.container);
     first.unmount();
     renderIn("en", <SortGame />);
     expect(screen.getByText("Song 2 of 5")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /^\+/ })).toHaveLength(3);
   });
 
-  it("announces each result to screen readers", () => {
+  it("announces each result to screen readers", async () => {
     const { container } = renderIn("en", <SortGame />);
     const status = () =>
       screen
         .getAllByRole("status")
         .map((el) => el.textContent)
         .join("|");
-    place(0, true, container);
+    await place(0, true, container);
     expect(status()).toContain("✅ Correct!");
-    place(1, false, container);
+    await place(1, false, container);
     expect(status()).toContain("❌ Not quite.");
   });
 
@@ -157,7 +159,7 @@ describe("Daily Five screen", () => {
   it("has no accessibility violations, in both languages and when done", async () => {
     const en = renderIn("en", <SortGame />);
     await expectAccessible(en.container);
-    for (let i = 0; i < 5; i++) place(i, i % 2 === 0, en.container);
+    for (let i = 0; i < 5; i++) await place(i, i % 2 === 0, en.container);
     await expectAccessible(en.container);
     en.unmount();
     const he = renderIn("he", <SortGame />);

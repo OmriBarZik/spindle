@@ -39,6 +39,10 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Component tests run in Vitest Browser Mode on Playwright's Chromium.
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Test
         run: pnpm test
 
