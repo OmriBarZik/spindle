@@ -111,6 +111,7 @@ is a "default" served without a prefix.
 | `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
 | `src/components/Settings.tsx` | Settings page (song-language switches) |
 | `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
+| `src/app/[lang]/opengraph-image.tsx` | Link preview image (the record + "Spindle"), drawn with `next/og` as SVG and prerendered per language |
 | `src/app/globals.css` | Theme tokens and custom classes (`.card`, `.btn-primary`, `.record`, `.loading-ring`, …) |
 | `scripts/validate-songs.mjs` | oEmbed check for missing or non-embeddable videos |
 
