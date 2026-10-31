@@ -174,14 +174,10 @@ body {
     0 0 48px color-mix(in srgb, var(--glow) 70%, transparent);
 }
 .deck-swap {
-  --dir: 1;
   /* Longhands: the minifier turns a shorthand without a name into "none". */
   animation-duration: 2s;
   animation-timing-function: ease-in-out;
   animation-fill-mode: both;
-}
-[dir="rtl"] .deck-swap {
-  --dir: -1;
 }
 .deck-swap-next {
   animation-name: deck-swap-next;
@@ -189,9 +185,18 @@ body {
 .deck-swap-next .deck-glow {
   animation: deck-glow-next 2s ease-in-out both;
 }
+/* Hebrew swipes the other way. Separate keyframes rather than a CSS variable:
+   Safari can't run keyframes that use var() off the main thread, so they lag
+   on a busy or throttled CPU. */
+[dir="rtl"] .deck-swap-next {
+  animation-name: deck-swap-next-rtl;
+}
 .deck-swap-last {
   animation-name: deck-swap-last;
   animation-duration: 1.6s;
+}
+[dir="rtl"] .deck-swap-last {
+  animation-name: deck-swap-last-rtl;
 }
 .deck-swap-last .deck-glow {
   animation: deck-glow-hold 1.6s ease-in-out both;
@@ -211,11 +216,32 @@ body {
     animation-timing-function: ease-in;
   }
   75% {
-    transform: translateX(calc(var(--dir) * 130%)) rotate(calc(var(--dir) * 90deg));
+    transform: translateX(130%) rotate(90deg);
     opacity: 0;
   }
   75.01% {
-    transform: translateX(calc(var(--dir) * -130%)) rotate(calc(var(--dir) * -90deg));
+    transform: translateX(-130%) rotate(-90deg);
+    opacity: 0;
+    animation-timing-function: ease-out;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes deck-swap-next-rtl {
+  0%,
+  50% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  75% {
+    transform: translateX(-130%) rotate(-90deg);
+    opacity: 0;
+  }
+  75.01% {
+    transform: translateX(130%) rotate(90deg);
     opacity: 0;
     animation-timing-function: ease-out;
   }
@@ -232,7 +258,19 @@ body {
     animation-timing-function: ease-in;
   }
   100% {
-    transform: translateX(calc(var(--dir) * 130%)) rotate(calc(var(--dir) * 90deg));
+    transform: translateX(130%) rotate(90deg);
+    opacity: 0;
+  }
+}
+@keyframes deck-swap-last-rtl {
+  0%,
+  60% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateX(-130%) rotate(-90deg);
     opacity: 0;
   }
 }
@@ -294,10 +332,11 @@ body {
     animation: none;
   }
   /* Keep the glow and the timing, but don't move the record. */
-  .deck-swap {
+  /* [dir] so it also beats the Hebrew keyframes above. */
+  [dir] .deck-swap {
     animation-name: deck-flash;
   }
-  .deck-swap .deck-glow {
+  [dir] .deck-swap .deck-glow {
     animation-name: deck-glow-flash;
   }
 }

@@ -145,8 +145,9 @@ is a "default" served without a prefix.
   line under the record has a fixed height (`h-5`). Keep it that way, since the user
   explicitly asked for no jumps.
 - **Result animation:** after a guess, `Deck`'s `swap` prop makes the record glow green or red.
-  In Daily Five it then swipes out in the reading direction (`--dir`, flipped under
-  `[dir="rtl"]`) and the next record slides in. Play and "Place it" stay locked until
+  In Daily Five it then swipes out in the reading direction (separate `-rtl` keyframes under
+  `[dir="rtl"]`) and the next record slides in. Keep `var()` out of `@keyframes`: Safari
+  can't run those off the main thread, so they lag on a throttled CPU. Play and "Place it" stay locked until
   `onSwapEnd`. The player, record and button move together so the iframe stays covered.
 - If a video fails (`status === "error"`), Timeline offers "Give me a different song"
   (`skipTimelineSong`).
@@ -163,7 +164,8 @@ is a "default" served without a prefix.
   (like `.card-good`, `.card-bad` or `.card-anchor`) instead of utility classes.
 - **CSS minifier:** in `globals.css`, an `animation` shorthand without a name is
   minified to `animation: none`. Use longhands (`animation-duration`, …) when the name is set
-  by another class, and check the built CSS in `.next/static/chunks/*.css`.
+  by another class, and check the built CSS in `.next/static/chunks/*.css`. If a CSS edit
+  doesn't show up there, Turbopack's cache is stale: `rm -rf .next` and build again.
 - The site has a dark theme only.
 - **Song years** are the original release year of the song (single or album), not the
   video or a remaster.
