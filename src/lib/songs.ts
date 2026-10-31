@@ -2,6 +2,10 @@ import songsData from "@/data/songs.json";
 import type { Locale } from "@/i18n/config";
 
 export type Song = {
+  /**
+   * Stable song id, stored in saves. It is the song's first `youtubeId`; when the video
+   * is later swapped (e.g. for an audio-only upload), songs.json keeps the old one as `id`.
+   */
   id: string;
   title: string;
   artist: string;
@@ -14,11 +18,11 @@ export type Song = {
   artistHe?: string;
 };
 
-type RawSong = Omit<Song, "id">;
+type RawSong = Omit<Song, "id"> & { id?: string };
 
 export const SONGS: Song[] = (songsData as RawSong[]).map((s) => ({
   ...s,
-  id: s.youtubeId,
+  id: s.id ?? s.youtubeId,
 }));
 
 /**
@@ -34,14 +38,17 @@ export function songLanguage(song: Pick<Song, "titleHe">): SongLanguage {
 }
 
 export const SONG_BY_ID = new Map(SONGS.map((s) => [s.id, s]));
+const SONG_BY_VIDEO = new Map(SONGS.map((s) => [s.youtubeId, s]));
 
+/** Finds a song by its stable id, or by its current `youtubeId`. */
 export function getSong(id: string): Song | undefined {
-  return SONG_BY_ID.get(id);
+  return SONG_BY_ID.get(id) ?? SONG_BY_VIDEO.get(id);
 }
 
 /**
  * Title and artist to show in a language. Looks the song up by `youtubeId`, because
- * timeline cards saved in localStorage only carry the English names.
+ * timeline cards saved in localStorage only carry the English names. Older saved cards
+ * hold the song's original video, which is also its stable id, so either one resolves.
  */
 export function songNames(
   song: { title: string; artist: string; youtubeId: string },
