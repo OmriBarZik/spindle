@@ -1,4 +1,7 @@
+"use client";
+
 import SongReveal from "@/components/SongReveal";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export function SlotButton({
   label,
@@ -9,6 +12,7 @@ export function SlotButton({
   selected: boolean;
   onClick: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <li>
       <button
@@ -20,7 +24,7 @@ export function SlotButton({
             : "border-line text-muted hover:border-white/50 hover:text-white"
         }`}
       >
-        {selected ? `🎵 Song goes here · ${label}` : `+ ${label}`}
+        {selected ? t.common.songGoesHere(label) : t.common.addSlot(label)}
       </button>
     </li>
   );
@@ -43,16 +47,17 @@ export function SongCard({
     >
       <div className="w-14 shrink-0 text-center text-xl font-bold tabular-nums">{song.year}</div>
       <SongReveal {...song} />
-      {note && <span className="ml-auto shrink-0 text-xs">{note}</span>}
+      {note && <span className="ms-auto shrink-0 text-xs">{note}</span>}
     </li>
   );
 }
 
 export function AnchorCard({ year }: { year: number }) {
+  const { t } = useI18n();
   return (
     <li className="card card-anchor flex items-center gap-3 p-3">
       <div className="w-14 shrink-0 text-center text-xl font-bold tabular-nums">{year}</div>
-      <div className="text-sm text-muted">Starting year</div>
+      <div className="text-sm text-muted">{t.common.startingYear}</div>
     </li>
   );
 }

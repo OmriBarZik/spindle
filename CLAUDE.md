@@ -23,8 +23,8 @@ Run lint, test and build before pushing.
 
 | Mode | Route | Internal name | Rules |
 | --- | --- | --- | --- |
-| **Daily Five** | `/sort` | "sort" (`SortGame`, `data.sort`, `sortSongsFor`) | The line starts with one **starting year**. Five songs come **one at a time**, and each is placed into a gap. A wrong placement is marked red and moved to its real spot. Score is x/5. Everyone gets the same songs each day. |
-| **Daily Timeline** | `/timeline` | "timeline" | One song per day goes into a personal timeline that persists across days. A new timeline starts with a free starting year, so day 1 is already a guess. A wrong guess or a missed day ends the run, and a fresh one starts the next day. |
+| **Daily Five** | `/{lang}/sort` | "sort" (`SortGame`, `data.sort`, `sortSongsFor`) | The line starts with one **starting year**. Five songs come **one at a time**, and each is placed into a gap. A wrong placement is marked red and moved to its real spot. Score is x/5. Everyone gets the same songs each day. |
+| **Daily Timeline** | `/{lang}/timeline` | "timeline" | One song per day goes into a personal timeline that persists across days. A new timeline starts with a free starting year, so day 1 is already a guess. A wrong guess or a missed day ends the run, and a fresh one starts the next day. |
 
 The "sort" name is historical: the mode used to be "order all 5 at once". Keep the
 internal names (route, save keys, functions) so existing saves and links keep working;
@@ -35,11 +35,36 @@ Shared rules:
 - **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
 - A new day starts at the **player's local midnight** (`dayKey()` in `src/lib/dates.ts`).
 
+## Languages (i18n)
+
+The site is fully bilingual: **English (`en`) and Hebrew (`he`) are equal**. Neither one
+is a "default" served without a prefix.
+
+- Every page lives under `src/app/[lang]/` (`/en`, `/he/sort`, …). `[lang]/layout.tsx` is the
+  root layout. It sets `<html lang dir>` (`rtl` for Hebrew) and statically generates both
+  languages.
+- `src/proxy.ts` redirects any URL without a prefix (`/`, or old `/sort` links) to the
+  `spindle-lang` cookie's language (set by the header switch), else the browser's
+  `Accept-Language`, else English.
+- All UI text is in `src/i18n/messages.tsx` (one `Messages` object per language; the
+  types force both languages to have every key). Server components use `getI18n()` from
+  `src/i18n/server.ts`; client components use `useI18n()` from `src/i18n/I18nProvider.tsx`.
+  **Never hard-code UI text in components**; add it to both languages.
+- `slotLabel(cards, slot, t.slots)` takes the language's slot labels.
+- Saves are shared between languages, so switching language keeps progress.
+- **RTL layout:** use logical utilities (`ms-*`, `ps-*`, `text-start`/`text-end`, `start-*`)
+  instead of `ml`/`pl`/`text-left`, and the `rtl:` variant where needed (e.g.
+  `rtl:tracking-normal`, since wide letter-spacing breaks Hebrew). Wrap Latin song
+  titles and artists in `<bdi>` inside sentences. Media icons (the play triangle) and
+  the clock stay left-to-right.
+- Fonts: Roboto (and Roboto Mono) for Latin. Roboto has no Hebrew, so Heebo
+  (`--font-hebrew`, Roboto's Hebrew companion) is the fallback for Hebrew glyphs.
+
 ## Architecture
 
 - **No backend.** All state lives in `localStorage` under the key `spindle:v1`
   (`src/lib/storage.ts`). There are no accounts and no API routes.
-- **Client-only game screens.** `src/app/{sort,timeline}/page.tsx` are server components
+- **Client-only game screens.** `src/app/[lang]/{sort,timeline}/page.tsx` are server components
   that render `SortGameClient` and `TimelineGameClient` from `src/components/ClientOnly.tsx`.
   These use `next/dynamic` with `ssr: false`, because the initial state reads
   `localStorage` and the local date. `ssr: false` is only allowed inside a client
@@ -70,6 +95,9 @@ Shared rules:
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |
 | `src/components/TimelineParts.tsx` | Shared `SlotButton`, `SongCard`, `AnchorCard`, `Stats` |
+| `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
+| `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
+| `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
 | `src/app/globals.css` | Theme tokens and custom classes (`.card`, `.btn-primary`, `.record`, `.loading-ring`, …) |
 | `scripts/validate-songs.mjs` | oEmbed check for missing or non-embeddable videos |
 

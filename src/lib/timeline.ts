@@ -36,12 +36,32 @@ export function correctSlot(cards: readonly { year: number }[], year: number): n
   return idx === -1 ? cards.length : idx;
 }
 
-export function slotLabel(cards: readonly { year: number }[], slot: number): string {
+export type SlotLabels = {
+  anywhere: string;
+  before: (year: number) => string;
+  after: (year: number) => string;
+  in: (year: number) => string;
+  between: (from: number, to: number) => string;
+};
+
+export const ENGLISH_SLOT_LABELS: SlotLabels = {
+  anywhere: "Anywhere",
+  before: (y) => `Before ${y}`,
+  after: (y) => `After ${y}`,
+  in: (y) => `In ${y}`,
+  between: (a, b) => `${a} – ${b}`,
+};
+
+export function slotLabel(
+  cards: readonly { year: number }[],
+  slot: number,
+  labels: SlotLabels = ENGLISH_SLOT_LABELS,
+): string {
   const before = cards[slot - 1];
   const after = cards[slot];
-  if (!before && !after) return "Anywhere";
-  if (!before) return `Before ${after.year}`;
-  if (!after) return `After ${before.year}`;
-  if (before.year === after.year) return `In ${before.year}`;
-  return `${before.year} – ${after.year}`;
+  if (!before && !after) return labels.anywhere;
+  if (!before) return labels.before(after.year);
+  if (!after) return labels.after(before.year);
+  if (before.year === after.year) return labels.in(before.year);
+  return labels.between(before.year, after.year);
 }

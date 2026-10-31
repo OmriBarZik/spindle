@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import Deck from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
 import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
+import { useI18n } from "@/i18n/I18nProvider";
 import { dayKey, puzzleNumber } from "@/lib/dates";
 import { getSong } from "@/lib/songs";
 import { ensureSortDay, placeSortSong, sortDayDone, sortLine } from "@/lib/storage";
@@ -15,6 +16,7 @@ import { useHiddenPlayer } from "@/lib/youtube";
  * Daily Five: start from a single year, then place five songs one at a time.
  */
 export default function SortGame() {
+  const { t } = useI18n();
   const [day] = useState(() => dayKey());
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
@@ -33,19 +35,19 @@ export default function SortGame() {
 
   const hits = state.placements.filter((p) => p.correct).length;
   const emoji = state.placements.map((p) => (p.correct ? "🟩" : "🟥")).join("");
-  const shareText = `Spindle Daily Five #${puzzleNumber(day)} ${hits}/${total}\n${emoji}\n${
+  const shareText = `${t.sort.shareHead(puzzleNumber(day), hits, total)}\n${emoji}\n${
     typeof window !== "undefined" ? window.location.origin : ""
   }`;
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
       <section className="text-center">
-        <h1 className="text-2xl font-bold">Daily Five</h1>
-        <p className="mt-1 text-sm text-muted">
-          Your line starts at <b className="text-white">{state.anchorYear}</b>. Listen to each song
-          and drop it before or after the cards you already have — one song at a time.
-        </p>
-        <div className="mt-3 flex justify-center gap-1.5" aria-label={`Song ${Math.min(turn + 1, total)} of ${total}`}>
+        <h1 className="text-2xl font-bold">{t.sort.name}</h1>
+        <p className="mt-1 text-sm text-muted">{t.sort.intro(state.anchorYear)}</p>
+        <div
+          className="mt-3 flex justify-center gap-1.5"
+          aria-label={t.sort.progress(Math.min(turn + 1, total), total)}
+        >
           {state.songIds.map((id, i) => (
             <span
               key={id}
@@ -69,8 +71,7 @@ export default function SortGame() {
             lastCorrect ? "bg-green-500/15 text-green-300" : "bg-red-500/15 text-red-300"
           }`}
         >
-          {lastCorrect ? "✅ Correct!" : "❌ Not quite."} “{last.title}” by {last.artist} is from{" "}
-          <b>{last.year}</b>.
+          {lastCorrect ? t.sort.correct : t.sort.wrong} {t.sort.reveal(last.title, last.artist, last.year)}
         </p>
       )}
 
@@ -80,16 +81,16 @@ export default function SortGame() {
           player={player}
           videoId={current?.youtubeId ?? null}
           start={current?.start}
-          label={`SONG ${turn + 1} OF ${total}`}
+          label={t.sort.deckLabel(turn + 1, total)}
         />
       )}
 
       <ol className="flex flex-col gap-2">
-        <li className="text-xs uppercase tracking-widest text-muted">▲ Oldest</li>
+        <li className="text-xs uppercase tracking-widest text-muted rtl:tracking-normal">{t.common.oldest}</li>
         {line.map((card, i) => (
           <Fragment key={card.kind === "anchor" ? "anchor" : card.id}>
             {!done && (
-              <SlotButton label={slotLabel(line, i)} selected={slot === i} onClick={() => setSlot(i)} />
+              <SlotButton label={slotLabel(line, i, t.slots)} selected={slot === i} onClick={() => setSlot(i)} />
             )}
             {card.kind === "anchor" ? (
               <AnchorCard year={card.year} />
@@ -97,19 +98,19 @@ export default function SortGame() {
               <SongCard
                 song={getSong(card.id)!}
                 variant={card.correct ? "good" : "bad"}
-                note={card.correct ? undefined : "moved here"}
+                note={card.correct ? undefined : t.sort.movedHere}
               />
             )}
           </Fragment>
         ))}
         {!done && (
           <SlotButton
-            label={slotLabel(line, line.length)}
+            label={slotLabel(line, line.length, t.slots)}
             selected={slot === line.length}
             onClick={() => setSlot(line.length)}
           />
         )}
-        <li className="text-xs uppercase tracking-widest text-muted">▼ Newest</li>
+        <li className="text-xs uppercase tracking-widest text-muted rtl:tracking-normal">{t.common.newest}</li>
       </ol>
 
       {!done ? (
@@ -124,24 +125,24 @@ export default function SortGame() {
             setSlot(null);
           }}
         >
-          {slot === null ? "Pick a spot on the line" : `Place it: ${slotLabel(line, slot)}`}
+          {slot === null ? t.sort.pickSpot : t.common.placeIt(slotLabel(line, slot, t.slots))}
         </button>
       ) : (
         <section className="card flex flex-col items-center gap-4 p-5 text-center">
           <div className="text-3xl font-bold">
-            {hits === total ? "Perfect! 🎉" : `${hits} / ${total} placed right`}
+            {hits === total ? t.sort.perfect : t.sort.score(hits, total)}
           </div>
-          <div className="text-2xl tracking-widest">{emoji}</div>
+          <div dir="ltr" className="text-2xl tracking-widest">{emoji}</div>
           <Stats
             items={[
-              ["Played", data.sort.stats.played],
-              ["Perfect", data.sort.stats.perfect],
-              ["Streak", data.sort.stats.streak],
-              ["Best streak", data.sort.stats.maxStreak],
+              [t.sort.stats.played, data.sort.stats.played],
+              [t.sort.stats.perfect, data.sort.stats.perfect],
+              [t.sort.stats.streak, data.sort.stats.streak],
+              [t.sort.stats.bestStreak, data.sort.stats.maxStreak],
             ]}
           />
           <ShareButton text={shareText} />
-          <p className="text-sm text-muted">New songs tomorrow.</p>
+          <p className="text-sm text-muted">{t.sort.tomorrow}</p>
         </section>
       )}
     </main>

@@ -1,8 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useI18n } from "@/i18n/I18nProvider";
 
-const Loading = () => <p className="p-8 text-center text-muted">Warming up the turntable…</p>;
+function Loading() {
+  const { t } = useI18n();
+  return <p className="p-8 text-center text-muted">{t.common.loadingGame}</p>;
+}
 
 export const SortGameClient = dynamic(() => import("@/components/SortGame"), {
   ssr: false,
