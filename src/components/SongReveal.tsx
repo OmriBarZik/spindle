@@ -1,17 +1,12 @@
 "use client";
 
 import { useI18n } from "@/i18n/I18nProvider";
+import { songNames } from "@/lib/songs";
 
-export default function SongReveal({
-  title,
-  artist,
-  youtubeId,
-}: {
-  title: string;
-  artist: string;
-  youtubeId: string;
-}) {
-  const { t } = useI18n();
+export default function SongReveal(song: { title: string; artist: string; youtubeId: string }) {
+  const { lang, t } = useI18n();
+  const { title, artist } = songNames(song, lang);
+  const { youtubeId } = song;
   return (
     <div className="min-w-0">
       {/* Titles and artists are mostly Latin; <bdi> keeps them intact in RTL pages. */}

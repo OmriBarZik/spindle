@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { SongLanguage } from "@/lib/songs";
 import type { SlotLabels } from "@/lib/timeline";
 import type { Locale } from "./config";
 
@@ -11,7 +12,13 @@ import type { Locale } from "./config";
  */
 export type Messages = {
   langName: string;
-  meta: { title: string; description: string; sortTitle: string; timelineTitle: string };
+  meta: {
+    title: string;
+    description: string;
+    sortTitle: string;
+    timelineTitle: string;
+    settingsTitle: string;
+  };
   common: {
     languageLabel: string;
     loadingGame: string;
@@ -61,6 +68,18 @@ export type Messages = {
     tomorrow: string;
     shareHead: (n: number, hits: number, total: number) => string;
   };
+  settings: {
+    name: string;
+    songsHeading: string;
+    songsIntro: string;
+    kinds: Record<SongLanguage, { name: string; desc: string }>;
+    count: (n: number) => string;
+    lastOne: string;
+    applyNote: string;
+    /** Added to share text when only one kind is on, since the puzzle differs. */
+    shareTag: Record<SongLanguage, string>;
+    back: string;
+  };
   timeline: {
     name: string;
     noSong: string;
@@ -92,6 +111,7 @@ const en: Messages = {
       "Listen to songs without seeing the titles and put them in order by release year. A new puzzle every day.",
     sortTitle: "Daily Five · Spindle",
     timelineTitle: "Daily Timeline · Spindle",
+    settingsTitle: "Settings · Spindle",
   },
   common: {
     languageLabel: "Language",
@@ -175,6 +195,21 @@ const en: Messages = {
     tomorrow: "New songs tomorrow.",
     shareHead: (n, hits, total) => `Spindle Daily Five #${n} ${hits}/${total}`,
   },
+  settings: {
+    name: "Settings",
+    songsHeading: "Songs",
+    songsIntro: "Choose which songs can show up in your puzzles.",
+    kinds: {
+      en: { name: "International songs", desc: "Hits from around the world, mostly in English" },
+      he: { name: "Israeli songs", desc: "Israeli hits, mostly in Hebrew" },
+    },
+    count: enSongs,
+    lastOne: "Keep at least one kind of song on.",
+    applyNote:
+      "Changes apply to puzzles you haven't started yet. With only one kind on, your daily puzzle is different from players who have both.",
+    shareTag: { en: "International songs only", he: "Israeli songs only" },
+    back: "Back to the games",
+  },
   timeline: {
     name: "Daily Timeline",
     noSong: "No song available today.",
@@ -213,6 +248,7 @@ const he: Messages = {
       "האזינו לשירים בלי לראות את השמות שלהם וסדרו אותם לפי שנת היציאה. חידה חדשה בכל יום.",
     sortTitle: "החמישייה היומית · Spindle",
     timelineTitle: "ציר הזמן היומי · Spindle",
+    settingsTitle: "הגדרות · Spindle",
   },
   common: {
     languageLabel: "שפה",
@@ -295,6 +331,21 @@ const he: Messages = {
     stats: { played: "משחקים", perfect: "מושלמים", streak: "רצף", bestStreak: "רצף שיא" },
     tomorrow: "שירים חדשים מחר.",
     shareHead: (n, hits, total) => `Spindle החמישייה היומית #${n} ${hits}/${total}`,
+  },
+  settings: {
+    name: "הגדרות",
+    songsHeading: "שירים",
+    songsIntro: "בחרו אילו שירים יכולים להופיע בחידות שלכם.",
+    kinds: {
+      en: { name: "שירים בינלאומיים", desc: "להיטים מכל העולם, בעיקר באנגלית" },
+      he: { name: "שירים ישראליים", desc: "להיטים ישראליים, בעיקר בעברית" },
+    },
+    count: heSongs,
+    lastOne: "צריך להשאיר לפחות סוג אחד של שירים.",
+    applyNote:
+      "השינויים חלים על חידות שעוד לא התחלתם. כשרק סוג אחד מסומן, החידה היומית שלכם שונה משל שחקנים שמסמנים את שניהם.",
+    shareTag: { en: "רק שירים בינלאומיים", he: "רק שירים ישראליים" },
+    back: "חזרה למשחקים",
   },
   timeline: {
     name: "ציר הזמן היומי",

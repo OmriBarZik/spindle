@@ -30,6 +30,8 @@ The "sort" name is historical: the mode used to be "order all 5 at once". Keep t
 internal names (route, save keys, functions) so existing saves and links keep working;
 only the UI says "Daily Five".
 
+| **Settings** | `/{lang}/settings` | `Settings` | Players choose which songs can appear: International (`en`) and/or Israeli (`he`) songs. Stored in `data.settings.songLanguages` (never empty). |
+
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
@@ -51,6 +53,8 @@ is a "default" served without a prefix.
   `src/i18n/server.ts`; client components use `useI18n()` from `src/i18n/I18nProvider.tsx`.
   **Never hard-code UI text in components**; add it to both languages.
 - `slotLabel(cards, slot, t.slots)` takes the language's slot labels.
+- Song names: use `songNames(song, lang)` (`src/lib/songs.ts`). It returns `titleHe`/`artistHe`
+  on Hebrew pages, looked up by `youtubeId` because saved timeline cards only store English names.
 - Saves are shared between languages, so switching language keeps progress.
 - **RTL layout:** use logical utilities (`ms-*`, `ps-*`, `text-start`/`text-end`, `start-*`)
   instead of `ml`/`pl`/`text-left`, and the `rtl:` variant where needed (e.g.
@@ -72,6 +76,14 @@ is a "default" served without a prefix.
 - **Deterministic daily picks.** `src/lib/daily.ts` runs `seededShuffle(SONGS, seed)`
   (`src/lib/random.ts`, FNV-1a + mulberry32) with these seed strings:
   `sort:${day}`, `anchor:${day}`, `timeline:${day}`, `timeline-anchor:${day}`.
+  `shuffled()` in `daily.ts` splits that shuffle by song language and interleaves the
+  lists with a seeded 50/50 coin (seed `${seed}:mix`), so with both kinds on about half the
+  picks are Israeli even though the catalog is mostly international. The song-language
+  setting only chooses which lists take part; it never changes the seed. So everyone with both kinds on (the default) shares one puzzle,
+  and players with the same setting match each other. A Daily Five day remembers its
+  `languages` and is re-picked only while no song has been placed; a pending Timeline song
+  in a turned-off language is swapped. Share text says "Israeli songs only" etc. when the
+  puzzle came from one kind.
   **Never change these strings or the shuffle algorithm**: doing so changes everyone's
   past and future puzzles. Editing `songs.json` also reshuffles the picks, so add songs
   rather than reorder or remove them, and avoid doing it mid-day.
@@ -85,7 +97,7 @@ is a "default" served without a prefix.
 
 | Path | What |
 | --- | --- |
-| `src/data/songs.json` | Song catalog: `{ artist, title, year, youtubeId, start? }`. The `id` is the `youtubeId`. |
+| `src/data/songs.json` | Song catalog: `{ artist, title, year, youtubeId, start?, titleHe?, artistHe? }`. The `id` is the `youtubeId`. One shared pool: Israeli songs (with Hebrew names) sit alongside the rest, so both languages get the same daily puzzle. |
 | `src/lib/songs.ts` | Loads the catalog; `getSong(id)` |
 | `src/lib/daily.ts` | Daily song and starting-year selection |
 | `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |
@@ -97,6 +109,7 @@ is a "default" served without a prefix.
 | `src/components/TimelineParts.tsx` | Shared `SlotButton`, `SongCard`, `AnchorCard`, `Stats` |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
 | `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
+| `src/components/Settings.tsx` | Settings page (song-language switches) |
 | `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
 | `src/app/globals.css` | Theme tokens and custom classes (`.card`, `.btn-primary`, `.record`, `.loading-ring`, …) |
 | `scripts/validate-songs.mjs` | oEmbed check for missing or non-embeddable videos |

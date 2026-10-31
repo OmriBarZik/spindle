@@ -6,7 +6,7 @@ import ShareButton from "@/components/ShareButton";
 import { AnchorCard, SlotButton, SongCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
 import { dayKey, puzzleNumber } from "@/lib/dates";
-import { getSong } from "@/lib/songs";
+import { getSong, songNames } from "@/lib/songs";
 import {
   correctSlot,
   ensureTimelineDay,
@@ -18,7 +18,7 @@ import { useSave } from "@/lib/useSave";
 import { useHiddenPlayer } from "@/lib/youtube";
 
 export default function TimelineGame() {
-  const { t: tr } = useI18n();
+  const { lang, t: tr } = useI18n();
   const [day] = useState(() => dayKey());
   const [data, update] = useSave((d) => ensureTimelineDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
@@ -48,7 +48,9 @@ export default function TimelineGame() {
   const wrongAt = today.result === "wrong" ? correctSlot(t.cards, song.year) : null;
 
   const shareText = (() => {
-    const head = tr.timeline.shareHead(puzzleNumber(day));
+    const langs = data.settings.songLanguages;
+    const only = langs.length === 1 ? ` · ${tr.settings.shareTag[langs[0]]}` : "";
+    const head = `${tr.timeline.shareHead(puzzleNumber(day))}${only}`;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     if (today.result === "wrong")
       return `${head}\n${tr.timeline.shareEnded(songs)}\n${"🟩".repeat(songs)}🟥\n${origin}`;
@@ -138,7 +140,7 @@ export default function TimelineGame() {
           </div>
           <p className="text-sm text-muted">
             {today.result === "correct" && tr.timeline.correctMsg(songs)}
-            {today.result === "wrong" && tr.timeline.wrongMsg(song.title, song.year, songs)}
+            {today.result === "wrong" && tr.timeline.wrongMsg(songNames(song, lang).title, song.year, songs)}
           </p>
           <Stats
             items={[

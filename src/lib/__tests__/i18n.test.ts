@@ -45,3 +45,22 @@ describe("messages", () => {
     expect(MESSAGES.he.common.songs(3)).toBe("3 שירים");
   });
 });
+
+describe("song names", () => {
+  it("shows Hebrew names on Hebrew pages and keeps English elsewhere", async () => {
+    const { SONGS, songNames } = await import("../songs");
+    const he = SONGS.find((s) => s.titleHe)!;
+    expect(songNames(he, "he")).toEqual({ title: he.titleHe, artist: he.artistHe });
+    expect(songNames(he, "en")).toEqual({ title: he.title, artist: he.artist });
+    // Saved timeline cards only carry English names; lookup is by youtubeId.
+    const saved = { title: he.title, artist: he.artist, youtubeId: he.youtubeId };
+    expect(songNames(saved, "he").title).toBe(he.titleHe);
+    const en = SONGS.find((s) => !s.titleHe)!;
+    expect(songNames(en, "he")).toEqual({ title: en.title, artist: en.artist });
+  });
+  it("gives every Hebrew song both Hebrew names", async () => {
+    const { SONGS } = await import("../songs");
+    for (const s of SONGS) expect(Boolean(s.titleHe)).toBe(Boolean(s.artistHe));
+    expect(SONGS.filter((s) => s.titleHe).length).toBeGreaterThanOrEqual(50);
+  });
+});

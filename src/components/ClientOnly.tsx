@@ -17,3 +17,8 @@ export const TimelineGameClient = dynamic(() => import("@/components/TimelineGam
   ssr: false,
   loading: Loading,
 });
+
+export const SettingsClient = dynamic(() => import("@/components/Settings"), {
+  ssr: false,
+  loading: Loading,
+});

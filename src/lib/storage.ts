@@ -1,6 +1,6 @@
 import { addDays } from "./dates";
 import { anchorYearFor, sortSongsFor, timelineAnchorYearFor, timelineSongFor } from "./daily";
-import { getSong } from "./songs";
+import { getSong, SONG_LANGUAGES, songLanguage, type SongLanguage } from "./songs";
 import {
   anchorCard,
   correctSlot,
@@ -20,6 +20,8 @@ export type SortDay = {
   songIds: string[];
   /** One entry per song placed so far (same order as songIds). */
   placements: SortPlacement[];
+  /** Song languages the day was picked from. Missing (older saves) means all. */
+  languages?: SongLanguage[];
 };
 
 /** One card on the Daily Five line. */
@@ -62,10 +64,16 @@ export type TimelineState = {
   today: TimelineToday | null;
 };
 
+export type Settings = {
+  /** Which songs can appear in new puzzles. Never empty. */
+  songLanguages: SongLanguage[];
+};
+
 export type SaveData = {
   version: 1;
   sort: { days: Record<string, SortDay>; stats: SortStats };
   timeline: TimelineState;
+  settings: Settings;
 };
 
 export function emptySave(): SaveData {
@@ -91,7 +99,19 @@ export function emptySave(): SaveData {
       runs: 0,
       today: null,
     },
+    settings: { songLanguages: [...SONG_LANGUAGES] },
   };
+}
+
+/** Keeps only known languages, in canonical order; falls back to all when empty. */
+function cleanLanguages(value: unknown): SongLanguage[] {
+  const list = Array.isArray(value) ? value : [];
+  const kept = SONG_LANGUAGES.filter((l) => list.includes(l));
+  return kept.length > 0 ? kept : [...SONG_LANGUAGES];
+}
+
+function sameLanguages(a: readonly SongLanguage[], b: readonly SongLanguage[]): boolean {
+  return a.length === b.length && a.every((l) => b.includes(l));
 }
 
 export function loadSave(): SaveData {
@@ -109,6 +129,7 @@ export function loadSave(): SaveData {
         stats: { ...base.sort.stats, ...parsed.sort?.stats },
       },
       timeline: { ...base.timeline, ...parsed.timeline },
+      settings: { songLanguages: cleanLanguages(parsed.settings?.songLanguages) },
     };
   } catch {
     return emptySave();
@@ -131,8 +152,29 @@ function isValidSortDay(d: Partial<SortDay> | undefined): d is SortDay {
   return !!d && typeof d.anchorYear === "number" && Array.isArray(d.placements);
 }
 
+/** Turn a song language on or off. The last one left can't be turned off. */
+export function setSongLanguage(data: SaveData, lang: SongLanguage, on: boolean): SaveData {
+  const current = data.settings.songLanguages;
+  if (current.includes(lang) === on) return data;
+  const next = on ? cleanLanguages([...current, lang]) : current.filter((l) => l !== lang);
+  if (next.length === 0) return data;
+  return { ...data, settings: { ...data.settings, songLanguages: next } };
+}
+
+/**
+ * Prepare today's Daily Five. A day that hasn't been started yet is re-picked if the
+ * player changed their song languages since it was first opened.
+ */
 export function ensureSortDay(data: SaveData, day: string): SaveData {
-  if (isValidSortDay(data.sort.days[day])) return data;
+  const langs = data.settings.songLanguages;
+  const existing = data.sort.days[day];
+  if (
+    isValidSortDay(existing) &&
+    (existing.placements.length > 0 ||
+      sameLanguages(existing.languages ?? SONG_LANGUAGES, langs))
+  ) {
+    return data;
+  }
   return {
     ...data,
     sort: {
@@ -140,9 +182,10 @@ export function ensureSortDay(data: SaveData, day: string): SaveData {
       days: {
         ...data.sort.days,
         [day]: {
-          anchorYear: anchorYearFor(day),
-          songIds: sortSongsFor(day).map((s) => s.id),
+          anchorYear: anchorYearFor(day, langs),
+          songIds: sortSongsFor(day, langs).map((s) => s.id),
           placements: [],
+          languages: [...langs],
         },
       },
     },
@@ -217,29 +260,37 @@ export function runContinues(t: TimelineState, day: string): boolean {
  */
 export function ensureTimelineDay(data: SaveData, day: string): SaveData {
   const t = data.timeline;
+  const langs = data.settings.songLanguages;
   if (t.today?.date === day) {
-    // Saves from before starting years existed: give today's turn one.
-    if (t.today.result === "pending" && t.cards.length === 0) {
-      const song = getSong(t.today.songId);
-      if (!song) return data;
-      return {
-        ...data,
-        timeline: { ...t, cards: [anchorCard(timelineAnchorYearFor(day, song.year))] },
-      };
+    if (t.today.result !== "pending") return data;
+    let today = t.today;
+    let cards = t.cards;
+    // The player turned off this song's language before answering: swap it.
+    const current = getSong(today.songId);
+    if (current && !langs.includes(songLanguage(current))) {
+      const exclude = new Set([...cards.map((c) => c.id), ...today.skipped, today.songId]);
+      const swap = timelineSongFor(day, exclude, langs);
+      if (swap && langs.includes(songLanguage(swap))) today = { ...today, songId: swap.id };
     }
-    return data;
+    // Saves from before starting years existed: give today's turn one.
+    if (cards.length === 0) {
+      const song = getSong(today.songId);
+      if (song) cards = [anchorCard(timelineAnchorYearFor(day, song.year, langs))];
+    }
+    if (today === t.today && cards === t.cards) return data;
+    return { ...data, timeline: { ...t, cards, today } };
   }
 
   const continuing = runContinues(t, day);
   const exclude = new Set(continuing ? t.cards.map((c) => c.id) : []);
-  const song = timelineSongFor(day, exclude);
+  const song = timelineSongFor(day, exclude, langs);
   if (!song) return data;
 
   let next: TimelineState = { ...t };
   if (!continuing) {
     next = {
       ...next,
-      cards: [anchorCard(timelineAnchorYearFor(day, song.year))],
+      cards: [anchorCard(timelineAnchorYearFor(day, song.year, langs))],
       runStart: day,
       runOver: false,
       lastDate: null,
@@ -256,7 +307,7 @@ export function skipTimelineSong(data: SaveData, day: string): SaveData {
   if (!today || today.date !== day || today.result !== "pending") return data;
   const skipped = [...today.skipped, today.songId];
   const exclude = new Set([...data.timeline.cards.map((c) => c.id), ...skipped]);
-  const song = timelineSongFor(day, exclude);
+  const song = timelineSongFor(day, exclude, data.settings.songLanguages);
   if (!song) return data;
   return {
     ...data,
