@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/i18n/I18nProvider";
 import { formatTime, type HiddenPlayer } from "@/lib/youtube";
 
 type Props = {
@@ -18,12 +19,13 @@ type Props = {
  * covered, so the title, channel, thumbnail and comments are never visible.
  */
 export default function Deck({ hostRef, player, videoId, start = 0, label, accent, onSkip }: Props) {
+  const { t } = useI18n();
   const isCurrent = videoId !== null && player.currentId === videoId;
   const playing = isCurrent && player.status === "playing";
   const loading = isCurrent && player.status === "loading";
   const errored = isCurrent && player.status === "error";
   const busy = loading || !player.ready;
-  const statusText = !player.ready ? "Loading player…" : loading ? "Loading song…" : "";
+  const statusText = !player.ready ? t.common.loadingPlayer : loading ? t.common.loadingSong : "";
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -52,7 +54,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
           type="button"
           disabled={!player.ready || !videoId}
           onClick={() => videoId && player.toggle(videoId, start)}
-          aria-label={playing || loading ? "Pause" : "Play"}
+          aria-label={playing || loading ? t.common.pause : t.common.play}
           className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40"
         >
           {playing || loading ? (
@@ -62,6 +64,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
             </svg>
           ) : (
             <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7" fill="currentColor">
+              {/* Play icons point right in every language, so this offset stays physical. */}
               <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
             </svg>
           )}
@@ -69,10 +72,10 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
       </div>
 
       {label && (
-        <div className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted">{label}</div>
+        <div className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-muted rtl:tracking-normal">{label}</div>
       )}
       <div className="flex items-center gap-3 text-sm text-muted">
-        <span className="w-12 text-right font-mono tabular-nums">
+        <span dir="ltr" className="w-12 text-end font-mono tabular-nums">
           {isCurrent ? formatTime(player.time) : "0:00"}
         </span>
         <button
@@ -81,7 +84,7 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
           onClick={() => player.restart(start)}
           className="rounded-full border border-line px-3 py-1 transition hover:bg-white/5 disabled:opacity-40"
         >
-          ↺ Restart
+          {t.common.restart}
         </button>
       </div>
 
@@ -93,10 +96,10 @@ export default function Deck({ hostRef, player, videoId, start = 0, label, accen
       )}
       {errored && (
         <div className="max-w-xs text-center text-sm text-amber-300">
-          This song can&apos;t be played here (YouTube blocked or removed it).
+          {t.common.cantPlay}
           {onSkip && (
             <button type="button" onClick={onSkip} className="mt-2 block w-full underline">
-              Give me a different song
+              {t.common.differentSong}
             </button>
           )}
         </div>

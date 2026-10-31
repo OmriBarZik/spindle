@@ -16,7 +16,7 @@
   --color-muted: var(--muted);
   --color-surface: var(--surface);
   --color-line: var(--line);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans), var(--font-hebrew);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -27,7 +27,7 @@ html {
 body {
   background: radial-gradient(1200px 600px at 50% -200px, #2a1846 0%, transparent 70%) no-repeat;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-geist-sans), var(--font-hebrew), system-ui, sans-serif;
 }
 
 .card {
