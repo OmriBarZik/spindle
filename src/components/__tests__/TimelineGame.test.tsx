@@ -1,6 +1,6 @@
-// @vitest-environment jsdom
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import TimelineGame from "@/components/TimelineGame";
 import { MESSAGES } from "@/i18n/messages";
 import { getSong } from "@/lib/songs";
@@ -24,12 +24,12 @@ function today() {
   return { cards: t.cards, song: getSong(t.today?.songId)! };
 }
 
-function placeAt(slot: number, container: HTMLElement) {
+async function placeAt(slot: number, container: HTMLElement) {
   const { cards } = today();
-  fireEvent.click(
+  await userEvent.click(
     screen.getByRole("button", { name: `+ ${slotLabel(cards, slot, MESSAGES.en.slots)}` }),
   );
-  fireEvent.click(
+  await userEvent.click(
     screen.getByRole("button", { name: `Place it: ${slotLabel(cards, slot, MESSAGES.en.slots)}` }),
   );
   expect(fakePlayer.stop).toHaveBeenCalled();
@@ -40,7 +40,7 @@ function placeAt(slot: number, container: HTMLElement) {
 
 async function shareAndRead() {
   const writeText = mockClipboard();
-  fireEvent.click(screen.getByRole("button", { name: "Share result" }));
+  await userEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
   return writeText.mock.calls[0]![0];
 }
@@ -64,7 +64,7 @@ describe("Daily Timeline screen", () => {
   it("grows the timeline on a right guess", async () => {
     const { container } = renderIn("en", <TimelineGame />);
     const { cards, song } = today();
-    placeAt(correctSlot(cards, song.year), container);
+    await placeAt(correctSlot(cards, song.year), container);
     expect(container.textContent).toContain("Nailed it! ✅");
     expect(container.textContent).toContain("Your timeline now has 1 song.");
     // The answer is revealed once placed.
@@ -79,7 +79,7 @@ describe("Daily Timeline screen", () => {
     const { container } = renderIn("en", <TimelineGame />);
     const { cards, song } = today();
     const wrong = [0, 1].find((s) => !isSlotCorrect(cards, s, song.year))!;
-    placeAt(wrong, container);
+    await placeAt(wrong, container);
     expect(container.textContent).toContain("Not quite ❌");
     expect(container.textContent).toContain(`“${song.title}” came out in ${song.year}.`);
     expect(container.textContent).toContain("belongs here");
@@ -89,10 +89,10 @@ describe("Daily Timeline screen", () => {
     );
   });
 
-  it("keeps the run going the next day", () => {
+  it("keeps the run going the next day", async () => {
     const first = renderIn("en", <TimelineGame />);
     const { cards, song } = today();
-    placeAt(correctSlot(cards, song.year), first.container);
+    await placeAt(correctSlot(cards, song.year), first.container);
     first.unmount();
     vi.setSystemTime(new Date("2026-11-02T10:00:00"));
     const { container } = renderIn("en", <TimelineGame />);
@@ -100,14 +100,14 @@ describe("Daily Timeline screen", () => {
     expect(screen.getAllByRole("button", { name: /^\+/ })).toHaveLength(3);
   });
 
-  it("offers a different song when the video can't play", () => {
+  it("offers a different song when the video can't play", async () => {
     renderIn("en", <TimelineGame />);
     const { song } = today();
     Object.assign(fakePlayer, { currentId: song.youtubeId, status: "error" });
     // Re-render with the player in its error state.
     const { container } = renderIn("en", <TimelineGame />);
     expect(container.textContent).toContain("This song can't be played here");
-    fireEvent.click(screen.getAllByRole("button", { name: "Give me a different song" })[0]!);
+    await userEvent.click(screen.getAllByRole("button", { name: "Give me a different song" })[0]!);
     expect(savedData().timeline.today?.skipped).toEqual([song.id]);
   });
 
@@ -115,7 +115,7 @@ describe("Daily Timeline screen", () => {
     const { container } = renderIn("en", <TimelineGame />);
     await expectAccessible(container);
     const { cards, song } = today();
-    placeAt(correctSlot(cards, song.year), container);
+    await placeAt(correctSlot(cards, song.year), container);
     await expectAccessible(container);
   });
 });

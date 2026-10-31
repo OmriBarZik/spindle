@@ -64,7 +64,7 @@ export function savedData(): SaveData {
 /** Fails with a readable list if axe finds accessibility problems. */
 export async function expectAccessible(container: HTMLElement) {
   const result = await axe.run(container, {
-    // jsdom can't compute colours or layout.
+    // Tests load components without the site CSS, so colours are not the real ones.
     rules: { "color-contrast": { enabled: false } },
   });
   const problems = result.violations.map(
