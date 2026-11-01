@@ -97,7 +97,7 @@ describe("Daily Five screen", () => {
     await userEvent.click(screen.getByRole("button", { name: "Share result" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(writeText).toHaveBeenCalledWith(
-      `Spindle Daily Five #1 3/5\n🟩🟥🟩🟩🟥\n${window.location.origin}`,
+      `Spindle Daily Five #1 3/5\n🟩🟥🟩🟩🟥\n${window.location.origin}/sort`,
     );
     await screen.findByRole("button", { name: "Copied!" });
   });
@@ -123,7 +123,7 @@ describe("Daily Five screen", () => {
     await userEvent.click(screen.getByRole("button", { name: "שיתוף התוצאה" }));
     await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(writeText).toHaveBeenCalledWith(
-      `Spindle החמישייה היומית #1 5/5 · רק שירים ישראליים\n🟩🟩🟩🟩🟩\n${window.location.origin}`,
+      `Spindle החמישייה היומית #1 5/5 · רק שירים ישראליים\n🟩🟩🟩🟩🟩\n${window.location.origin}/sort`,
     );
     expect(container.textContent).toContain(songs[0]!.titleHe);
   });
