@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
 import {
@@ -13,6 +13,7 @@ import {
   Stats,
 } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
+import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
 import { timelineShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
@@ -29,6 +30,13 @@ export default function TimelineGame() {
   const [slot, setSlot] = useState<number | null>(null);
   // Today's record glows green or red after the guess. There's no next song until tomorrow.
   const [swap, setSwap] = useState<DeckSwap | null>(null);
+
+  // How today's turn looked when the screen opened, reported once.
+  const [opened] = useState(() => {
+    const status = data.timeline.today?.result === "pending" ? "new" : "done";
+    return { mode: "timeline", status } as const;
+  });
+  useEffect(() => track("game_open", opened), [opened]);
 
   const t = data.timeline;
   const today = t.today;
@@ -75,7 +83,15 @@ export default function TimelineGame() {
         videoId={song.youtubeId}
         start={song.start}
         label={pending ? tr.timeline.today : String(song.year)}
-        onSkip={pending ? () => update((d) => skipTimelineSong(d, day)) : undefined}
+        onSkip={
+          pending
+            ? () => {
+                update((d) => skipTimelineSong(d, day));
+                track("song_skip", { mode: "timeline" });
+              }
+            : undefined
+        }
+        onPlay={() => track("song_play", { mode: "timeline", turn: songs + 1 })}
         swap={swap}
         onSwapEnd={() => setSwap(null)}
       />
@@ -117,7 +133,10 @@ export default function TimelineGame() {
           pickSpot={tr.timeline.pickSpot}
           onPlace={(at) => {
             player.stop();
-            setSwap({ correct: isSlotCorrect(t.cards, at, song.year), kind: "flash" });
+            const correct = isSlotCorrect(t.cards, at, song.year);
+            setSwap({ correct, kind: "flash" });
+            track("song_place", { mode: "timeline", turn: songs + 1, correct });
+            if (!correct) track("run_end", { mode: "timeline", songs });
             update((d) => placeTimelineCard(d, day, at));
           }}
         />
@@ -134,6 +153,7 @@ export default function TimelineGame() {
             ]}
           />
           <ShareButton
+            mode="timeline"
             text={timelineShareText(
               tr,
               day,

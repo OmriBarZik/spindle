@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Heebo, Roboto, Roboto_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { lang as langParam } from "next/root-params";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { dirOf, hasLocale, LOCALES } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { MESSAGES } from "@/i18n/messages";
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
       className={`${roboto.variable} ${robotoMono.variable} ${heebo.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <GoogleAnalytics />
         <I18nProvider lang={lang}>{children}</I18nProvider>
       </body>
     </html>

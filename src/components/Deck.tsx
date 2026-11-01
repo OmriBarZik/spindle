@@ -21,6 +21,8 @@ type Props = {
   start?: number;
   label?: string;
   onSkip?: () => void;
+  /** Called when the big button starts the song (not when it pauses). */
+  onPlay?: () => void;
   /** While set, the record animates and the play button is locked. */
   swap?: DeckSwap | null;
   onSwapEnd?: () => void;
@@ -37,6 +39,7 @@ export default function Deck({
   start = 0,
   label,
   onSkip,
+  onPlay,
   swap,
   onSwapEnd,
 }: Props) {
@@ -112,7 +115,11 @@ export default function Deck({
             ref={buttonRef}
             type="button"
             disabled={!player.ready || !videoId || Boolean(swap)}
-            onClick={() => videoId && player.toggle(videoId, start)}
+            onClick={() => {
+              if (!videoId) return;
+              if (!playing && !loading) onPlay?.();
+              player.toggle(videoId, start);
+            }}
             aria-label={playing || loading ? t.common.pause : t.common.play}
             className="absolute top-1/2 left-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40"
           >

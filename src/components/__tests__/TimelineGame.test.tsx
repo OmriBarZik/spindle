@@ -12,6 +12,7 @@ import {
   renderIn,
   savedData,
   setupGameTests,
+  trackedEvents,
 } from "@/test/helpers";
 
 vi.mock("@/lib/youtube", async (original) =>
@@ -89,6 +90,19 @@ describe("Daily Timeline screen", () => {
     );
   });
 
+  it("sends analytics events for a run that ends", async () => {
+    const { container } = renderIn("en", <TimelineGame />);
+    const { cards, song } = today();
+    const wrong = [0, 1].find((s) => !isSlotCorrect(cards, s, song.year))!;
+    await placeAt(wrong, container);
+    const mode = "timeline";
+    expect(trackedEvents()).toEqual([
+      ["game_open", { mode, status: "new" }],
+      ["song_place", { mode, turn: 1, correct: false }],
+      ["run_end", { mode, songs: 0 }],
+    ]);
+  });
+
   it("keeps the run going the next day", async () => {
     const first = renderIn("en", <TimelineGame />);
     const { cards, song } = today();
@@ -109,6 +123,7 @@ describe("Daily Timeline screen", () => {
     expect(container.textContent).toContain("This song can't be played here");
     await userEvent.click(screen.getAllByRole("button", { name: "Give me a different song" })[0]!);
     expect(savedData().timeline.today?.skipped).toEqual([song.id]);
+    expect(trackedEvents().at(-1)).toEqual(["song_skip", { mode: "timeline" }]);
   });
 
   it("has no accessibility violations", async () => {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LOCALE_COOKIE, localePath, LOCALES } from "@/i18n/config";
 import { useI18n } from "@/i18n/I18nProvider";
 import { MESSAGES } from "@/i18n/messages";
+import { track } from "@/lib/analytics";
 
 /** English / עברית toggle. Remembers the choice so unprefixed links open in it. */
 export default function LanguageSwitch({ path }: { path: string }) {
@@ -21,6 +22,7 @@ export default function LanguageSwitch({ path }: { path: string }) {
           hrefLang={l}
           aria-current={l === lang ? "true" : undefined}
           onClick={() => {
+            if (l !== lang) track("language_switch", { from: lang, to: l });
             document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
           }}
           className={`rounded-full px-2.5 py-1 transition ${
