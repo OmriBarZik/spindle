@@ -75,6 +75,9 @@ is a "default" served without a prefix.
 
 - **No backend.** All state lives in `localStorage` under the key `spindle:v1`
   (`src/lib/storage.ts`). There are no accounts and no API routes.
+- **Analytics.** Google Analytics 4 (`GA_MEASUREMENT_ID` in `src/app/[lang]/layout.tsx`) loads
+  through `@next/third-parties/google` after hydration. Keep `@next/third-parties` on the same
+  version as `next`. Song info is never sent to analytics.
 - **Client-only game screens.** `src/app/[lang]/{sort,timeline}/page.tsx` are server components
   that render `SortGameClient` and `TimelineGameClient` from `src/components/ClientOnly.tsx`.
   These use `next/dynamic` with `ssr: false`, because the initial state reads
