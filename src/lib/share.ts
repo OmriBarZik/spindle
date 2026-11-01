@@ -32,18 +32,21 @@ function onlyTag(t: Messages, langs: readonly SongLanguage[] | undefined): strin
 
 const lines = (...parts: string[]) => parts.join("\n");
 
-/** Daily Five share text: head, one square per song, link. */
+// Share links point at the game itself (`/sort`, `/timeline`) without a language prefix,
+// so the proxy sends each friend to it in their own language.
+
+/** Daily Five share text: head, one square per song, link to the game. */
 export function sortShareText(t: Messages, day: string, sortDay: SortDay, origin: string): string {
   const hits = sortDay.placements.filter((p) => p.correct).length;
   const head = t.sort.shareHead(puzzleNumber(day), hits, sortDay.songIds.length);
-  return lines(`${head}${onlyTag(t, sortDay.languages)}`, sortEmoji(sortDay), origin);
+  return lines(`${head}${onlyTag(t, sortDay.languages)}`, sortEmoji(sortDay), `${origin}/sort`);
 }
 
 export function sortEmoji(sortDay: SortDay): string {
   return sortDay.placements.map((p) => (p.correct ? "🟩" : "🟥")).join("");
 }
 
-/** Daily Timeline share text: head, run length, one square per song, link. */
+/** Daily Timeline share text: head, run length, one square per song, link to the game. */
 export function timelineShareText(
   t: Messages,
   day: string,
@@ -54,7 +57,8 @@ export function timelineShareText(
 ): string {
   const head = `${t.timeline.shareHead(puzzleNumber(day))}${onlyTag(t, langs)}`;
   const squares = "🟩".repeat(songs);
+  const link = `${origin}/timeline`;
   return wrong
-    ? lines(head, t.timeline.shareEnded(songs), `${squares}🟥`, origin)
-    : lines(head, t.timeline.shareAlive(songs), squares, origin);
+    ? lines(head, t.timeline.shareEnded(songs), `${squares}🟥`, link)
+    : lines(head, t.timeline.shareAlive(songs), squares, link);
 }

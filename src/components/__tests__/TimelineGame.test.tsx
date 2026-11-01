@@ -71,7 +71,7 @@ describe("Daily Timeline screen", () => {
     expect(container.textContent).toContain(song.title);
     expect(screen.queryByRole("button", { name: /^\+/ })).toBeNull();
     expect(await shareAndRead()).toBe(
-      `Spindle Timeline #1\n🔥 1 song and counting\n🟩\n${window.location.origin}`,
+      `Spindle Timeline #1\n🔥 1 song and counting\n🟩\n${window.location.origin}/timeline`,
     );
   });
 
@@ -85,7 +85,7 @@ describe("Daily Timeline screen", () => {
     expect(container.textContent).toContain("belongs here");
     expect(savedData().timeline.runOver).toBe(true);
     expect(await shareAndRead()).toBe(
-      `Spindle Timeline #1\n❌ Timeline ended at 0 songs\n🟥\n${window.location.origin}`,
+      `Spindle Timeline #1\n❌ Timeline ended at 0 songs\n🟥\n${window.location.origin}/timeline`,
     );
   });
 
