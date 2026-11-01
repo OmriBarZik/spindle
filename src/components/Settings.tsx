@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { localePath } from "@/i18n/config";
 import { useI18n } from "@/i18n/I18nProvider";
+import { track } from "@/lib/analytics";
 import { SONG_LANGUAGES, songLanguage, SONGS } from "@/lib/songs";
 import { setSongLanguage } from "@/lib/storage";
 import { useSave } from "@/lib/useSave";
@@ -41,7 +42,10 @@ export default function Settings() {
                   aria-describedby={`${id}-desc`}
                   disabled={locked}
                   title={locked ? t.settings.lastOne : undefined}
-                  onClick={() => update((d) => setSongLanguage(d, l, !on))}
+                  onClick={() => {
+                    update((d) => setSongLanguage(d, l, !on));
+                    track("song_languages_change", { song_language: l, enabled: !on });
+                  }}
                   className="flex w-full items-center gap-4 rounded-xl border border-line p-3 text-start transition hover:bg-white/5 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                 >
                   <span className="min-w-0 flex-1">

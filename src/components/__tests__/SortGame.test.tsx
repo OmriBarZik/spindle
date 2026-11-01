@@ -15,6 +15,7 @@ import {
   renderIn,
   savedData,
   setupGameTests,
+  trackedEvents,
 } from "@/test/helpers";
 
 vi.mock("@/lib/youtube", async (original) =>
@@ -100,6 +101,32 @@ describe("Daily Five screen", () => {
       `Spindle Daily Five #1 3/5\n🟩🟥🟩🟩🟥\n${window.location.origin}`,
     );
     await screen.findByRole("button", { name: "Copied!" });
+  });
+
+  it("sends analytics events through the day, without song details", async () => {
+    mockClipboard();
+    const { container } = renderIn("en", <SortGame />);
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+    for (let i = 0; i < 5; i++) await place(i, i !== 1, container);
+    await userEvent.click(screen.getByRole("button", { name: "Share result" }));
+    await vi.waitFor(() => expect(trackedEvents().at(-1)?.[0]).toBe("share"));
+
+    const mode = "daily_five";
+    expect(trackedEvents()).toEqual([
+      ["game_open", { mode, status: "new" }],
+      ["song_play", { mode, turn: 1 }],
+      ["song_place", { mode, turn: 1, correct: true }],
+      ["song_place", { mode, turn: 2, correct: false }],
+      ["song_place", { mode, turn: 3, correct: true }],
+      ["song_place", { mode, turn: 4, correct: true }],
+      ["song_place", { mode, turn: 5, correct: true }],
+      ["game_complete", { mode, score: 4, total: 5, perfect: false }],
+      ["share", { content_type: mode, method: "copied" }],
+    ]);
+    // Reopening a finished day says so.
+    container.remove();
+    renderIn("en", <SortGame />);
+    expect(trackedEvents().at(-1)).toEqual(["game_open", { mode, status: "done" }]);
   });
 
   it("tags the share text when the puzzle used one kind of song", async () => {

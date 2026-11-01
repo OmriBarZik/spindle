@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
 import {
@@ -13,6 +13,7 @@ import {
   Stats,
 } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
+import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
 import { useDropRecordFlight } from "@/lib/recordFlight";
 import { sortEmoji, sortShareText } from "@/lib/share";
@@ -35,6 +36,15 @@ export default function SortGame() {
   const [swap, setSwap] = useState<DeckSwap | null>(null);
   // A finished day has no Deck to land on, so let the home record fade away.
   useDropRecordFlight();
+
+  // How today's game looked when the screen opened, reported once.
+  const [opened] = useState(() => {
+    const d = data.sort.days[day];
+    const placed = d?.placements.length ?? 0;
+    const status = d && sortDayDone(d) ? "done" : placed > 0 ? "in_progress" : "new";
+    return { mode: "daily_five", status } as const;
+  });
+  useEffect(() => track("game_open", opened), [opened]);
 
   // `ensureSortDay` always prepares today, so this is only a type guard.
   const state = data.sort.days[day];
@@ -104,6 +114,7 @@ export default function SortGame() {
           videoId={current?.youtubeId ?? null}
           start={current?.start}
           label={done ? undefined : t.sort.deckLabel(turn + 1, total)}
+          onPlay={() => track("song_play", { mode: "daily_five", turn: turn + 1 })}
           swap={swap}
           onSwapEnd={() => setSwap(null)}
         />
@@ -137,10 +148,18 @@ export default function SortGame() {
           onPlace={(at) => {
             if (!current) return;
             player.stop();
-            setSwap({
-              correct: isSlotCorrect(line, at, current.year),
-              kind: turn + 1 < total ? "next" : "last",
-            });
+            const correct = isSlotCorrect(line, at, current.year);
+            setSwap({ correct, kind: turn + 1 < total ? "next" : "last" });
+            track("song_place", { mode: "daily_five", turn: turn + 1, correct });
+            if (turn + 1 === total) {
+              const final = hits + (correct ? 1 : 0);
+              track("game_complete", {
+                mode: "daily_five",
+                score: final,
+                total,
+                perfect: final === total,
+              });
+            }
             update((d) => placeSortSong(d, day, at));
             setSlot(null);
           }}
@@ -160,7 +179,10 @@ export default function SortGame() {
               [t.sort.stats.bestStreak, data.sort.stats.maxStreak],
             ]}
           />
-          <ShareButton text={sortShareText(t, day, state, window.location.origin)} />
+          <ShareButton
+            mode="daily_five"
+            text={sortShareText(t, day, state, window.location.origin)}
+          />
           <p className="text-sm text-muted">{t.sort.tomorrow}</p>
         </ResultCard>
       )}

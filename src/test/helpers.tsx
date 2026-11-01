@@ -21,6 +21,14 @@ export const fakePlayer: HiddenPlayer = {
   stop: vi.fn<HiddenPlayer["stop"]>(),
 };
 
+/** Stands in for the Google Analytics snippet's `window.gtag`. */
+export const gtag = vi.fn<NonNullable<Window["gtag"]>>();
+
+/** The analytics events sent so far, as `[name, params]`. */
+export function trackedEvents(): [string, Record<string, unknown>][] {
+  return gtag.mock.calls.map(([, name, params]) => [name, params]);
+}
+
 /** Mock factory for `@/lib/youtube` (call from `vi.mock`). */
 export async function mockYoutube(importOriginal: () => Promise<typeof Youtube>) {
   const real = await importOriginal();
@@ -36,12 +44,14 @@ export function setupGameTests(now = "2026-11-01T10:00:00") {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(now));
     window.localStorage.clear();
+    window.gtag = gtag;
     Object.assign(fakePlayer, { ready: true, currentId: null, status: "idle", time: 0 });
     vi.clearAllMocks();
   });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+    delete window.gtag;
   });
 }
 
