@@ -12,6 +12,7 @@ import {
 } from "react";
 import ExternalLink from "@/components/ExternalLink";
 import { useI18n } from "@/i18n/I18nProvider";
+import { canAnimate } from "@/lib/motion";
 import { getSong, songNames } from "@/lib/songs";
 import { slotLabel } from "@/lib/timeline";
 
@@ -143,9 +144,10 @@ export default function SwipeLine({
       const el = g?.track.querySelector(selector);
       if (!g || !el) return;
       const r = el.getBoundingClientRect();
+      // Glide only for players who haven't asked for reduced motion.
       g.track.scrollBy({
         left: r.left + r.width / 2 - g.mid,
-        behavior: smooth ? "smooth" : "instant",
+        behavior: smooth && canAnimate() ? "smooth" : "instant",
       });
     },
     [geometry],

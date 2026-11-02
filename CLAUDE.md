@@ -21,10 +21,11 @@ pnpm typecheck          # next typegen + tsc --noEmit (TypeScript 7, the native 
 pnpm check              # format check + lint + typecheck + tests (what CI runs, minus the build)
 pnpm build              # production build; all routes are static
 pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node runs the .mts directly)
+pnpm a11y               # after `pnpm build`: axe on every page in both languages, in Chromium with the real CSS
 ```
 
-Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
-runs format, lint, typecheck, tests and build on every PR and on `main`.
+Run `pnpm check`, `pnpm build` and `pnpm a11y` before pushing. CI (`.github/workflows/ci.yml`)
+runs format, lint, typecheck, tests, build and the accessibility check on every PR and on `main`.
 
 ## Game modes
 
@@ -201,8 +202,22 @@ is a "default" served without a prefix.
 - TypeScript is strict with `noUncheckedIndexedAccess`: indexing an array or record gives
   `T | undefined`, so handle the missing case (`getSong` accepts `undefined` for this).
 - Lint is strict and type-aware. Don't silence a rule without a comment saying why.
-- Accessibility: every control needs an accessible name; decorative emoji/SVGs get
-  `aria-hidden`; results are announced through `Announce`; the YouTube host is `inert`.
+- **Accessibility is checked in three layers; keep all three green:**
+  1. **Lint:** every `jsx-a11y` rule is an error in `.oxlintrc.json` (listed explicitly, since
+     oxlint only turns on some of them by category). Only `prefer-tag-over-role` is off, with its reason.
+  2. **Component tests:** `expectAccessible(container)` runs axe on each game state (no site
+     CSS there, so colour contrast is skipped).
+  3. **`pnpm a11y`** (`scripts/a11y.mts`): axe (WCAG 2.0–2.2 A/AA + best practices) on the built
+     site at phone width, both languages, every page, plus the games played through to their
+     answer and end-of-day screens. It also fails if a page scrolls sideways.
+     axe can't measure contrast over the gradient at the top of the page (it reports
+     "needs review" there, which doesn't fail), and it skips `aria-hidden` text. Check those by hand:
+     small text needs **4.5:1** (`--muted` on the background is 7.7:1; the rail's faint years use
+     `#8a8a96`, 5.7:1), and icons and borders need 3:1.
+- Every control needs an accessible name; decorative emoji/SVGs get `aria-hidden`; results are
+  announced through `Announce`; the YouTube host is `inert`. Anything that moves respects
+  `prefers-reduced-motion` (CSS media query, or `canAnimate()` in JavaScript). Focus rings must
+  stay visible: where a mask or `overflow` would clip one (the swipe line), draw it on a parent.
 
 ## Testing tips
 

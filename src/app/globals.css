@@ -322,6 +322,11 @@ body {
   .spin-slow {
     animation: none;
   }
+  .swipe-card,
+  .swipe-node,
+  .swipe-year {
+    transition: none;
+  }
   /* Keep the glow and the timing, but don't move the record. */
   /* [dir] so it also beats the Hebrew keyframes above. */
   [dir] .deck-swap {
@@ -371,6 +376,16 @@ body {
 }
 .swipe-track::-webkit-scrollbar {
   display: none;
+}
+/* The edge fade (mask) would clip a focus ring drawn on the strip itself,
+   so the ring goes around the whole line instead. */
+.swipe-track:focus-visible {
+  outline: none;
+}
+.swipe:has(.swipe-track:focus-visible) {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+  border-radius: 1rem;
 }
 .swipe-list {
   display: flex;
@@ -445,7 +460,8 @@ body {
   font-family: var(--font-roboto-mono), ui-monospace, monospace;
   font-size: 12px;
   line-height: 1;
-  color: #6b6b78;
+  /* 5.7:1 on the background: small text needs at least 4.5:1 (WCAG AA). */
+  color: #8a8a96;
   font-variant-numeric: tabular-nums;
   transition:
     font-size 0.2s ease,
