@@ -25,8 +25,8 @@ export function ModeSleeve({
         <span className="record-label" />
       </span>
       <span className="sleeve-tag font-mono">{tag}</span>
-      <span className="text-xl font-black">{name}</span>
-      <span className="sleeve-desc text-sm">{desc}</span>
+      <span className="text-xl font-black lg:text-3xl">{name}</span>
+      <span className="sleeve-desc text-sm lg:text-base">{desc}</span>
     </ModeLink>
   );
 }

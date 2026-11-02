@@ -7,6 +7,7 @@ import { DeckStatus } from "@/components/DeckStatus";
 import { DeckTransport } from "@/components/DeckTransport";
 import type { DeckSwap } from "@/hooks/useGameScreen";
 import type { HiddenPlayer } from "@/hooks/useHiddenPlayer";
+import { useKeyShortcut } from "@/hooks/useKeyShortcut";
 import { useI18n } from "@/i18n/I18nProvider";
 
 type Props = {
@@ -55,6 +56,19 @@ export function Deck({
     return loading ? t.common.loadingSong : "";
   }
 
+  const disabled = !player.ready || !videoId || Boolean(swap);
+  function toggle() {
+    if (!videoId) {
+      return;
+    }
+    if (!playing && !loading) {
+      onPlay?.();
+    }
+    player.toggle(videoId, start);
+  }
+  // Space plays and pauses from anywhere on the page, like a media player.
+  useKeyShortcut(" ", !disabled, toggle);
+
   const record = (
     <DeckRecord
       hostRef={hostRef}
@@ -62,18 +76,10 @@ export function Deck({
       busy={loading || !player.ready}
       spinning={playing}
       small={small}
-      disabled={!player.ready || !videoId || Boolean(swap)}
+      disabled={disabled}
       swap={swap}
       onSwapEnd={onSwapEnd}
-      onToggle={() => {
-        if (!videoId) {
-          return;
-        }
-        if (!playing && !loading) {
-          onPlay?.();
-        }
-        player.toggle(videoId, start);
-      }}
+      onToggle={toggle}
     />
   );
 

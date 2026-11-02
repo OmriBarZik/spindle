@@ -5,8 +5,10 @@ import { SwipeBrowse } from "@/components/SwipeBrowse";
 import { SwipeCard } from "@/components/SwipeCard";
 import { SwipeGap } from "@/components/SwipeGap";
 import { SwipeOverview } from "@/components/SwipeOverview";
+import { useSwipeDrag } from "@/hooks/useSwipeDrag";
 import { useSwipeKeys } from "@/hooks/useSwipeKeys";
 import { useSwipeTrack } from "@/hooks/useSwipeTrack";
+import { useSwipeWheel } from "@/hooks/useSwipeWheel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clamp } from "@/lib/clamp";
 import { directionSign } from "@/lib/directionSign";
@@ -24,8 +26,17 @@ import type { LineItem } from "@/lib/timeline";
  * When not placing, the record (if any) sits above the strip, which is centered
  * on `focus`.
  */
-/** A card plus its margins on a finished line: `.swipe-item` width + `.swipe-done .swipe-item` margins. */
+/**
+ * A card plus its margins on a finished line on a phone (`.swipe-item` width +
+ * `.swipe-done .swipe-item` margins). `donePitch` measures the real one.
+ */
 const DONE_PITCH = 120;
+
+/** The distance between two cards on a finished line, as laid out now. */
+function donePitch(track: HTMLElement): number {
+  const [a, b] = track.querySelectorAll<HTMLElement>(".swipe-item");
+  return a && b ? Math.abs(b.offsetLeft - a.offsetLeft) : DONE_PITCH;
+}
 
 export function SwipeLine({
   items,
@@ -54,7 +65,14 @@ export function SwipeLine({
   const placing = slot !== null;
   const choosing = placing && !reveal;
   const count = items.length;
-  const { trackRef, onScroll } = useSwipeTrack({ slot, count, focus, choosing, live, onSlot });
+  const { trackRef, pitchRef, onScroll, takeOver } = useSwipeTrack({
+    slot,
+    count,
+    focus,
+    choosing,
+    live,
+    onSlot,
+  });
 
   function step(delta: number) {
     const from = live.get() ?? slot;
@@ -67,16 +85,25 @@ export function SwipeLine({
     }
   }
 
-  /** Scroll the finished strip by `delta` cards (`DONE_PITCH`), in reading direction. */
+  /** Scroll the finished strip by `delta` cards, in reading direction. */
   function browseBy(delta: number) {
     const track = trackRef.current;
     track?.scrollBy({
-      left: delta * DONE_PITCH * directionSign(track),
+      left: delta * donePitch(track) * directionSign(track),
       behavior: canAnimate() ? "smooth" : "auto",
     });
   }
 
   useSwipeKeys({ choosing, count, onStep: step, onSlot });
+  useSwipeWheel({
+    trackRef,
+    choosing,
+    browse: !placing,
+    slot: () => live.get() ?? slot,
+    count,
+    onStep: step,
+  });
+  const drag = useSwipeDrag({ pitchRef, takeOver, choosing, count, onSlot });
 
   const flank = (i: number) => choosing && (i === slot - 1 || i === slot);
 
@@ -91,6 +118,7 @@ export function SwipeLine({
           // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- axe's scrollable-region-focusable needs it
           tabIndex={0}
           onScroll={onScroll}
+          {...drag}
           className="swipe-track"
         >
           <ol className="swipe-list">
@@ -121,13 +149,15 @@ export function SwipeLine({
       </div>
 
       {placing ? (
-        <SwipeOverview
-          items={items}
-          choosing={choosing}
-          live={live}
-          onStep={step}
-          onSlot={onSlot}
-        />
+        <div className="mx-auto w-full max-w-page">
+          <SwipeOverview
+            items={items}
+            choosing={choosing}
+            live={live}
+            onStep={step}
+            onSlot={onSlot}
+          />
+        </div>
       ) : null}
       {!placing && browse ? <SwipeBrowse onStep={browseBy} /> : null}
     </div>

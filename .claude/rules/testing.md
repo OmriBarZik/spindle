@@ -18,6 +18,13 @@ the fake recorded.
 - The one exception is `@/i18n/server` in `Pages.test.tsx`, since `next/root-params` only exists
   inside a Next build. A new exception needs a disable comment saying why it can't be avoided.
 
+## Real input
+
+Click and type with `userEvent` from `vitest/browser`. For what it can't do (dragging with the
+mouse, turning the wheel), use `mouseDrag` and `mouseWheel` from `src/test/realMouse.ts`, which drive
+Playwright's real mouse, so the browser makes the pointer events. Synthetic `PointerEvent`s are fine
+for a tap or click that doesn't move (`tapAt` in `recordControls.ts`).
+
 ## Parameterized tests use `test.for` / `it.for`, never a loop around `it`
 
 ```ts
@@ -50,3 +57,5 @@ it.for(items)("does something with $name", (item) => {
 - `lint-rules`: runs oxlint on samples to prove the rules in `lint/spindle-rules.mjs` still work.
 - `browser`: components, in Chromium (`src/components/**/*.test.tsx`).
 - `performance`: swiping on a slowed-down CPU (`*.perf.test.tsx`). It runs last and alone.
+  **Don't run it on a remote or cloud machine**: they're too noisy, so it fails even on `main`.
+  There, use `pnpm vitest run --project '!performance-*'` and leave this check to CI.

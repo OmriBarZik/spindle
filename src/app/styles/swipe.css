@@ -5,6 +5,8 @@
    Vertical layout (tokens.css): track padding + card + stem + half a node is the
    rail (`--swipe-rail`, measured from the top of the list). */
 .swipe {
+  --size-record-small: var(--swipe-record);
+
   position: relative;
   height: var(--swipe-height);
 }
@@ -125,9 +127,15 @@
 /* Fixed rows, so a card's year, title, artist, "watch" and note sit at the same
    height as its neighbours', whatever the language or the title's length. */
 .swipe-title {
-  /* Two lines of text-sm, even for a one-line title. */
+  /* Two lines of text-sm (text-base on a desktop), even for a one-line title. */
   height: calc(2 * var(--text-sm--line-height));
   flex: none;
+}
+
+@variant lg {
+  .swipe-title {
+    height: calc(2 * var(--text-base--line-height));
+  }
 }
 
 /* Names have dir="auto"; align them with the page, not with their own language. */
@@ -351,6 +359,22 @@
 
 .swipe-map-anchor {
   background: var(--color-secondary);
+}
+
+/* With a mouse the strip is dragged (useSwipeDrag.ts); a click moves the record to
+   the nearest gap. Snapping waits until the drag ends. */
+@media (hover: hover) and (pointer: fine) {
+  .swipe-track {
+    cursor: grab;
+
+    /* A drag would otherwise select the cards' text before it starts moving the strip. */
+    user-select: none;
+  }
+}
+
+.swipe-track.swipe-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

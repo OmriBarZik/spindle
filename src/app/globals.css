@@ -95,3 +95,34 @@ body {
 .btn-primary:disabled {
   opacity: 0.4;
 }
+
+/* Keyboard shortcuts (KeyHints.tsx): only for a mouse or trackpad, where there's a keyboard. */
+.key-hints {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-100) var(--spacing-300);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  color: var(--color-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .key-hints {
+    display: flex;
+  }
+}
+
+.key-hints kbd {
+  display: inline-block;
+  min-width: var(--spacing-300);
+  margin-inline-end: var(--spacing-50);
+  padding: 0 var(--spacing-50);
+  border: var(--border-thin) solid var(--color-line);
+  border-bottom-width: var(--border-thick);
+  border-radius: var(--spacing-50);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  text-align: center;
+}

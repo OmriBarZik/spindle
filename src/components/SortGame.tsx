@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Announce } from "@/components/Announce";
 import { Deck } from "@/components/Deck";
+import { KeyHints } from "@/components/KeyHints";
 import { PlaceButton } from "@/components/PlaceButton";
 import { ScreenMain } from "@/components/ScreenMain";
 import { SortFeedback } from "@/components/SortFeedback";
@@ -115,7 +116,16 @@ export function SortGame() {
       {done ? (
         <SortResult day={day} state={state} stats={data.sort.stats} score={score} />
       ) : (
-        <PlaceButton live={live} cards={line} slot={at} disabled={Boolean(swap)} onPlace={place} />
+        <>
+          <PlaceButton
+            live={live}
+            cards={line}
+            slot={at}
+            disabled={Boolean(swap)}
+            onPlace={place}
+          />
+          <KeyHints />
+        </>
       )}
     </ScreenMain>
   );

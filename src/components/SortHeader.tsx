@@ -19,7 +19,9 @@ export function SortHeader({ state }: { state: SortDay }) {
   return (
     <section className="text-center">
       <h1 className="text-2xl font-bold">{t.sort.name}</h1>
-      <p className="mt-50 text-sm text-muted">{t.sort.intro(state.anchorYear)}</p>
+      <p className="mx-auto mt-50 max-w-page text-sm text-muted">
+        {t.sort.intro(state.anchorYear)}
+      </p>
       <div
         className="mt-150 flex justify-center gap-100"
         role="img"

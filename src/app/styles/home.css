@@ -1,5 +1,37 @@
 /* ---------- Home page: each game mode is a record sleeve (ModeSleeve.tsx) ---------- */
 
+/* On a phone the home page is one column. On a desktop the headline, "This week" and
+   "How to play" sit on one side and the sleeves, bigger, on the other. */
+@variant lg {
+  .home {
+    display: grid;
+    grid-template:
+      "hero sleeves" auto
+      "side sleeves" 1fr
+      "foot foot" auto / minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--spacing-400) var(--spacing-600);
+    padding-top: var(--spacing-400);
+  }
+
+  .home-hero {
+    grid-area: hero;
+  }
+
+  .home-side {
+    grid-area: side;
+  }
+
+  .home .sleeves {
+    grid-area: sleeves;
+    align-self: start;
+    column-gap: var(--spacing-300);
+  }
+
+  .home-foot {
+    grid-area: foot;
+  }
+}
+
 /* The sleeves share their rows (tag, name, description) through a subgrid, so each row
    lines up with its neighbour even when one name wraps (as "החמישייה היומית" does). */
 .sleeves {
@@ -30,6 +62,15 @@
   color: var(--color-on-game);
   box-shadow: var(--shadow-sleeve);
   transition: transform var(--duration-fast) ease;
+}
+
+@variant lg {
+  .sleeve {
+    --sleeve-record-peek: var(--sleeve-record-peek-wide);
+    --sleeve-top: var(--sleeve-top-wide);
+
+    padding-bottom: var(--spacing-400);
+  }
 }
 
 .sleeve:hover {
@@ -66,6 +107,13 @@
   width: var(--size-record-small);
   height: var(--size-record-small);
   border-radius: var(--radius-pill);
+}
+
+@variant lg {
+  .sleeve-record {
+    width: var(--size-record);
+    height: var(--size-record);
+  }
 }
 
 .sleeve-tag {
