@@ -30,10 +30,6 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
-  redirects() {
-    // Daily Timeline was replaced by Marathon; old links and bookmarks land on the new mode.
-    return [{ source: "/:lang/timeline", destination: "/:lang/marathon", permanent: false }];
-  },
   headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

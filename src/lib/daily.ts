@@ -105,3 +105,29 @@ export function marathonAnchorYearFor(day: string, langs?: readonly Locale[]): n
   const pick = shuffled(`marathon-anchor:${day}`, langs).find((s) => s.year !== first?.year);
   return pick?.year ?? FALLBACK_YEAR;
 }
+
+/** Starting year for a new Daily Timeline, different from the first song's year. */
+export function timelineAnchorYearFor(
+  day: string,
+  songYear: number,
+  langs?: readonly Locale[],
+): number {
+  const pick = shuffled(`timeline-anchor:${day}`, langs).find((s) => s.year !== songYear);
+  return pick?.year ?? FALLBACK_YEAR;
+}
+
+/**
+ * Pick the daily "Timeline" song. The day's sort songs are excluded (no spoilers),
+ * as are songs already on the player's timeline and any songs they skipped
+ * because the video couldn't play.
+ */
+export function timelineSongFor(
+  day: string,
+  exclude: ReadonlySet<string>,
+  langs?: readonly Locale[],
+): Song | undefined {
+  const sortIds = new Set(sortSongsFor(day, langs).map((s) => s.id));
+  const ok = (s: Song) => !sortIds.has(s.id) && !exclude.has(s.id);
+  // If the chosen languages run out (a very long run), fall back to any song.
+  return shuffled(`timeline:${day}`, langs).find(ok) ?? shuffled(`timeline:${day}`).find(ok);
+}

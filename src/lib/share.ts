@@ -34,7 +34,7 @@ function onlyTag(t: Messages, langs: readonly Locale[] | undefined): string {
 
 const lines = (...parts: string[]) => parts.join("\n");
 
-// Share links point at the game itself (`/sort`, `/marathon`) without a language prefix,
+// Share links point at the game itself (`/sort`, `/marathon`, `/timeline`) without a language prefix,
 // so the proxy sends each friend to it in their own language.
 
 /** Daily Five share text: head, one square per song, link to the game. */
@@ -66,4 +66,19 @@ export function marathonShareText(
     squares.slice(i * SQUARES_PER_ROW, (i + 1) * SQUARES_PER_ROW).join(""),
   );
   return lines(`${head}${onlyTag(t, marathonDay.languages)}`, ...rows, `${origin}/marathon`);
+}
+
+/** Daily Timeline share text: head, run length, one square per song, link to the game. */
+export function timelineShareText(
+  t: Messages,
+  day: string,
+  { songs, wrong, langs }: { songs: number; wrong: boolean; langs: readonly Locale[] },
+  origin: string,
+): string {
+  const head = `${t.timeline.shareHead(puzzleNumber(day))}${onlyTag(t, langs)}`;
+  const squares = "🟩".repeat(songs);
+  const link = `${origin}/timeline`;
+  return wrong
+    ? lines(head, t.timeline.shareEnded(songs), `${squares}🟥`, link)
+    : lines(head, t.timeline.shareAlive(songs), squares, link);
 }

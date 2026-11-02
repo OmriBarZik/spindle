@@ -96,6 +96,6 @@ it("loadSave: gives a save from before Marathon an empty one, and keeps the rest
   const d = loadSave();
   expect(d.marathon).toEqual(emptySave().marathon);
   expect(d.sort.stats.played).toBe(1);
-  // The retired Daily Timeline's data is left as it was, not deleted.
-  expect((d as unknown as { timeline: unknown }).timeline).toEqual(timeline);
+  // The hidden Daily Timeline keeps its progress.
+  expect(d.timeline).toEqual({ ...emptySave().timeline, ...timeline });
 });

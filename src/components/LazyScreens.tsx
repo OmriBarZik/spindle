@@ -5,6 +5,7 @@ import { GameLoading } from "@/components/GameLoading";
 import { WeekStripLoading } from "@/components/WeekStripLoading";
 
 const loadSort = () => import("@/components/SortGame").then((m) => m.SortGame);
+const loadTimeline = () => import("@/components/TimelineGame").then((m) => m.TimelineGame);
 const loadMarathon = () => import("@/components/MarathonGame").then((m) => m.MarathonGame);
 
 /**
@@ -21,6 +22,12 @@ function ignore(): void {
 }
 
 export const SortGameClient = dynamic(loadSort, {
+  ssr: false,
+  loading: GameLoading,
+});
+
+/** Daily Timeline, kept as a hidden page (not linked or preloaded from the home page). */
+export const TimelineGameClient = dynamic(loadTimeline, {
   ssr: false,
   loading: GameLoading,
 });

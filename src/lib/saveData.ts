@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/config";
 import type { Song } from "./songs";
+import type { TimelineCard } from "./timeline";
 
 export type SortPlacement = { slot: number; correct: boolean };
 
@@ -51,6 +52,30 @@ export type MarathonStats = {
   totalHits: number;
 };
 
+export type TimelineToday = {
+  date: string;
+  songId: string;
+  /** Songs skipped today because the video was unavailable. */
+  skipped: string[];
+  /**
+   * pending: not answered yet
+   * correct / wrong: result of today's placement
+   */
+  result: "pending" | "correct" | "wrong";
+  slot?: number;
+};
+
+export type TimelineState = {
+  cards: TimelineCard[];
+  runStart: string | null;
+  /** Last day the player completed a turn in the current run. */
+  lastDate: string | null;
+  runOver: boolean;
+  best: number;
+  runs: number;
+  today: TimelineToday | null;
+};
+
 type SaveSettings = {
   /** Which songs can appear in new puzzles. Never empty. */
   songLanguages: Locale[];
@@ -59,6 +84,7 @@ type SaveSettings = {
 export type SaveData = {
   version: 1;
   sort: { days: Record<string, SortDay>; stats: SortStats };
+  timeline: TimelineState;
   marathon: { days: Record<string, MarathonDay>; stats: MarathonStats };
   settings: SaveSettings;
 };

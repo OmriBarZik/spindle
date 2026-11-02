@@ -1,6 +1,13 @@
 import { expect, it } from "vitest";
 import type { Locale } from "@/i18n/config";
-import { anchorYearFor, marathonAnchorYearFor, marathonSongsFor, sortSongsFor } from "@/lib/daily";
+import {
+  anchorYearFor,
+  marathonAnchorYearFor,
+  marathonSongsFor,
+  sortSongsFor,
+  timelineAnchorYearFor,
+  timelineSongFor,
+} from "@/lib/daily";
 import { addDays } from "@/lib/dates";
 import { hashString, mulberry32, seededShuffle } from "@/lib/random";
 
@@ -20,11 +27,14 @@ const days = Array.from({ length: 30 }, (_, i) => addDays("2026-10-20", i));
 it.for(settings)("daily picks are stable: for $name", ({ langs }) => {
   const picks = days.map((day) => {
     const five = sortSongsFor(day, langs);
+    const timeline = timelineSongFor(day, new Set(), langs)!;
     const marathon = marathonSongsFor(day, langs).slice(0, 10);
     return [
       day,
       five.map((s) => s.id).join(","),
       anchorYearFor(day, langs),
+      timeline.id,
+      timelineAnchorYearFor(day, timeline.year, langs),
       marathon.map((s) => s.id).join(","),
       marathonAnchorYearFor(day, langs),
     ].join(" ");

@@ -15,6 +15,7 @@ export type Messages = {
     description: string;
     sortTitle: string;
     marathonTitle: string;
+    timelineTitle: string;
     settingsTitle: string;
   };
   common: {
@@ -107,6 +108,24 @@ export type Messages = {
     placedWrong: string;
     openOnYouTube: (title: string) => string;
   };
+  timeline: {
+    name: string;
+    noSong: string;
+    introFirst: (year: number) => string;
+    introPending: string;
+    introDone: string;
+    dayLine: (day: number, best: number) => string;
+    today: string;
+    belongsHere: string;
+    nailed: string;
+    notQuite: string;
+    correctMsg: (songs: number) => string;
+    wrongMsg: (title: string, year: number, songs: number) => ReactNode;
+    stats: { songs: string; best: string; runs: string; day: string };
+    shareHead: (n: number) => string;
+    shareEnded: (songs: number) => string;
+    shareAlive: (songs: number) => string;
+  };
 };
 
 const enSongs = (n: number) => `${n} song${n === 1 ? "" : "s"}`;
@@ -118,6 +137,7 @@ const en: Messages = {
       "Listen to songs without seeing the titles and put them in order by release year. A new puzzle every day.",
     sortTitle: "Daily Five · Spindle",
     marathonTitle: "Marathon · Spindle",
+    timelineTitle: "Daily Timeline · Spindle",
     settingsTitle: "Settings · Spindle",
   },
   common: {
@@ -249,6 +269,31 @@ const en: Messages = {
     placedWrong: "Placed wrong:",
     openOnYouTube: (title) => `Watch “${title}” on YouTube`,
   },
+  timeline: {
+    name: "Daily Timeline",
+    noSong: "No song available today.",
+    introFirst: (year) =>
+      `Day 1 of a new timeline, starting at ${year}. Is today's song from before or after?`,
+    introPending: "Listen to today's song and drop it where it belongs on your timeline.",
+    introDone: "Come back tomorrow for your next song.",
+    dayLine: (day, best) => `Timeline day ${day} · Best ${best}`,
+    today: "Today",
+    belongsHere: "belongs here",
+    nailed: "Nailed it! ✅",
+    notQuite: "Not quite ❌",
+    correctMsg: (songs) =>
+      `Your timeline now has ${enSongs(songs)}. Each day adds a gap and gets harder — don't miss a day!`,
+    wrongMsg: (title, year, songs) => (
+      <>
+        “<bdi>{title}</bdi>” came out in {year}. Your timeline ended at {enSongs(songs)}. A fresh
+        one starts tomorrow.
+      </>
+    ),
+    stats: { songs: "Songs", best: "Best", runs: "Runs", day: "Day" },
+    shareHead: (n) => `Spindle Timeline #${n}`,
+    shareEnded: (songs) => `❌ Timeline ended at ${enSongs(songs)}`,
+    shareAlive: (songs) => `🔥 ${enSongs(songs)} and counting`,
+  },
 };
 
 const heSongs = (n: number) => (n === 1 ? "שיר אחד" : `${n} שירים`);
@@ -260,6 +305,7 @@ const he: Messages = {
       "האזינו לשירים בלי לראות את השמות שלהם וסדרו אותם לפי שנת היציאה. חידה חדשה בכל יום.",
     sortTitle: "החמישייה היומית · Spindle",
     marathonTitle: "מרתון · Spindle",
+    timelineTitle: "ציר הזמן היומי · Spindle",
     settingsTitle: "הגדרות · Spindle",
   },
   common: {
@@ -389,6 +435,30 @@ const he: Messages = {
     placedRight: "שובץ נכון:",
     placedWrong: "שובץ לא נכון:",
     openOnYouTube: (title) => `לצפייה ב״${title}״ ב־YouTube`,
+  },
+  timeline: {
+    name: "ציר הזמן היומי",
+    noSong: "אין שיר זמין היום.",
+    introFirst: (year) => `יום 1 בציר זמן חדש, שמתחיל ב־${year}. השיר של היום יצא לפני או אחרי?`,
+    introPending: "האזינו לשיר של היום ושבצו אותו במקום הנכון בציר הזמן שלכם.",
+    introDone: "חזרו מחר לשיר הבא.",
+    dayLine: (day, best) => `יום ${day} בציר · שיא ${best}`,
+    today: "היום",
+    belongsHere: "המקום שלו כאן",
+    nailed: "בול! ✅",
+    notQuite: "לא בדיוק ❌",
+    correctMsg: (songs) =>
+      `בציר הזמן שלכם יש עכשיו ${heSongs(songs)}. כל יום מוסיף רווח ונהיה קשה יותר — אל תפספסו יום!`,
+    wrongMsg: (title, year, songs) => (
+      <>
+        ״<bdi>{title}</bdi>״ יצא ב־{year}. ציר הזמן שלכם נגמר אחרי {heSongs(songs)}. ציר חדש מתחיל
+        מחר.
+      </>
+    ),
+    stats: { songs: "שירים", best: "שיא", runs: "סבבים", day: "יום" },
+    shareHead: (n) => `Spindle ציר הזמן #${n}`,
+    shareEnded: (songs) => `❌ ציר הזמן נגמר אחרי ${heSongs(songs)}`,
+    shareAlive: (songs) => `🔥 ${heSongs(songs)} וממשיכים`,
   },
 };
 

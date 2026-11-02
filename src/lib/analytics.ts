@@ -8,7 +8,7 @@ import type { Locale } from "@/i18n/config";
  * people play, and they must never be able to reveal an answer.
  */
 
-export type GameMode = "daily_five" | "marathon";
+export type GameMode = "daily_five" | "marathon" | "timeline";
 
 type Events = {
   /** A game screen opened. `status` is the state of today's game at that moment. */
@@ -24,8 +24,10 @@ type Events = {
   game_complete:
     | { mode: "daily_five"; score: number; total: number; perfect: boolean }
     | { mode: "marathon"; score: number };
-  /** Marathon: the current video wouldn't play, so the player asked for another. */
-  song_skip: { mode: "marathon" };
+  /** Daily Timeline (hidden page): a wrong guess ended the run. `songs` is how many it had placed. */
+  run_end: { mode: "timeline"; songs: number };
+  /** The current video wouldn't play, so the player asked for another. */
+  song_skip: { mode: "marathon" | "timeline" };
   /** The share button. `method` is what happened (GA's recommended `share` event). */
   share: { content_type: GameMode; method: "shared" | "copied" | "failed" };
   language_switch: { from: Locale; to: Locale };
