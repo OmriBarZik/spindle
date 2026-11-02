@@ -199,11 +199,11 @@ describe("Daily Five screen", () => {
     await moveRecordTo(container, slot === 0 ? 1 : 0);
     await userEvent.click(placeButton());
     // The answer sits beside the record, and the choosing glow is gone.
-    expect(container.querySelector(".swipe-span")).toBeNull();
+    expect(container.querySelector(".swipe-gap-on")).toBeNull();
     expect(container.querySelector(".swipe-lit")).toBeNull();
     expect(container.querySelector(".card-bad")).not.toBeNull();
     fireEvent.animationEnd(container.querySelector(".deck-swap")!);
-    expect(container.querySelector(".swipe-span")).not.toBeNull();
+    expect(container.querySelector(".swipe-gap-on")).not.toBeNull();
   });
 
   it("keeps the hidden YouTube player out of reach", () => {

@@ -322,9 +322,7 @@ body {
   .spin-slow {
     animation: none;
   }
-  .swipe-card,
-  .swipe-node,
-  .swipe-year {
+  .swipe-glow {
     transition: none;
   }
   /* Keep the glow and the timing, but don't move the record. */
@@ -394,11 +392,51 @@ body {
   background: linear-gradient(var(--line), var(--line)) 0 176px / 100% 2px no-repeat;
 }
 .swipe-gap {
+  position: relative;
   flex: none;
+  /* SwipeLine's PITCH is this width plus a card's (104px): keep them in step. */
   width: 156px;
   height: 1px;
   scroll-snap-align: center;
 }
+/* The glowing stretch of rail between the two lit years. It lives inside the gap,
+   so it scrolls with the strip for free (on the compositor, with no JavaScript),
+   and only its opacity changes when the record moves to another gap.
+   It reaches from the older card's node to the newer one's (52px past each side
+   of the gap: half a card), stopping 10px short so the lit nodes sit on top.
+   Rail centre in the list: card 150 + stem 22 + half a node 5 = 177px. */
+.swipe-glow {
+  position: absolute;
+  top: 174px;
+  height: 6px;
+  inset-inline: -42px;
+  border-radius: 6px;
+  background: #a78bfa;
+  box-shadow: 0 0 18px rgb(167 139 250 / 0.65);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  will-change: opacity;
+  pointer-events: none;
+}
+.swipe-gap-on .swipe-glow {
+  opacity: 1;
+}
+/* No song on that side: "any time before / after", fading out to the edge. */
+.swipe-glow-open-start {
+  inset-inline-start: -260px;
+  background: linear-gradient(to right, transparent, #a78bfa 70%);
+}
+.swipe-glow-open-end {
+  inset-inline-end: -260px;
+  background: linear-gradient(to right, #a78bfa 30%, transparent);
+}
+[dir="rtl"] .swipe-glow-open-start {
+  background: linear-gradient(to left, transparent, #a78bfa 70%);
+}
+[dir="rtl"] .swipe-glow-open-end {
+  background: linear-gradient(to left, #a78bfa 30%, transparent);
+}
+
 .swipe-item {
   flex: none;
   width: 104px;
@@ -414,8 +452,6 @@ body {
   gap: 4px;
   padding: 10px;
   overflow: hidden;
-  transform-origin: center bottom;
-  transition: border-color 0.2s ease;
 }
 .swipe-lit .swipe-card:not(.card-good, .card-bad) {
   border-color: rgb(167 139 250 / 0.6);
@@ -425,6 +461,10 @@ body {
   height: 22px;
   background: var(--line);
 }
+/* Lighting up is instant: the lit pair changes every few frames mid-swipe, and
+   transitions on the years and nodes (or on colours, shadows and font weight) kept
+   the main thread busy and made swipes stutter. Only the glow fades, on its own
+   compositor layer. */
 .swipe-node {
   position: relative;
   width: 10px;
@@ -432,10 +472,18 @@ body {
   border-radius: 9999px;
   background: #6b6b78;
   box-shadow: 0 0 0 4px var(--background);
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+}
+/* The lit look is its own layer, faded in with opacity. */
+.swipe-node::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #a78bfa;
+  box-shadow:
+    0 0 0 3px var(--background),
+    0 0 16px rgb(167 139 250 / 0.9);
+  opacity: 0;
 }
 .card-anchor ~ .swipe-node {
   background: #8b5cf6;
@@ -449,51 +497,30 @@ body {
   transform: scale(1.5);
 }
 .swipe-lit .swipe-node {
-  background: #a78bfa;
   transform: scale(1.5);
-  box-shadow:
-    0 0 0 3px var(--background),
-    0 0 16px rgb(167 139 250 / 0.9);
 }
+.swipe-lit .swipe-node::after {
+  opacity: 1;
+}
+/* The year on the rail. It grows with transform rather than font-size, so lighting
+   up a pair of years never re-lays out the strip. */
 .swipe-year {
   margin-top: 8px;
+  transform-origin: center top;
   font-family: var(--font-roboto-mono), ui-monospace, monospace;
   font-size: 12px;
   line-height: 1;
   /* 5.7:1 on the background: small text needs at least 4.5:1 (WCAG AA). */
   color: #8a8a96;
   font-variant-numeric: tabular-nums;
-  transition:
-    font-size 0.2s ease,
-    color 0.2s ease;
+  /* Always bold: changing the weight would re-lay out the text. */
+  font-weight: 700;
 }
 .swipe-lit .swipe-year,
 .card-good ~ .swipe-year,
 .card-bad ~ .swipe-year {
-  font-size: 22px;
-  font-weight: 700;
+  transform: scale(1.8);
   color: var(--foreground);
-}
-/* The glowing stretch of rail between the two lit years (placed by SwipeLine). */
-.swipe-span {
-  position: absolute;
-  top: 182px;
-  height: 6px;
-  border-radius: 6px;
-  background: #a78bfa;
-  box-shadow: 0 0 18px rgb(167 139 250 / 0.65);
-  pointer-events: none;
-  z-index: 1;
-}
-/* No song on that side: "any time before / after", fading out to the edge. */
-.swipe-span-fade-left {
-  background: linear-gradient(to right, transparent, #a78bfa 70%);
-}
-.swipe-span-fade-right {
-  background: linear-gradient(to right, #a78bfa 30%, transparent);
-}
-.swipe-span-fade-left.swipe-span-fade-right {
-  background: linear-gradient(to right, transparent, #a78bfa, transparent);
 }
 .swipe-record {
   position: absolute;

@@ -61,97 +61,17 @@ export default function SwipeLine({
   const placing = slot !== null;
   const choosing = placing && !reveal;
   const count = items.length;
-  const stageRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const spanRef = useRef<HTMLDivElement>(null);
   // The gap last reported by (or steered to on behalf of) the player.
   const shownRef = useRef<number | null>(null);
   const countRef = useRef(count);
   // While we scroll the strip ourselves, its passing gaps aren't the player's choice.
   const steeringRef = useRef(false);
   const steerTimerRef = useRef(0);
-  const frameRef = useRef(0);
-
-  /** Where each piece is on screen, in the strip's reading direction. */
-  const geometry = useCallback(() => {
-    const track = trackRef.current;
-    const stage = stageRef.current;
-    if (!track || !stage) return null;
-    const rtl = getComputedStyle(track).direction === "rtl";
-    const box = track.getBoundingClientRect();
-    const mid = box.left + box.width / 2;
-    return { track, stage, rtl, box, mid };
-  }, []);
-
-  /** Recede the cards away from the middle, and stretch the glow between the lit years. */
-  const paint = useCallback(() => {
-    const g = geometry();
-    if (!g) return;
-    for (const card of g.track.querySelectorAll<HTMLElement>("[data-card]")) {
-      const r = card.getBoundingClientRect();
-      const d = Math.min(1, Math.max(0, Math.abs(r.left + r.width / 2 - g.mid) - 150) / 260);
-      card.style.transform = d ? `scale(${1 - d * 0.12})` : "";
-      card.style.opacity = d ? String(1 - d * 0.5) : "";
-    }
-    const span = spanRef.current;
-    const at = shownRef.current;
-    if (!span || at === null) return;
-    const stageBox = g.stage.getBoundingClientRect();
-    const nodeX = (i: number) => {
-      const node = g.track.querySelector(`[data-node="${i}"]`);
-      if (!node) return null;
-      const r = node.getBoundingClientRect();
-      return r.left + r.width / 2 - stageBox.left;
-    };
-    // With no song on one side, the glow runs out to that edge (older is left in LTR).
-    const older = nodeX(at - 1) ?? (g.rtl ? stageBox.width : 0);
-    const newer = nodeX(at) ?? (g.rtl ? 0 : stageBox.width);
-    const openOld = at === 0;
-    const openNew = at === countRef.current;
-    // Stop short of the lit nodes so they stay on top of the glow.
-    const inset = (open: boolean) => (open ? 0 : 9);
-    const leftInset = inset(g.rtl ? openNew : openOld);
-    const rightInset = inset(g.rtl ? openOld : openNew);
-    const x0 = Math.min(older, newer) + leftInset;
-    const x1 = Math.max(older, newer) - rightInset;
-    span.style.left = `${x0}px`;
-    span.style.width = `${Math.max(0, x1 - x0)}px`;
-    span.classList.toggle("swipe-span-fade-left", g.rtl ? openNew : openOld);
-    span.classList.toggle("swipe-span-fade-right", g.rtl ? openOld : openNew);
-  }, [geometry]);
-
-  /** The gap nearest the middle of the strip. */
-  const nearestGap = useCallback(() => {
-    const g = geometry();
-    if (!g) return null;
-    let best: number | null = null;
-    let bestDistance = Infinity;
-    for (const gap of g.track.querySelectorAll<HTMLElement>("[data-gap]")) {
-      const r = gap.getBoundingClientRect();
-      const distance = Math.abs(r.left + r.width / 2 - g.mid);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = Number(gap.dataset.gap);
-      }
-    }
-    return best;
-  }, [geometry]);
-
-  /** Scroll so `selector`'s element is in the middle of the strip. */
-  const center = useCallback(
-    (selector: string, smooth: boolean) => {
-      const g = geometry();
-      const el = g?.track.querySelector(selector);
-      if (!g || !el) return;
-      const r = el.getBoundingClientRect();
-      // Glide only for players who haven't asked for reduced motion.
-      g.track.scrollBy({
-        left: r.left + r.width / 2 - g.mid,
-        behavior: smooth && canAnimate() ? "smooth" : "instant",
-      });
-    },
-    [geometry],
-  );
+  // A swipe tells React (and so the place button) only once the strip comes to rest.
+  const reportTimerRef = useRef(0);
+  // 1 for left-to-right, −1 for right-to-left; read once, not on every scroll.
+  const dirRef = useRef(1);
 
   const settle = useCallback(() => {
     window.clearTimeout(steerTimerRef.current);
@@ -161,48 +81,70 @@ export default function SwipeLine({
   }, []);
 
   // Follow `slot` when it changes from outside (a button, a new song), and
-  // re-center when the line itself changes.
+  // re-center when the line itself changes. Nothing here runs while scrolling.
   useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    dirRef.current = direction(track);
     const lineChanged = countRef.current !== count;
     countRef.current = count;
+    // Glide only for players who haven't asked for reduced motion.
+    const behavior = (smooth: boolean) => (smooth && canAnimate() ? "smooth" : "instant");
     if (slot === null) {
       shownRef.current = null;
-      center(`[data-item="${focus}"]`, false);
-      paint();
+      const item = track.querySelector(`[data-item="${focus}"]`);
+      if (!item) return;
+      const r = item.getBoundingClientRect();
+      const box = track.getBoundingClientRect();
+      track.scrollBy({
+        left: r.left + r.width / 2 - (box.left + box.width / 2),
+        behavior: "instant",
+      });
       return;
     }
     if (slot !== shownRef.current || lineChanged) {
       const first = shownRef.current === null || lineChanged;
       shownRef.current = slot;
       steeringRef.current = true;
-      center(`[data-gap="${slot}"]`, !first);
+      // Gap `slot` is centered at scrollLeft = slot × PITCH (negative in RTL).
+      track.scrollTo({ left: dirRef.current * slot * PITCH, behavior: behavior(!first) });
       settle();
     }
-    paint();
-  }, [slot, count, focus, center, paint, settle]);
+  }, [slot, count, focus, settle]);
 
   useEffect(
     () => () => {
-      cancelAnimationFrame(frameRef.current);
       window.clearTimeout(steerTimerRef.current);
+      window.clearTimeout(reportTimerRef.current);
     },
     [],
   );
 
+  // The browser scrolls the strip and moves the glow with it (it lives inside the
+  // strip), so a swipe costs almost no JavaScript:
+  // - the gap under the record comes from scrollLeft (no layout reads),
+  // - crossing into a new gap only moves three CSS classes (the glow and the two
+  //   lit cards), with no React render,
+  // - React hears about it once the strip is still, which re-renders the place
+  //   button. Rendering the whole game on every gap crossed is what made swipes lag.
   function onScroll() {
-    cancelAnimationFrame(frameRef.current);
-    frameRef.current = requestAnimationFrame(() => {
-      if (steeringRef.current) {
-        settle();
-      } else if (choosing) {
-        const best = nearestGap();
-        if (best !== null && best !== shownRef.current) {
-          shownRef.current = best;
-          onSlot(best);
-        }
-      }
-      paint();
-    });
+    const track = trackRef.current;
+    if (!track) return;
+    if (steeringRef.current) {
+      settle();
+      return;
+    }
+    if (!choosing) return;
+    const gap = Math.round((dirRef.current * track.scrollLeft) / PITCH);
+    const best = Math.max(0, Math.min(count, gap));
+    if (best !== shownRef.current) {
+      shownRef.current = best;
+      light(track, best);
+    }
+    window.clearTimeout(reportTimerRef.current);
+    reportTimerRef.current = window.setTimeout(() => {
+      if (shownRef.current !== null && shownRef.current !== slot) onSlot(shownRef.current);
+    }, 100);
   }
 
   function step(delta: number) {
@@ -237,8 +179,7 @@ export default function SwipeLine({
 
   return (
     <div className="flex w-full flex-col gap-3">
-      <div ref={stageRef} className={placing ? "swipe" : "swipe swipe-done"}>
-        {choosing && <div ref={spanRef} aria-hidden className="swipe-span" />}
+      <div className={placing ? "swipe" : "swipe swipe-done"}>
         {/* Scrollable, so it must be reachable by keyboard; arrows move the record. */}
         {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- arrow keys mirror the Earlier/Later buttons */}
         <div
@@ -254,11 +195,11 @@ export default function SwipeLine({
           <ol className="swipe-list">
             {items.map((item, i) => (
               <Fragment key={item.key}>
-                {placing && <li aria-hidden className="swipe-gap" data-gap={i} />}
+                {placing && <Gap slot={i} count={count} on={choosing && slot === i} />}
                 <SwipeCard item={item} index={i} lit={flank(i)} />
               </Fragment>
             ))}
-            {placing && <li aria-hidden className="swipe-gap" data-gap={count} />}
+            {placing && <Gap slot={count} count={count} on={choosing && slot === count} />}
           </ol>
         </div>
         {record && (
@@ -319,6 +260,41 @@ export default function SwipeLine({
   );
 }
 
+/** Distance between neighbouring gaps: a gap (156px) plus a card (104px), as in `globals.css`. */
+const PITCH = 260;
+
+/**
+ * Light gap `slot` and the cards either side of it, ahead of React. React renders
+ * the same classes once it hears of the gap, so the two never disagree for long.
+ */
+function light(track: HTMLElement, slot: number) {
+  for (const el of track.querySelectorAll(".swipe-gap-on")) el.classList.remove("swipe-gap-on");
+  for (const el of track.querySelectorAll(".swipe-lit")) el.classList.remove("swipe-lit");
+  track.querySelector(`[data-gap="${slot}"]`)?.classList.add("swipe-gap-on");
+  for (const i of [slot - 1, slot]) {
+    track.querySelector(`[data-item="${i}"]`)?.classList.add("swipe-lit");
+  }
+}
+
+/** 1 for left-to-right, −1 for right-to-left (where scrollLeft counts down from 0). */
+function direction(el: Element): number {
+  return getComputedStyle(el).direction === "rtl" ? -1 : 1;
+}
+
+/**
+ * A gap between two cards. Its glow spans the rail from the older card's year to
+ * the newer one's; it only shows on the gap under the record, and fades in and out
+ * there (opacity only), so moving between gaps costs no layout.
+ */
+function Gap({ slot, count, on }: { slot: number; count: number; on: boolean }) {
+  const open = slot === 0 ? " swipe-glow-open-start" : slot === count ? " swipe-glow-open-end" : "";
+  return (
+    <li aria-hidden className={on ? "swipe-gap swipe-gap-on" : "swipe-gap"} data-gap={slot}>
+      <span className={`swipe-glow${open}`} />
+    </li>
+  );
+}
+
 function SwipeCard({ item, index, lit }: { item: LineItem; index: number; lit: boolean }) {
   const { t } = useI18n();
   const variant = item.song
@@ -326,7 +302,7 @@ function SwipeCard({ item, index, lit }: { item: LineItem; index: number; lit: b
     : "card-anchor";
   return (
     <li className={lit ? "swipe-item swipe-lit" : "swipe-item"} data-item={index}>
-      <div data-card className={`card swipe-card ${variant}`}>
+      <div className={`card swipe-card ${variant}`}>
         <span className="text-2xl leading-none font-black tabular-nums">{item.year}</span>
         {item.song ? (
           <CardNames song={item.song} />
@@ -337,7 +313,7 @@ function SwipeCard({ item, index, lit }: { item: LineItem; index: number; lit: b
       </div>
       {/* The card's spot on the time rail. */}
       <span aria-hidden className="swipe-stem" />
-      <span aria-hidden className="swipe-node" data-node={index} />
+      <span aria-hidden className="swipe-node" />
       <span aria-hidden className="swipe-year">
         {item.year}
       </span>
