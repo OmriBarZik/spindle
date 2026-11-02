@@ -55,6 +55,8 @@ it("plays until the third wrong answer, then shows and shares the score", async 
   const { container } = renderIn("en", <MarathonGame />);
   const songs = marathonSongsFor(DAY);
   const answers = [true, false, true, true, false];
+  // Nothing is listed until the run is over, so no song is given away.
+  expect(screen.queryByRole("region", { name: "Today's songs" })).toBeNull();
   for (const [i, right] of answers.entries()) {
     await place(right, container);
     expect(container.textContent).toContain(right ? "✅ Correct!" : "❌ Not quite.");
@@ -71,6 +73,20 @@ it("plays until the third wrong answer, then shows and shares the score", async 
   expect(container.textContent).toContain("3 songs placed right");
   expect(container.querySelector("[data-gap]")).toBeNull();
   expect(savedData().marathon.stats).toEqual({ played: 1, best: 3, totalHits: 3 });
+
+  // Every song of the run, in the order played, links to YouTube.
+  const list = screen.getByRole("region", { name: "Today's songs" });
+  const items = list.querySelectorAll("li");
+  expect(items).toHaveLength(6);
+  for (const [i, song] of songs.slice(0, 6).entries()) {
+    expect(items[i]!.textContent).toContain(song.title);
+    expect(items[i]!.textContent).toContain(String(song.year));
+    expect(items[i]!.textContent).toContain(i === 1 || i >= 4 ? "Placed wrong:" : "Placed right:");
+    const link = screen.getByRole("link", {
+      name: `Watch “${song.title}” on YouTube (opens in a new tab)`,
+    });
+    expect(link.getAttribute("href")).toBe(`https://www.youtube.com/watch?v=${song.youtubeId}`);
+  }
 
   await userEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() =>

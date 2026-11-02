@@ -102,6 +102,10 @@ export type Messages = {
     stats: { today: string; best: string; played: string; average: string };
     tomorrow: string;
     shareHead: (n: number, hits: number) => string;
+    songsHeading: string;
+    placedRight: string;
+    placedWrong: string;
+    openOnYouTube: (title: string) => string;
   };
 };
 
@@ -240,6 +244,10 @@ const en: Messages = {
     stats: { today: "Today", best: "Best", played: "Played", average: "Average" },
     tomorrow: "A new marathon tomorrow.",
     shareHead: (n, hits) => `Spindle Marathon #${n} · ${hits} 🎵`,
+    songsHeading: "Today's songs",
+    placedRight: "Placed right:",
+    placedWrong: "Placed wrong:",
+    openOnYouTube: (title) => `Watch “${title}” on YouTube`,
   },
 };
 
@@ -377,6 +385,10 @@ const he: Messages = {
     stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע" },
     tomorrow: "מרתון חדש מחר.",
     shareHead: (n, hits) => `Spindle מרתון #${n} · ${hits} 🎵`,
+    songsHeading: "השירים של היום",
+    placedRight: "שובץ נכון:",
+    placedWrong: "שובץ לא נכון:",
+    openOnYouTube: (title) => `לצפייה ב״${title}״ ב־YouTube`,
   },
 };
 
