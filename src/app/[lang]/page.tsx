@@ -11,7 +11,7 @@ export default async function Home() {
     <>
       <Header path="/" />
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
-        <section className="flex flex-col gap-3 px-1 pt-4">
+        <section className="home-inset flex flex-col gap-3 pt-4">
           <h1 className="max-w-xs text-4xl leading-[1.05] font-black tracking-tight text-balance rtl:tracking-normal">
             {t.home.headline}
           </h1>
@@ -37,7 +37,7 @@ export default async function Home() {
 
         <WeekStripClient />
 
-        <details className="card group p-5">
+        <details className="card home-card group">
           <summary className="cursor-pointer text-lg font-bold">{t.home.howTo}</summary>
           <ul className="mt-3 flex list-disc flex-col gap-2 ps-5 text-sm text-muted">
             {t.home.rules.map((rule, i) => (
