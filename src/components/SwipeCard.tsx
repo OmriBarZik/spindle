@@ -13,11 +13,13 @@ export function SwipeCard({ item, index, lit }: { item: LineItem; index: number;
   return (
     <li className={clsx("swipe-item", lit && "swipe-lit")} data-item={index}>
       <div className={clsx("card swipe-card", variant)}>
-        <span className="text-2xl leading-none font-black tabular-nums">{item.year}</span>
+        <span className="text-2xl leading-none font-black tabular-nums lg:text-3xl">
+          {item.year}
+        </span>
         {item.song ? (
           <SwipeCardNames song={item.song} />
         ) : (
-          <span className="text-sm text-muted">{t.common.startingYear}</span>
+          <span className="text-sm text-muted lg:text-base">{t.common.startingYear}</span>
         )}
         {item.note ? <span className="swipe-note text-xs font-semibold">{item.note}</span> : null}
       </div>

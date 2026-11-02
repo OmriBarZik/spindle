@@ -114,6 +114,7 @@ export function DeckRecord({
           disabled={disabled}
           onClick={onToggle}
           aria-label={active ? t.common.pause : t.common.play}
+          aria-keyshortcuts="Space"
           className={clsx(
             "record-button absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition hover:scale-105 active:scale-95 disabled:opacity-40",
             small ? "size-600" : "size-800",

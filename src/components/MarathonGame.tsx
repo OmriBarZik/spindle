@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Announce } from "@/components/Announce";
 import { Deck } from "@/components/Deck";
+import { KeyHints } from "@/components/KeyHints";
 import { MarathonFeedback } from "@/components/MarathonFeedback";
 import { MarathonHeader } from "@/components/MarathonHeader";
 import { MarathonResult } from "@/components/MarathonResult";
@@ -131,7 +132,16 @@ export function MarathonGame() {
           hits={hits}
         />
       ) : (
-        <PlaceButton live={live} cards={line} slot={at} disabled={Boolean(swap)} onPlace={place} />
+        <>
+          <PlaceButton
+            live={live}
+            cards={line}
+            slot={at}
+            disabled={Boolean(swap)}
+            onPlace={place}
+          />
+          <KeyHints />
+        </>
       )}
     </ScreenMain>
   );

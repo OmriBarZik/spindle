@@ -1,0 +1,118 @@
+"use client";
+
+import { type MouseEvent, type PointerEvent, type RefObject, useRef } from "react";
+import { clamp } from "@/lib/clamp";
+import { directionSign } from "@/lib/directionSign";
+import { canAnimate } from "@/lib/motion";
+
+/** How far (px) a mouse moves before a press becomes a drag rather than a click. */
+const DRAG_START = 5;
+
+type Drag = { id: number; x: number; left: number; moved: boolean };
+
+/**
+ * The gap nearest to a point `offset` px right of the strip's middle. Gap `s` sits in
+ * the middle at scrollLeft = s × pitch (negative right to left).
+ */
+function gapAt(track: HTMLElement, offset: number, pitch: number, count: number) {
+  const along = directionSign(track) * (track.scrollLeft + offset);
+  return clamp(Math.round(along / pitch), 0, count);
+}
+
+/**
+ * Mouse controls for the strip (touch scrolls it natively): drag it sideways like a
+ * finger would, or click anywhere on it to move the record to the nearest gap.
+ * Dragging only sets scrollLeft, so the strip's own scroll handler lights the gaps
+ * exactly as it does for a swipe.
+ */
+export function useSwipeDrag({
+  pitchRef,
+  choosing,
+  count,
+  onSlot,
+}: {
+  /** The strip's gap-to-gap distance (`useSwipePitch`). */
+  pitchRef: RefObject<number>;
+  choosing: boolean;
+  count: number;
+  onSlot: (slot: number) => void;
+}) {
+  const dragRef = useRef<Drag | null>(null);
+  // A drag ends with a click on whatever is under the mouse: swallow it.
+  const draggedRef = useRef(false);
+
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "mouse" || e.button !== 0) {
+      return;
+    }
+    draggedRef.current = false;
+    dragRef.current = {
+      id: e.pointerId,
+      x: e.clientX,
+      left: e.currentTarget.scrollLeft,
+      moved: false,
+    };
+  }
+
+  function onPointerMove(e: PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const track = e.currentTarget;
+    if (!drag || drag.id !== e.pointerId) {
+      return;
+    }
+    const dx = e.clientX - drag.x;
+    if (!drag.moved) {
+      if (Math.abs(dx) < DRAG_START) {
+        return;
+      }
+      drag.moved = true;
+      track.setPointerCapture(e.pointerId);
+      track.classList.add("swipe-dragging");
+    }
+    track.scrollLeft = drag.left - dx;
+  }
+
+  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const track = e.currentTarget;
+    dragRef.current = null;
+    if (!drag || drag.id !== e.pointerId) {
+      return;
+    }
+    if (!drag.moved) {
+      // A click on a link (a card's "watch") is the link's, not the strip's.
+      const onLink = e.target instanceof Element && e.target.closest("a, button");
+      if (choosing && !onLink) {
+        const box = track.getBoundingClientRect();
+        onSlot(gapAt(track, e.clientX - (box.left + box.width / 2), pitchRef.current, count));
+      }
+      return;
+    }
+    draggedRef.current = true;
+    track.classList.remove("swipe-dragging");
+    if (choosing) {
+      // Settle on the nearest gap, as snapping would after a swipe.
+      const pitch = pitchRef.current;
+      const left = directionSign(track) * gapAt(track, 0, pitch, count) * pitch;
+      track.scrollTo({ left, behavior: canAnimate() ? "smooth" : "instant" });
+    }
+  }
+
+  function onClickCapture(e: MouseEvent<HTMLDivElement>) {
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  return {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel: onPointerUp,
+    onClickCapture,
+    // Links and text would otherwise start the browser's own drag.
+    onDragStart: (e: MouseEvent<HTMLDivElement>) => e.preventDefault(),
+  };
+}

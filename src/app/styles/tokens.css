@@ -126,6 +126,8 @@
   --swipe-pin: var(--spacing-300);
   --swipe-drop: var(--spacing-300);
   --swipe-track-top: var(--spacing-100);
+  /* The record over the line: the deck's small record. */
+  --swipe-record: var(--size-record-small);
   /* The rail runs through the nodes' middle, measured from the top of the list. */
   --swipe-rail: calc(var(--swipe-card-height) + var(--swipe-stem) + var(--swipe-node) / 2);
 
@@ -141,6 +143,22 @@
   --sleeve-record-peek: var(--spacing-450);
   --sleeve-top: var(--spacing-1400);
   --week-card-height: var(--spacing-1200);
+
+  /* Desktop home page: bigger sleeves with bigger records. */
+  --sleeve-record-peek-wide: var(--spacing-800);
+  --sleeve-top-wide: var(--spacing-2800);
+}
+
+/* Desktop (`lg:`): a bigger line, with room for longer titles. useSwipePitch.ts measures
+   the strip, so the code that scrolls it follows these sizes. */
+@variant lg {
+  :root {
+    --swipe-card-width: var(--spacing-1700);
+    --swipe-card-height: var(--spacing-2200);
+    --swipe-gap-width: var(--spacing-2400);
+    --swipe-height: calc(var(--spacing-3000) + var(--spacing-300));
+    --swipe-record: var(--spacing-2000);
+  }
 }
 
 /* ---------- Tailwind's theme: these make the utilities (`bg-surface`, `p-100`, …). ---------- */
@@ -203,11 +221,14 @@
   --spacing-4000: 20rem;
   --spacing-4800: 24rem;
   --spacing-7200: 36rem;
+  --spacing-14400: 72rem;
 
   /* Page widths (`max-w-page`, …). */
   --container-narrow: var(--spacing-4000);
   --container-prose: var(--spacing-4800);
   --container-page: var(--spacing-7200);
+  /* Desktop (`lg:`): game screens and the home page use the screen's width. */
+  --container-wide: var(--spacing-14400);
 
   /* Type: rem sizes on the 16px root, every line height on the 4px grid. */
   --font-sans: var(--font-roboto), var(--font-hebrew), system-ui, sans-serif;
@@ -230,6 +251,8 @@
   --text-3xl--line-height: var(--spacing-500);
   --text-4xl: 2.25rem;
   --text-4xl--line-height: var(--spacing-500);
+  --text-5xl: 3rem;
+  --text-5xl--line-height: var(--spacing-600);
   --leading-none: 1;
   --tracking-tight: -0.025em;
   --tracking-normal: 0em;

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Announce } from "@/components/Announce";
 import { Deck } from "@/components/Deck";
+import { KeyHints } from "@/components/KeyHints";
 import { PlaceButton } from "@/components/PlaceButton";
 import { ScreenMain } from "@/components/ScreenMain";
 import { SwipeLine } from "@/components/SwipeLine";
@@ -113,7 +114,10 @@ export function TimelineGame() {
       </Announce>
 
       {pending ? (
-        <PlaceButton live={live} cards={cards} slot={at} onPlace={place} />
+        <>
+          <PlaceButton live={live} cards={cards} slot={at} onPlace={place} />
+          <KeyHints />
+        </>
       ) : (
         <TimelineResult
           title={resultTitle}

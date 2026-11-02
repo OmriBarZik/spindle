@@ -47,6 +47,11 @@ duration, and the linters enforce it.
 - **Light and dark:** each themed role is `light-dark(light, dark)` and follows the system setting.
   A browser without `light-dark()` gets the dark values. The vinyl record stays black in both.
   Component tests run in both schemes (`browser-dark`, `browser-light`), so axe checks contrast in each.
+- **Desktop (`lg:`, 64rem and up):** pages widen to `max-w-wide`. The home page becomes two
+  columns (`.home` grid in `styles/home.css`: headline, "This week" and "How to play" beside bigger
+  sleeves). A game screen's line uses the full width with bigger cards and record (the `--swipe-*`
+  overrides under `@variant lg` in `tokens.css`), while its header, buttons and result stay in the
+  narrow `max-w-page` column. Phones must look exactly as before.
 - **Game colours:** a game screen passes `game` to `ScreenMain` (`.game-*` sets the record's label
   colour); a home sleeve passes `game` to `ModeSleeve`.
 - **Lint:** stylelint (`stylelint-config-standard` plus `lint/stylelint-tokens.mjs`):
@@ -76,6 +81,11 @@ home page doesn't preload it, and it's marked `noindex`. It may come back later,
 
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
+- **Desktop controls:** Space plays/pauses and Enter places, from anywhere on the page
+  (`useKeyShortcut`; a focused button keeps its own keys), alongside the arrow keys, Home and End.
+  With a mouse, the strip can be dragged, a click moves the record to the nearest gap
+  (`useSwipeDrag`), and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
+  the keys under the place button, only for fine pointers.
 - **Placing is swipe-then-tap.** The record always sits on a gap (it starts in the middle,
   `defaultSlot`), so the place button is ready at once and the whole line, record and button fit
   on one phone screen. Keep it that way: the player asked for no scrolling up and down.
@@ -169,6 +179,9 @@ is a "default" served without a prefix.
 | `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
 | `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
 | `src/hooks/useSwipeKeys.ts` | Arrow keys, Home and End move the record from anywhere on the page |
+| `src/hooks/useKeyShortcut.ts` | A page-wide key (Space plays in `Deck`, Enter places in `PlaceButton`) |
+| `src/hooks/useSwipePitch.ts` | `PITCH` (the phone's gap-to-gap distance) and the strip's measured pitch, kept in a ref and re-measured on resize |
+| `src/hooks/useSwipeDrag.ts`, `useSwipeWheel.ts` | Mouse controls for the strip: drag, click to a gap, wheel |
 | `src/hooks/recordFlight.ts` | The record's flight from the home page into a game |
 | `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`) |
 | `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
@@ -178,7 +191,7 @@ is a "default" served without a prefix.
 | `src/components/TimelineGame.tsx` | Daily Timeline screen (hidden page) |
 | `src/components/MarathonGame.tsx` | Marathon screen (with `MarathonHeader`, `Hearts`, `MarathonFeedback`, `MarathonResult`) |
 | `src/app/[lang]/page.tsx` | Home page: each mode is a record sleeve (`ModeSleeve`, `.sleeve-*` in `styles/home.css`) whose record flies into the game (`ModeLink` launches the clicked sleeve's `[data-flight-record]`), then `WeekStrip` and "How to play" |
-| `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. With `browse` (a finished Marathon), `SwipeBrowse` adds Earlier / Later buttons that scroll the strip a card at a time (`DONE_PITCH`), so players can look through the run and open songs on YouTube. Styles are the `.swipe-*` classes in `styles/swipe.css`, sized by the `--swipe-*` tokens. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match `--swipe-gap-width` + `--swipe-card-width`); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
+| `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. With `browse` (a finished Marathon), `SwipeBrowse` adds Earlier / Later buttons that scroll the strip a card at a time (`DONE_PITCH`), so players can look through the run and open songs on YouTube. Styles are the `.swipe-*` classes in `styles/swipe.css`, sized by the `--swipe-*` tokens. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / pitch` (no layout reads: `useSwipePitch` measures `--swipe-gap-width` + `--swipe-card-width` only on mount and resize, and `PITCH` must match the phone sizes); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
 | `src/components/PlaceButton.tsx` | Says where the song goes ("Between 1992 and 1997", from `t.placeAt`); its accessible name adds "Place it: " |
 | `src/components/Announce.tsx` | Screen-reader live region |
 | `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |

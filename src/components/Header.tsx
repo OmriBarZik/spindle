@@ -7,7 +7,7 @@ import { getI18n } from "@/i18n/server";
 export async function Header({ title, path }: { title?: string; path: string }) {
   const { lang, t } = await getI18n();
   return (
-    <header className="mx-auto flex w-full max-w-page items-center justify-between gap-150 px-200 py-200">
+    <header className="mx-auto flex w-full max-w-page items-center justify-between gap-150 px-200 py-200 lg:max-w-wide">
       <Link
         href={localePath(lang, "/")}
         className="flex items-center gap-100 font-bold tracking-tight"

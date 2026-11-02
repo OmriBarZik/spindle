@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { SortGame } from "@/components/SortGame";
-import { PITCH } from "@/hooks/useSwipeTrack";
+import { PITCH } from "@/hooks/useSwipePitch";
 import { renderIn } from "@/test/renderIn";
 import { setupGameTests } from "@/test/setupGameTests";
 

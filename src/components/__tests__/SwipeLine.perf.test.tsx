@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import { Profiler } from "react";
 import { afterEach, expect, it } from "vitest";
 import { MarathonGame } from "@/components/MarathonGame";
-import { PITCH } from "@/hooks/useSwipeTrack";
+import { PITCH } from "@/hooks/useSwipePitch";
 import { marathonAnchorYearFor, marathonSongsFor } from "@/lib/daily";
 import { emptySave, writeSave } from "@/lib/storage";
 import { correctSlot } from "@/lib/timeline";

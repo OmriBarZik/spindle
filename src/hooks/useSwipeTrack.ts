@@ -5,9 +5,7 @@ import { clamp } from "@/lib/clamp";
 import { directionSign } from "@/lib/directionSign";
 import type { LiveSlot } from "@/lib/liveSlot";
 import { canAnimate } from "@/lib/motion";
-
-/** Distance between neighbouring gaps: a gap (156px) plus a card (104px), as in `globals.css`. */
-export const PITCH = 264;
+import { useSwipePitch } from "./useSwipePitch";
 
 /**
  * Light gap `slot` and the cards either side of it, ahead of React. React renders
@@ -61,6 +59,17 @@ export function useSwipeTrack({
     }, 140);
   }, []);
 
+  // The strip changed size (cards grow on a desktop): keep the record on its gap.
+  const { pitchRef, measure } = useSwipePitch(trackRef, (pitch) => {
+    const track = trackRef.current;
+    if (!track || shownRef.current === null) {
+      return;
+    }
+    steeringRef.current = true;
+    track.scrollTo({ left: dirRef.current * shownRef.current * pitch, behavior: "instant" });
+    settle();
+  });
+
   // Follow `slot` when it changes from outside (a button, a new song), and
   // re-center when the line itself changes. Nothing here runs while scrolling.
   useLayoutEffect(() => {
@@ -69,6 +78,7 @@ export function useSwipeTrack({
       return;
     }
     dirRef.current = directionSign(track);
+    measure();
     const lineChanged = countRef.current !== count;
     countRef.current = count;
     // Glide only for players who haven't asked for reduced motion.
@@ -93,11 +103,14 @@ export function useSwipeTrack({
       shownRef.current = slot;
       live.set(slot);
       steeringRef.current = true;
-      // Gap `slot` is centered at scrollLeft = slot × PITCH (negative in RTL).
-      track.scrollTo({ left: dirRef.current * slot * PITCH, behavior: behavior(!first) });
+      // Gap `slot` is centered at scrollLeft = slot × pitch (negative in RTL).
+      track.scrollTo({
+        left: dirRef.current * slot * pitchRef.current,
+        behavior: behavior(!first),
+      });
       settle();
     }
-  }, [slot, count, focus, settle, live]);
+  }, [slot, count, focus, settle, live, measure, pitchRef]);
 
   useEffect(
     () => () => {
@@ -126,7 +139,11 @@ export function useSwipeTrack({
     if (!choosing) {
       return;
     }
-    const best = clamp(Math.round((dirRef.current * track.scrollLeft) / PITCH), 0, count);
+    const best = clamp(
+      Math.round((dirRef.current * track.scrollLeft) / pitchRef.current),
+      0,
+      count,
+    );
     if (best !== shownRef.current) {
       shownRef.current = best;
       light(track, best);
@@ -141,5 +158,5 @@ export function useSwipeTrack({
     }, 100);
   }
 
-  return { trackRef, onScroll };
+  return { trackRef, pitchRef, onScroll };
 }

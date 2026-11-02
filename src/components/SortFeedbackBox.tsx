@@ -5,7 +5,7 @@ export function SortFeedbackBox({ correct, children }: { correct: boolean; child
   return (
     <p
       className={clsx(
-        "rounded-control px-150 py-100 text-center text-sm",
+        "mx-auto w-full max-w-page rounded-control px-150 py-100 text-center text-sm",
         correct ? "bg-success/15 text-success-ink" : "bg-danger/15 text-danger-ink",
       )}
     >

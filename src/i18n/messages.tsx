@@ -42,6 +42,8 @@ export type Messages = {
     copyFailed: string;
     /** Accessible name of the place button, e.g. "Place it: Between 1992 and 1997". */
     placeIt: (label: string) => string;
+    /** The keyboard hints under the place button (pointer devices only). */
+    keys: { space: string; enter: string; move: string; play: string; place: string };
     songs: (n: number) => string;
   };
   slots: SlotLabels;
@@ -155,6 +157,7 @@ const en: Messages = {
     copied: "Copied!",
     copyFailed: "Couldn't copy",
     placeIt: (l) => `Place it: ${l}`,
+    keys: { space: "Space", enter: "Enter", move: "move", play: "play / pause", place: "place it" },
     songs: enSongs,
   },
   slots: {
@@ -318,6 +321,7 @@ const he: Messages = {
     copied: "הועתק!",
     copyFailed: "ההעתקה נכשלה",
     placeIt: (l) => `לשבץ: ${l}`,
+    keys: { space: "רווח", enter: "Enter", move: "הזזה", play: "נגינה / השהיה", place: "שיבוץ" },
     songs: heSongs,
   },
   slots: {
