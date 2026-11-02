@@ -148,46 +148,6 @@ body {
   box-shadow: inset 0 0 0 1px var(--muted);
 }
 
-/* The finished Marathon's song list (MarathonSongList.tsx). */
-.run-mark {
-  display: flex;
-  width: 1.75rem;
-  height: 1.75rem;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.run-mark-good {
-  background: color-mix(in srgb, var(--good) 25%, var(--surface));
-  color: #86efac;
-  box-shadow: inset 0 0 0 1px var(--good);
-}
-.run-mark-bad {
-  background: color-mix(in srgb, var(--bad) 25%, var(--surface));
-  color: #fca5a5;
-  box-shadow: inset 0 0 0 1px var(--bad);
-}
-.run-link {
-  display: flex;
-  min-height: 2.75rem;
-  flex: none;
-  align-items: center;
-  gap: 0.25rem;
-  border-radius: 9999px;
-  border: 1px solid var(--line);
-  padding: 0 0.875rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--foreground);
-}
-.run-link:hover {
-  border-color: var(--muted);
-}
-
 /* Marathon hearts (Hearts.tsx). */
 .heart {
   stroke-width: 2;
@@ -706,7 +666,8 @@ body {
   position: relative;
   inset: auto;
   width: 100%;
-  padding-bottom: 4px;
+  /* Room for the years, which are scaled up under answered cards. */
+  padding-bottom: 14px;
   padding-inline: calc(50% - 58px);
   scroll-snap-type: x proximity;
 }

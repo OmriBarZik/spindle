@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type KeyboardEvent, type ReactNode } from "react";
+import { SwipeBrowse } from "@/components/SwipeBrowse";
 import { SwipeCard } from "@/components/SwipeCard";
 import { SwipeGap } from "@/components/SwipeGap";
 import { SwipeOverview } from "@/components/SwipeOverview";
@@ -9,6 +10,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { clamp } from "@/lib/clamp";
 import { directionSign } from "@/lib/directionSign";
 import type { LiveSlot } from "@/lib/liveSlot";
+import { canAnimate } from "@/lib/motion";
 import type { LineItem } from "@/lib/timeline";
 
 /**
@@ -21,6 +23,9 @@ import type { LineItem } from "@/lib/timeline";
  * When not placing, the record (if any) sits above the strip, which is centered
  * on `focus`.
  */
+/** A card plus its margins on a finished line: `.swipe-item` width + `.swipe-done .swipe-item` margins. */
+const DONE_PITCH = 116;
+
 export function SwipeLine({
   items,
   slot,
@@ -29,6 +34,7 @@ export function SwipeLine({
   record,
   reveal = false,
   live,
+  browse = false,
 }: {
   items: readonly LineItem[];
   /** The gap under the record, or null when not placing. */
@@ -40,6 +46,8 @@ export function SwipeLine({
   reveal?: boolean;
   /** The gap under the record as the strip moves (see `liveSlot.ts`). */
   live: LiveSlot;
+  /** Once the game is over: Earlier / Later buttons that move the strip a card at a time. */
+  browse?: boolean;
 }) {
   const { t } = useI18n();
   const placing = slot !== null;
@@ -56,6 +64,15 @@ export function SwipeLine({
     if (next !== from) {
       onSlot(next);
     }
+  }
+
+  /** Scroll the finished strip by `delta` cards (`DONE_PITCH`), in reading direction. */
+  function browseBy(delta: number) {
+    const track = trackRef.current;
+    track?.scrollBy({
+      left: delta * DONE_PITCH * directionSign(track),
+      behavior: canAnimate() ? "smooth" : "auto",
+    });
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
@@ -132,6 +149,7 @@ export function SwipeLine({
           onSlot={onSlot}
         />
       ) : null}
+      {!placing && browse ? <SwipeBrowse onStep={browseBy} /> : null}
     </div>
   );
 }

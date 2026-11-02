@@ -55,8 +55,6 @@ it("plays until the third wrong answer, then shows and shares the score", async 
   const { container } = renderIn("en", <MarathonGame />);
   const songs = marathonSongsFor(DAY);
   const answers = [true, false, true, true, false];
-  // Nothing is listed until the run is over, so no song is given away.
-  expect(screen.queryByRole("region", { name: "Today's songs" })).toBeNull();
   for (const [i, right] of answers.entries()) {
     await place(right, container);
     expect(container.textContent).toContain(right ? "✅ Correct!" : "❌ Not quite.");
@@ -74,19 +72,21 @@ it("plays until the third wrong answer, then shows and shares the score", async 
   expect(container.querySelector("[data-gap]")).toBeNull();
   expect(savedData().marathon.stats).toEqual({ played: 1, best: 3, totalHits: 3 });
 
-  // Every song of the run, in the order played, links to YouTube.
-  const list = screen.getByRole("region", { name: "Today's songs" });
-  const items = list.querySelectorAll("li");
-  expect(items).toHaveLength(6);
-  for (const [i, song] of songs.slice(0, 6).entries()) {
-    expect(items[i]!.textContent).toContain(song.title);
-    expect(items[i]!.textContent).toContain(String(song.year));
-    expect(items[i]!.textContent).toContain(i === 1 || i >= 4 ? "Placed wrong:" : "Placed right:");
-    const link = screen.getByRole("link", {
-      name: `Watch “${song.title}” on YouTube (opens in a new tab)`,
-    });
-    expect(link.getAttribute("href")).toBe(`https://www.youtube.com/watch?v=${song.youtubeId}`);
+  // Every song of the run is a card on the line, with a link to watch it on YouTube.
+  const line = screen.getByRole("group", { name: /^Your timeline/ });
+  for (const song of songs.slice(0, 6)) {
+    expect(line.textContent).toContain(song.title);
+    const card = [...line.querySelectorAll("li")].find((li) => li.textContent.includes(song.title));
+    const watch = card?.querySelector("a");
+    expect(watch?.getAttribute("href")).toBe(`https://www.youtube.com/watch?v=${song.youtubeId}`);
   }
+  // Earlier / Later step through the cards freely.
+  line.scrollLeft = 0;
+  await userEvent.click(screen.getByRole("button", { name: "Later" }));
+  await vi.waitFor(() => expect(line.scrollLeft).toBeGreaterThan(100));
+  const after = line.scrollLeft;
+  await userEvent.click(screen.getByRole("button", { name: "Earlier" }));
+  await vi.waitFor(() => expect(line.scrollLeft).toBeLessThan(after));
 
   await userEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() =>

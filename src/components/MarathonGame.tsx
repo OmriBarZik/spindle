@@ -6,7 +6,6 @@ import { Deck } from "@/components/Deck";
 import { MarathonFeedback } from "@/components/MarathonFeedback";
 import { MarathonHeader } from "@/components/MarathonHeader";
 import { MarathonResult } from "@/components/MarathonResult";
-import { MarathonSongList } from "@/components/MarathonSongList";
 import { PlaceButton } from "@/components/PlaceButton";
 import { ScreenMain } from "@/components/ScreenMain";
 import { SortFeedbackBox } from "@/components/SortFeedbackBox";
@@ -86,6 +85,7 @@ export function MarathonGame() {
       record={record}
       live={live}
       reveal={Boolean(swap)}
+      browse
     />
   );
 
@@ -122,17 +122,14 @@ export function MarathonGame() {
       )}
 
       {done ? (
-        <>
-          <MarathonResult
-            day={day}
-            state={state}
-            stats={data.marathon.stats}
-            title={title}
-            score={score}
-            hits={hits}
-          />
-          <MarathonSongList state={state} />
-        </>
+        <MarathonResult
+          day={day}
+          state={state}
+          stats={data.marathon.stats}
+          title={title}
+          score={score}
+          hits={hits}
+        />
       ) : (
         <PlaceButton live={live} cards={line} slot={at} disabled={Boolean(swap)} onPlace={place} />
       )}
