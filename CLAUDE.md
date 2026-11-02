@@ -28,6 +28,11 @@ pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com 
 Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
 runs format, lint, CSS lint, knip, typecheck, tests and build on every PR and on `main`.
 
+**On a remote or cloud machine (e.g. Claude Code on the web), skip the CPU check.** The
+`performance` project times swipes on a throttled CPU, and shared machines are too noisy for it:
+it fails there even on an untouched `main`. Run the other checks one by one and test with
+`pnpm vitest run --project '!performance-*'`; CI runs the performance test on every PR.
+
 ## Styling: design tokens only
 
 All styles come from `src/app/styles/tokens.css`. Nothing else holds a raw colour, length or

@@ -50,3 +50,5 @@ it.for(items)("does something with $name", (item) => {
 - `lint-rules`: runs oxlint on samples to prove the rules in `lint/spindle-rules.mjs` still work.
 - `browser`: components, in Chromium (`src/components/**/*.test.tsx`).
 - `performance`: swiping on a slowed-down CPU (`*.perf.test.tsx`). It runs last and alone.
+  **Don't run it on a remote or cloud machine**: they're too noisy, so it fails even on `main`.
+  There, use `pnpm vitest run --project '!performance-*'` and leave this check to CI.
