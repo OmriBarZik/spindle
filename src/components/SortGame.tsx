@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
-import {
-  AnchorCard,
-  Announce,
-  PlaceButton,
-  ResultCard,
-  SlotLine,
-  SongCard,
-  Stats,
-} from "@/components/TimelineParts";
+import SwipeLine, { defaultSlot, type LineItem } from "@/components/SwipeLine";
+import { Announce, PlaceButton, ResultCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
+import { createLiveSlot } from "@/lib/liveSlot";
 import { useDropRecordFlight } from "@/lib/recordFlight";
 import { sortEmoji, sortShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
@@ -32,6 +26,8 @@ export default function SortGame() {
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // The gap under the record mid-swipe, shared by the line and the place button.
+  const [live] = useState(createLiveSlot);
   // The record's result animation; the next song can't be played until it ends.
   const [swap, setSwap] = useState<DeckSwap | null>(null);
   // A finished day has no Deck to land on, so let the home record fade away.
@@ -68,6 +64,54 @@ export default function SortGame() {
 
   const hits = state.placements.filter((p) => p.correct).length;
   const score = hits === total ? t.sort.perfect : t.sort.score(hits, total);
+
+  const items: LineItem[] = line.map((card) =>
+    card.kind === "anchor"
+      ? { key: "anchor", year: card.year, song: null }
+      : {
+          key: card.song.id,
+          year: card.year,
+          song: card.song,
+          variant: card.correct ? "good" : "bad",
+          note: card.correct ? undefined : t.sort.movedHere,
+        },
+  );
+  // The song just placed, where it really went. While the record glows, the line
+  // holds still with that card beside it, so the player sees where it landed.
+  const lastAt = last ? line.findIndex((c) => c.kind === "song" && c.song.id === last.id) : -1;
+  const placing = !done || Boolean(swap);
+  const at = swap && lastAt >= 0 ? lastAt + 1 : (slot ?? defaultSlot(line.length));
+
+  const place = (where: number) => {
+    if (!current || swap) return;
+    player.stop();
+    const correct = isSlotCorrect(line, where, current.year);
+    setSwap({ correct, kind: turn + 1 < total ? "next" : "last" });
+    track("song_place", { mode: "daily_five", turn: turn + 1, correct });
+    if (turn + 1 === total) {
+      const final = hits + (correct ? 1 : 0);
+      track("game_complete", {
+        mode: "daily_five",
+        score: final,
+        total,
+        perfect: final === total,
+      });
+    }
+    update((d) => placeSortSong(d, day, where));
+    setSlot(null);
+  };
+
+  const swipeLine = (record?: ReactNode) => (
+    <SwipeLine
+      items={items}
+      slot={placing ? at : null}
+      onSlot={setSlot}
+      focus={Math.max(0, lastAt)}
+      record={record}
+      live={live}
+      reveal={Boolean(swap)}
+    />
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
@@ -107,7 +151,7 @@ export default function SortGame() {
         </p>
       )}
 
-      {(!done || swap) && (
+      {!done || swap ? (
         <Deck
           hostRef={hostRef}
           player={player}
@@ -117,53 +161,14 @@ export default function SortGame() {
           onPlay={() => track("song_play", { mode: "daily_five", turn: turn + 1 })}
           swap={swap}
           onSwapEnd={() => setSwap(null)}
+          around={swipeLine}
         />
+      ) : (
+        swipeLine()
       )}
 
-      <SlotLine
-        cards={line}
-        cardKey={(card) => (card.kind === "anchor" ? "anchor" : card.song.id)}
-        renderCard={(card) =>
-          card.kind === "anchor" ? (
-            <AnchorCard year={card.year} />
-          ) : (
-            <SongCard
-              song={card.song}
-              variant={card.correct ? "good" : "bad"}
-              note={card.correct ? undefined : t.sort.movedHere}
-            />
-          )
-        }
-        canPlace={!done}
-        selected={slot}
-        onSelect={setSlot}
-      />
-
       {!done ? (
-        <PlaceButton
-          cards={line}
-          slot={slot}
-          pickSpot={t.sort.pickSpot}
-          disabled={Boolean(swap)}
-          onPlace={(at) => {
-            if (!current) return;
-            player.stop();
-            const correct = isSlotCorrect(line, at, current.year);
-            setSwap({ correct, kind: turn + 1 < total ? "next" : "last" });
-            track("song_place", { mode: "daily_five", turn: turn + 1, correct });
-            if (turn + 1 === total) {
-              const final = hits + (correct ? 1 : 0);
-              track("game_complete", {
-                mode: "daily_five",
-                score: final,
-                total,
-                perfect: final === total,
-              });
-            }
-            update((d) => placeSortSong(d, day, at));
-            setSlot(null);
-          }}
-        />
+        <PlaceButton live={live} cards={line} slot={at} disabled={Boolean(swap)} onPlace={place} />
       ) : (
         <ResultCard>
           <div className="text-3xl font-bold">{score}</div>

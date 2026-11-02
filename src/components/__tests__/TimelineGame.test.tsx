@@ -9,6 +9,7 @@ import {
   expectAccessible,
   fakePlayer,
   mockClipboard,
+  moveRecordTo,
   renderIn,
   savedData,
   setupGameTests,
@@ -27,11 +28,11 @@ function today() {
 
 async function placeAt(slot: number, container: HTMLElement) {
   const { cards } = today();
+  await moveRecordTo(container, slot);
   await userEvent.click(
-    screen.getByRole("button", { name: `+ ${slotLabel(cards, slot, MESSAGES.en.slots)}` }),
-  );
-  await userEvent.click(
-    screen.getByRole("button", { name: `Place it: ${slotLabel(cards, slot, MESSAGES.en.slots)}` }),
+    screen.getByRole("button", {
+      name: `Place it: ${slotLabel(cards, slot, MESSAGES.en.placeAt)}`,
+    }),
   );
   expect(fakePlayer.stop).toHaveBeenCalled();
   const swap = container.querySelector(".deck-swap-flash");
@@ -56,10 +57,9 @@ describe("Daily Timeline screen", () => {
     );
     expect(container.textContent).toContain("Starting year");
     expect(screen.getByText("Today")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Pick a spot on the timeline" })).toHaveProperty(
-      "disabled",
-      true,
-    );
+    // One gap on each side of the starting year; the record starts after it.
+    expect(container.querySelectorAll("[data-gap]")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: `Place it: After ${cards[0]!.year}` })).toBeTruthy();
   });
 
   it("grows the timeline on a right guess", async () => {
@@ -70,7 +70,7 @@ describe("Daily Timeline screen", () => {
     expect(container.textContent).toContain("Your timeline now has 1 song.");
     // The answer is revealed once placed.
     expect(container.textContent).toContain(song.title);
-    expect(screen.queryByRole("button", { name: /^\+/ })).toBeNull();
+    expect(container.querySelector("[data-gap]")).toBeNull();
     expect(await shareAndRead()).toBe(
       `Spindle Timeline #1\n🔥 1 song and counting\n🟩\n${window.location.origin}/timeline`,
     );
@@ -111,7 +111,7 @@ describe("Daily Timeline screen", () => {
     vi.setSystemTime(new Date("2026-11-02T10:00:00"));
     const { container } = renderIn("en", <TimelineGame />);
     expect(container.textContent).toContain("Timeline day 2 · Best 1");
-    expect(screen.getAllByRole("button", { name: /^\+/ })).toHaveLength(3);
+    expect(container.querySelectorAll("[data-gap]")).toHaveLength(3);
   });
 
   it("offers a different song when the video can't play", async () => {

@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   check:
-    name: Format, lint, typecheck, test and build
+    name: Format, lint, typecheck, test, build and accessibility
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -51,3 +51,7 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # axe on every page, in both languages, with the real CSS (colour contrast included).
+      - name: Accessibility
+        run: pnpm a11y

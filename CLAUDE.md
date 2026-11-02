@@ -21,10 +21,11 @@ pnpm typecheck          # next typegen + tsc --noEmit (TypeScript 7, the native 
 pnpm check              # format check + lint + typecheck + tests (what CI runs, minus the build)
 pnpm build              # production build; all routes are static
 pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node runs the .mts directly)
+pnpm a11y               # after `pnpm build`: axe on every page in both languages, in Chromium with the real CSS
 ```
 
-Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
-runs format, lint, typecheck, tests and build on every PR and on `main`.
+Run `pnpm check`, `pnpm build` and `pnpm a11y` before pushing. CI (`.github/workflows/ci.yml`)
+runs format, lint, typecheck, tests, build and the accessibility check on every PR and on `main`.
 
 ## Game modes
 
@@ -41,6 +42,9 @@ only the UI says "Daily Five".
 
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
+- **Placing is swipe-then-tap.** The record always sits on a gap (it starts in the middle,
+  `defaultSlot`), so the place button is ready at once and the whole line, record and button fit
+  on one phone screen. Keep it that way: the player asked for no scrolling up and down.
 - **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
 - A new day starts at the **player's local midnight** (`dayKey()` in `src/lib/dates.ts`).
 
@@ -121,7 +125,8 @@ is a "default" served without a prefix.
 | `src/components/Deck.tsx` | Turntable UI: opaque record over the hidden iframe, play/pause, loading ring, status line |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |
-| `src/components/TimelineParts.tsx` | Parts both games share: `SlotLine` (the line with its gap buttons), `PlaceButton`, `SongCard`, `AnchorCard`, `ResultCard`, `Stats`, `Announce` (screen-reader live region) |
+| `src/components/SwipeLine.tsx` | The line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. Styles are the `.swipe-*` classes in `globals.css`. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match the gap + card widths in CSS); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
+| `src/components/TimelineParts.tsx` | Parts both games share: `PlaceButton` (says where the song goes, "Between 1992 and 1997", from `t.placeAt`; its accessible name adds "Place it: "), `ResultCard`, `Stats`, `Announce` (screen-reader live region) |
 | `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
 | `src/test/` | Test setup and helpers (fake YouTube player, `renderIn(lang, ui)`, axe check) |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
@@ -197,8 +202,22 @@ is a "default" served without a prefix.
 - TypeScript is strict with `noUncheckedIndexedAccess`: indexing an array or record gives
   `T | undefined`, so handle the missing case (`getSong` accepts `undefined` for this).
 - Lint is strict and type-aware. Don't silence a rule without a comment saying why.
-- Accessibility: every control needs an accessible name; decorative emoji/SVGs get
-  `aria-hidden`; results are announced through `Announce`; the YouTube host is `inert`.
+- **Accessibility is checked in three layers; keep all three green:**
+  1. **Lint:** every `jsx-a11y` rule is an error in `.oxlintrc.json` (listed explicitly, since
+     oxlint only turns on some of them by category). Only `prefer-tag-over-role` is off, with its reason.
+  2. **Component tests:** `expectAccessible(container)` runs axe on each game state (no site
+     CSS there, so colour contrast is skipped).
+  3. **`pnpm a11y`** (`scripts/a11y.mts`): axe (WCAG 2.0–2.2 A/AA + best practices) on the built
+     site at phone width, both languages, every page, plus the games played through to their
+     answer and end-of-day screens. It also fails if a page scrolls sideways.
+     axe can't measure contrast over the gradient at the top of the page (it reports
+     "needs review" there, which doesn't fail), and it skips `aria-hidden` text. Check those by hand:
+     small text needs **4.5:1** (`--muted` on the background is 7.7:1; the rail's faint years use
+     `#8a8a96`, 5.7:1), and icons and borders need 3:1.
+- Every control needs an accessible name; decorative emoji/SVGs get `aria-hidden`; results are
+  announced through `Announce`; the YouTube host is `inert`. Anything that moves respects
+  `prefers-reduced-motion` (CSS media query, or `canAnimate()` in JavaScript). Focus rings must
+  stay visible: where a mask or `overflow` would clip one (the swipe line), draw it on a parent.
 
 ## Testing tips
 

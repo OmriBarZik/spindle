@@ -1,24 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import Deck, { type DeckSwap } from "@/components/Deck";
 import ShareButton from "@/components/ShareButton";
-import {
-  AnchorCard,
-  Announce,
-  PlaceButton,
-  ResultCard,
-  SlotLine,
-  SongCard,
-  Stats,
-} from "@/components/TimelineParts";
+import SwipeLine, { defaultSlot, type LineItem } from "@/components/SwipeLine";
+import { Announce, PlaceButton, ResultCard, Stats } from "@/components/TimelineParts";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
+import { createLiveSlot } from "@/lib/liveSlot";
 import { timelineShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
 import { ensureTimelineDay, placeTimelineCard, skipTimelineSong } from "@/lib/storage";
-import { correctSlot, isSlotCorrect, songCard, songCount } from "@/lib/timeline";
+import { correctSlot, isSlotCorrect, songCount } from "@/lib/timeline";
 import { useSave } from "@/lib/useSave";
 import { useHiddenPlayer } from "@/lib/youtube";
 
@@ -28,6 +22,8 @@ export default function TimelineGame() {
   const [data, update] = useSave((d) => ensureTimelineDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // The gap under the record mid-swipe, shared by the line and the place button.
+  const [live] = useState(createLiveSlot);
   // Today's record glows green or red after the guess. There's no next song until tomorrow.
   const [swap, setSwap] = useState<DeckSwap | null>(null);
 
@@ -53,13 +49,57 @@ export default function TimelineGame() {
   const dayNumber = Math.max(1, songs + (pending || wrong ? 1 : 0));
 
   // After a wrong guess, today's song is shown in red where it really belongs.
-  const wrongAt = wrong ? correctSlot(t.cards, song.year) : null;
-  const misplaced = <SongCard song={songCard(song)} variant="bad" note={tr.timeline.belongsHere} />;
+  const items: LineItem[] = t.cards.map((card) =>
+    card.anchor
+      ? { key: card.id, year: card.year, song: null }
+      : {
+          key: card.id,
+          year: card.year,
+          song: card,
+          variant: today.result === "correct" && card.id === song.id ? "good" : "plain",
+        },
+  );
+  if (wrong) {
+    items.splice(correctSlot(t.cards, song.year), 0, {
+      key: `missed:${song.id}`,
+      year: song.year,
+      song,
+      variant: "bad",
+      note: tr.timeline.belongsHere,
+    });
+  }
+  // Today's card once answered: the line centers on it.
+  const answerAt = pending ? -1 : items.findIndex((i) => i.variant !== "plain" && i.song);
+  // While the record glows, the line holds still with today's card beside it.
+  const placing = pending || Boolean(swap);
+  const at = !pending && answerAt >= 0 ? answerAt + 1 : (slot ?? defaultSlot(t.cards.length));
+
+  const place = (where: number) => {
+    if (!pending) return;
+    player.stop();
+    const correct = isSlotCorrect(t.cards, where, song.year);
+    setSwap({ correct, kind: "flash" });
+    track("song_place", { mode: "timeline", turn: songs + 1, correct });
+    if (!correct) track("run_end", { mode: "timeline", songs });
+    update((d) => placeTimelineCard(d, day, where));
+  };
 
   const resultTitle = wrong ? tr.timeline.notQuite : tr.timeline.nailed;
   const resultText = wrong
     ? tr.timeline.wrongMsg(songNames(song, lang).title, song.year, songs)
     : tr.timeline.correctMsg(songs);
+
+  const swipeLine = (record: ReactNode) => (
+    <SwipeLine
+      items={items}
+      slot={placing ? at : null}
+      onSlot={setSlot}
+      focus={Math.max(0, answerAt)}
+      record={record}
+      live={live}
+      reveal={!pending}
+    />
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
@@ -94,28 +134,7 @@ export default function TimelineGame() {
         onPlay={() => track("song_play", { mode: "timeline", turn: songs + 1 })}
         swap={swap}
         onSwapEnd={() => setSwap(null)}
-      />
-
-      <SlotLine
-        cards={t.cards}
-        cardKey={(card) => card.id}
-        renderCard={(card, i) => (
-          <>
-            {wrongAt === i && misplaced}
-            {card.anchor ? (
-              <AnchorCard year={card.year} />
-            ) : (
-              <SongCard
-                song={card}
-                variant={today.result === "correct" && card.id === song.id ? "good" : "plain"}
-              />
-            )}
-          </>
-        )}
-        after={wrongAt === t.cards.length && misplaced}
-        canPlace={pending}
-        selected={slot}
-        onSelect={setSlot}
+        around={swipeLine}
       />
 
       <Announce>
@@ -127,19 +146,7 @@ export default function TimelineGame() {
       </Announce>
 
       {pending ? (
-        <PlaceButton
-          cards={t.cards}
-          slot={slot}
-          pickSpot={tr.timeline.pickSpot}
-          onPlace={(at) => {
-            player.stop();
-            const correct = isSlotCorrect(t.cards, at, song.year);
-            setSwap({ correct, kind: "flash" });
-            track("song_place", { mode: "timeline", turn: songs + 1, correct });
-            if (!correct) track("run_end", { mode: "timeline", songs });
-            update((d) => placeTimelineCard(d, day, at));
-          }}
-        />
+        <PlaceButton live={live} cards={t.cards} slot={at} onPlace={place} />
       ) : (
         <ResultCard>
           <div className="text-2xl font-bold">{resultTitle}</div>

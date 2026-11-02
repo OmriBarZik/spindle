@@ -12,6 +12,8 @@ import {
   expectAccessible,
   fakePlayer,
   mockClipboard,
+  moveRecordTo,
+  recordGap,
   renderIn,
   savedData,
   setupGameTests,
@@ -37,7 +39,7 @@ function currentLine(): { year: number }[] {
 }
 
 function placeButton() {
-  return screen.getByRole("button", { name: /^(Pick a spot|Place it)/ });
+  return screen.getByRole("button", { name: /^Place it: / });
 }
 
 /** Place song `i` (0-based) right or wrong, then let the record animation end. */
@@ -46,17 +48,15 @@ async function place(i: number, right: boolean, container: HTMLElement) {
   const year = sortSongsFor(DAY)[i]!.year;
   const good = correctSlot(line, year);
   const slot = right ? good : good === 0 ? line.length : 0;
-  await userEvent.click(
-    screen.getByRole("button", { name: `+ ${slotLabel(line, slot, MESSAGES.en.slots)}` }),
-  );
-  expect(placeButton()).toHaveProperty(
-    "textContent",
-    `Place it: ${slotLabel(line, slot, MESSAGES.en.slots)}`,
-  );
+  await moveRecordTo(container, slot);
+  // The button says where the song goes; its name adds the action.
+  const where = slotLabel(line, slot, MESSAGES.en.placeAt);
+  expect(placeButton().textContent).toBe(where);
+  expect(placeButton().getAttribute("aria-label")).toBe(`Place it: ${where}`);
   await userEvent.click(placeButton());
   expect(fakePlayer.stop).toHaveBeenCalled();
   // Locked until the record's result animation ends (the last song has no button left).
-  const locked = screen.queryByRole("button", { name: /^(Pick a spot|Place it)/ });
+  const locked = screen.queryByRole("button", { name: /^Place it: / });
   expect(locked?.hasAttribute("disabled") ?? true).toBe(true);
   const swap = container.querySelector(".deck-swap");
   expect(swap).not.toBeNull();
@@ -65,14 +65,18 @@ async function place(i: number, right: boolean, container: HTMLElement) {
 }
 
 describe("Daily Five screen", () => {
-  it("starts from the day's starting year with two gaps", () => {
+  it("starts from the day's starting year with two gaps", async () => {
     const { container } = renderIn("en", <SortGame />);
     const year = anchorYearFor(DAY);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Daily Five");
     expect(container.textContent).toContain(`Your line starts at ${year}`);
-    expect(screen.getByRole("button", { name: `+ Before ${year}` })).toBeTruthy();
-    expect(screen.getByRole("button", { name: `+ After ${year}` })).toBeTruthy();
-    expect(placeButton()).toHaveProperty("disabled", true);
+    expect(container.querySelectorAll("[data-gap]")).toHaveLength(2);
+    // The record starts on a gap, so the button is ready to answer.
+    expect(placeButton().textContent).toBe(`After ${year}`);
+    expect(placeButton()).toHaveProperty("disabled", false);
+    await moveRecordTo(container, 0);
+    expect(placeButton().textContent).toBe(`Before ${year}`);
+    expect(screen.getByRole("button", { name: "Earlier" })).toHaveProperty("disabled", true);
     expect(screen.getByText("Song 1 of 5")).toBeTruthy();
   });
 
@@ -92,7 +96,7 @@ describe("Daily Five screen", () => {
     expect(container.textContent).toContain("3 / 5 placed right");
     expect(container.textContent).toContain("🟩🟥🟩🟩🟥");
     expect(container.textContent).toContain("moved here");
-    expect(screen.queryByRole("button", { name: /^\+/ })).toBeNull();
+    expect(container.querySelector("[data-gap]")).toBeNull();
     expect(savedData().sort.stats.played).toBe(1);
 
     await userEvent.click(screen.getByRole("button", { name: "Share result" }));
@@ -141,8 +145,7 @@ describe("Daily Five screen", () => {
     for (let i = 0; i < 5; i++) {
       const line = currentLine();
       const slot = correctSlot(line, songs[i]!.year);
-      const slots = screen.getAllByRole("button").filter((b) => b.textContent.startsWith("+ "));
-      await userEvent.click(slots[slot]!);
+      await moveRecordTo(container, slot, "he");
       await userEvent.click(screen.getByRole("button", { name: /^לשבץ/ }));
       fireEvent.animationEnd(container.querySelector(".deck-swap")!);
     }
@@ -159,9 +162,9 @@ describe("Daily Five screen", () => {
     const first = renderIn("en", <SortGame />);
     await place(0, true, first.container);
     first.unmount();
-    renderIn("en", <SortGame />);
+    const { container } = renderIn("en", <SortGame />);
     expect(screen.getByText("Song 2 of 5")).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: /^\+/ })).toHaveLength(3);
+    expect(container.querySelectorAll("[data-gap]")).toHaveLength(3);
   });
 
   it("announces each result to screen readers", async () => {
@@ -175,6 +178,32 @@ describe("Daily Five screen", () => {
     expect(status()).toContain("✅ Correct!");
     await place(1, false, container);
     expect(status()).toContain("❌ Not quite.");
+  });
+
+  it("moves the record with the arrow keys on the line", async () => {
+    const { container } = renderIn("en", <SortGame />);
+    const year = anchorYearFor(DAY);
+    const line = screen.getByRole("group", { name: /^Your timeline/ });
+    line.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(placeButton().textContent).toBe(`Before ${year}`);
+    await userEvent.keyboard("{End}");
+    expect(placeButton().textContent).toBe(`After ${year}`);
+    expect(recordGap(container)).toBe(1);
+  });
+
+  it("shows where the song really went while the record glows", async () => {
+    const { container } = renderIn("en", <SortGame />);
+    const year = sortSongsFor(DAY)[0]!.year;
+    const slot = correctSlot(currentLine(), year);
+    await moveRecordTo(container, slot === 0 ? 1 : 0);
+    await userEvent.click(placeButton());
+    // The answer sits beside the record, and the choosing glow is gone.
+    expect(container.querySelector(".swipe-gap-on")).toBeNull();
+    expect(container.querySelector(".swipe-lit")).toBeNull();
+    expect(container.querySelector(".card-bad")).not.toBeNull();
+    fireEvent.animationEnd(container.querySelector(".deck-swap")!);
+    expect(container.querySelector(".swipe-gap-on")).not.toBeNull();
   });
 
   it("keeps the hidden YouTube player out of reach", () => {

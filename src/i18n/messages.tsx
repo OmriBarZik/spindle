@@ -22,8 +22,11 @@ export type Messages = {
   common: {
     languageLabel: string;
     loadingGame: string;
-    oldest: string;
-    newest: string;
+    /** Steps the record one gap toward older / newer songs. */
+    earlier: string;
+    later: string;
+    /** Name of the swipeable line of cards. */
+    lineLabel: string;
     play: string;
     pause: string;
     restart: string;
@@ -38,12 +41,13 @@ export type Messages = {
     shareResult: string;
     copied: string;
     copyFailed: string;
-    addSlot: (label: string) => string;
-    songGoesHere: (label: string) => string;
+    /** Accessible name of the place button, e.g. "Place it: Between 1992 and 1997". */
     placeIt: (label: string) => string;
     songs: (n: number) => string;
   };
   slots: SlotLabels;
+  /** What the place button says: where today's song goes, as a phrase. */
+  placeAt: SlotLabels;
   home: {
     tagline: string;
     sortDesc: string;
@@ -63,7 +67,6 @@ export type Messages = {
     wrong: string;
     reveal: (title: string, artist: string, year: number) => ReactNode;
     movedHere: string;
-    pickSpot: string;
     perfect: string;
     score: (hits: number, total: number) => string;
     stats: { played: string; perfect: string; streak: string; bestStreak: string };
@@ -91,7 +94,6 @@ export type Messages = {
     dayLine: (day: number, best: number) => string;
     today: string;
     belongsHere: string;
-    pickSpot: string;
     nailed: string;
     notQuite: string;
     correctMsg: (songs: number) => string;
@@ -118,8 +120,9 @@ const en: Messages = {
   common: {
     languageLabel: "Language",
     loadingGame: "Warming up the turntable…",
-    oldest: "▲ Oldest",
-    newest: "▼ Newest",
+    earlier: "Earlier",
+    later: "Later",
+    lineLabel: "Your timeline. Swipe to move the record between two songs.",
     play: "Play",
     pause: "Pause",
     restart: "↺ Restart",
@@ -133,8 +136,6 @@ const en: Messages = {
     shareResult: "Share result",
     copied: "Copied!",
     copyFailed: "Couldn't copy",
-    addSlot: (l) => `+ ${l}`,
-    songGoesHere: (l) => `🎵 Song goes here · ${l}`,
     placeIt: (l) => `Place it: ${l}`,
     songs: enSongs,
   },
@@ -144,6 +145,13 @@ const en: Messages = {
     after: (y) => `After ${y}`,
     in: (y) => `In ${y}`,
     between: (a, b) => `${a} – ${b}`,
+  },
+  placeAt: {
+    anywhere: "Anywhere",
+    before: (y) => `Before ${y}`,
+    after: (y) => `After ${y}`,
+    in: (y) => `In ${y}`,
+    between: (a, b) => `Between ${a} and ${b}`,
   },
   home: {
     tagline:
@@ -191,7 +199,6 @@ const en: Messages = {
       </>
     ),
     movedHere: "moved here",
-    pickSpot: "Pick a spot on the line",
     perfect: "Perfect! 🎉",
     score: (hits, total) => `${hits} / ${total} placed right`,
     stats: { played: "Played", perfect: "Perfect", streak: "Streak", bestStreak: "Best streak" },
@@ -223,7 +230,6 @@ const en: Messages = {
     dayLine: (day, best) => `Timeline day ${day} · Best ${best}`,
     today: "Today",
     belongsHere: "belongs here",
-    pickSpot: "Pick a spot on the timeline",
     nailed: "Nailed it! ✅",
     notQuite: "Not quite ❌",
     correctMsg: (songs) =>
@@ -256,8 +262,9 @@ const he: Messages = {
   common: {
     languageLabel: "שפה",
     loadingGame: "מחממים את הפטיפון…",
-    oldest: "▲ הכי ישן",
-    newest: "▼ הכי חדש",
+    earlier: "מוקדם יותר",
+    later: "מאוחר יותר",
+    lineLabel: "ציר הזמן שלכם. החליקו כדי להזיז את התקליט בין שני שירים.",
     play: "נגינה",
     pause: "השהיה",
     restart: "↺ מההתחלה",
@@ -271,8 +278,6 @@ const he: Messages = {
     shareResult: "שיתוף התוצאה",
     copied: "הועתק!",
     copyFailed: "ההעתקה נכשלה",
-    addSlot: (l) => `+ ${l}`,
-    songGoesHere: (l) => `🎵 השיר נכנס כאן · ${l}`,
     placeIt: (l) => `לשבץ: ${l}`,
     songs: heSongs,
   },
@@ -282,6 +287,13 @@ const he: Messages = {
     after: (y) => `אחרי ${y}`,
     in: (y) => `ב־${y}`,
     between: (a, b) => `${a} – ${b}`,
+  },
+  placeAt: {
+    anywhere: "בכל מקום",
+    before: (y) => `לפני ${y}`,
+    after: (y) => `אחרי ${y}`,
+    in: (y) => `ב־${y}`,
+    between: (a, b) => `בין ${a} ל־${b}`,
   },
   home: {
     tagline: "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ונחשו מתי הם יצאו.",
@@ -327,7 +339,6 @@ const he: Messages = {
       </>
     ),
     movedHere: "הועבר לכאן",
-    pickSpot: "בחרו מקום על הציר",
     perfect: "מושלם! 🎉",
     score: (hits, total) => `${hits} / ${total} במקום הנכון`,
     stats: { played: "משחקים", perfect: "מושלמים", streak: "רצף", bestStreak: "רצף שיא" },
@@ -358,7 +369,6 @@ const he: Messages = {
     dayLine: (day, best) => `יום ${day} בציר · שיא ${best}`,
     today: "היום",
     belongsHere: "המקום שלו כאן",
-    pickSpot: "בחרו מקום על ציר הזמן",
     nailed: "בול! ✅",
     notQuite: "לא בדיוק ❌",
     correctMsg: (songs) =>
