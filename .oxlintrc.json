@@ -12,6 +12,7 @@
     "promise",
     "vitest"
   ],
+  "jsPlugins": ["./lint/spindle-rules.mjs"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -28,6 +29,28 @@
     "next": { "rootDir": "." }
   },
   "rules": {
+    // Size and structure: split things up rather than raising these.
+    "complexity": ["error", 15],
+    "max-depth": ["error", 3],
+    "max-params": ["error", 4],
+    "max-lines": ["error", { "max": 300, "skipBlankLines": true, "skipComments": true }],
+    "max-lines-per-function": [
+      "error",
+      { "max": 120, "skipBlankLines": true, "skipComments": true }
+    ],
+    "no-nested-ternary": "error",
+    "unicorn/no-nested-ternary": "error",
+    "unicorn/no-array-for-each": "error",
+    "curly": ["error", "all"],
+    "import/no-default-export": "error",
+    "import/no-relative-parent-imports": "error",
+    "typescript/method-signature-style": ["error", "property"],
+    "react/no-multi-comp": "error",
+    "spindle/no-barrel": "error",
+    "spindle/specific-file-name": "error",
+    "spindle/no-jsx-and": "error",
+    "spindle/no-typeof-type": "error",
+
     "eqeqeq": ["error", "always"],
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-implicit-coercion": "error",
@@ -135,8 +158,67 @@
   },
   "overrides": [
     {
+      // Next requires default exports for pages and its special files; so do the tool configs.
+      "files": ["src/app/**", "*.config.*"],
+      "rules": { "import/no-default-export": "off" }
+    },
+    {
+      // One object per language; splitting it would only hide that.
+      "files": ["src/i18n/messages.tsx"],
+      "rules": { "max-lines": "off", "max-lines-per-function": "off", "react/no-multi-comp": "off" }
+    },
+    {
+      // Layers: lib and i18n know nothing about React screens.
+      "files": ["src/lib/**", "src/i18n/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/app/*", "@/components/*", "@/hooks/*"],
+                "message": "lib and i18n must not depend on app, components or hooks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/hooks/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/app/*", "@/components/*"],
+                "message": "Hooks must not depend on app or components."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/__tests__/**", "src/test/**"],
       "rules": {
+        // A describe block is as long as what it covers.
+        "max-lines-per-function": "off",
+        // Everything is imported and nothing is global. Tests are flat: no `describe`.
+        "vitest/prefer-importing-vitest-globals": "error",
+        "spindle/no-describe": "error",
+        // Fake at the outside boundary (see .claude/rules/testing.md), not inside the app.
+        "vitest/no-restricted-vi-methods": [
+          "error",
+          {
+            "mock": "Avoid module mocks: fake the outside boundary instead.",
+            "doMock": "Avoid module mocks: fake the outside boundary instead.",
+            "fn": "Avoid mock functions: use a small fake that records what happened.",
+            "spyOn": "Avoid spies: assert on what the code visibly did.",
+            "stubGlobal": "Set the fake up in src/test/helpers.tsx."
+          }
+        ],
         "typescript/no-non-null-assertion": "off",
         "no-param-reassign": "off",
         // Helpers next to the tests that use them read better than hoisted ones.
@@ -144,11 +226,8 @@
         // Vitest: stray `.only`/`.skip`, broken `expect`s and unawaited assertions fail silently.
         // Parameterized tests use `.for` (never a loop around `it`): see .claude/rules/testing.md.
         "vitest/prefer-each": "error",
-        "vitest/consistent-each-for": [
-          "error",
-          { "test": "for", "it": "for", "describe": "for", "suite": "for" }
-        ],
-        "vitest/consistent-test-it": "error",
+        "vitest/consistent-each-for": ["error", { "test": "for", "it": "for" }],
+        "vitest/consistent-test-it": ["error", { "fn": "it" }],
         "vitest/consistent-vitest-vi": "error",
         "vitest/hoisted-apis-on-top": "error",
         "vitest/no-alias-methods": "error",
@@ -188,5 +267,5 @@
       "rules": { "no-console": "off" }
     }
   ],
-  "ignorePatterns": [".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]
+  "ignorePatterns": ["lint/**", ".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]
 }

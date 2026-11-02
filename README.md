@@ -58,10 +58,10 @@ formatted with oxfmt.
 | --- | --- |
 | `src/data/songs.json` | The song catalog |
 | `src/lib/daily.ts` | Deterministic daily song selection (seeded by date) |
-| `src/lib/storage.ts` | Save format and all game state transitions |
+| `src/lib/storage.ts`, `sortState.ts`, `timelineState.ts` | Save format and all game state transitions |
 | `src/lib/timeline.ts` | Slot / placement rules |
-| `src/lib/youtube.ts` | Hidden YouTube player hook |
-| `src/components/` | `Deck` (turntable), `SortGame` (Daily Five), `TimelineGame`, `TimelineParts` |
+| `src/hooks/useHiddenPlayer.ts` | Hidden YouTube player hook |
+| `src/components/` | `Deck` (turntable), `SortGame` (Daily Five), `TimelineGame`, `SwipeLine` (the line) |
 
 ## Adding songs
 

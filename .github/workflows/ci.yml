@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: pnpm lint --format github
 
+      - name: Unused code
+        run: pnpm knip
+
       - name: Typecheck
         run: pnpm typecheck
 

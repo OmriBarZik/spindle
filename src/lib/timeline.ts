@@ -1,4 +1,4 @@
-import type { Song } from "./songs";
+import type { Song, SongRef } from "./songs";
 
 export type TimelineCard = {
   id: string;
@@ -11,6 +11,20 @@ export type TimelineCard = {
 };
 
 type Dated = { year: number };
+
+/** One card on the swipe line: a song, or the starting year (`song: null`). */
+export type LineItem = {
+  key: string;
+  year: number;
+  song: SongRef | null;
+  variant?: "plain" | "good" | "bad";
+  note?: string;
+};
+
+/** The gap the record starts on: the middle of the line. */
+export function defaultSlot(count: number): number {
+  return Math.ceil(count / 2);
+}
 
 export function anchorCard(year: number): TimelineCard {
   return { id: `anchor:${year}`, title: "", artist: "", year, youtubeId: "", anchor: true };
@@ -54,8 +68,14 @@ export type SlotLabels = {
 export function slotLabel(cards: readonly Dated[], slot: number, labels: SlotLabels): string {
   const before = cards[slot - 1];
   const after = cards[slot];
-  if (!before) return after ? labels.before(after.year) : labels.anywhere;
-  if (!after) return labels.after(before.year);
-  if (before.year === after.year) return labels.in(before.year);
+  if (!before) {
+    return after ? labels.before(after.year) : labels.anywhere;
+  }
+  if (!after) {
+    return labels.after(before.year);
+  }
+  if (before.year === after.year) {
+    return labels.in(before.year);
+  }
   return labels.between(before.year, after.year);
 }

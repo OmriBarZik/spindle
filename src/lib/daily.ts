@@ -1,7 +1,11 @@
+import { type Locale, LOCALES } from "@/i18n/config";
 import { hashString, mulberry32, seededShuffle } from "./random";
-import { type Song, SONG_LANGUAGES, type SongLanguage, songLanguage, SONGS } from "./songs";
+import { type Song, songLanguage, SONGS } from "./songs";
 
 export const SORT_SIZE = 5;
+
+/** Starting year if the catalog somehow has no other year to offer. */
+const FALLBACK_YEAR = 1990;
 
 /**
  * The day's song order for the player's chosen languages.
@@ -15,14 +19,18 @@ export const SORT_SIZE = 5;
  * Nothing here depends on anything but the seed and the setting: players with the same
  * setting (both on is the default) get the same puzzle.
  */
-function shuffled(seed: string, langs: readonly SongLanguage[] = SONG_LANGUAGES): Song[] {
+function shuffled(seed: string, langs: readonly Locale[] = LOCALES): Song[] {
   const all = seededShuffle(SONGS, seed);
-  const queues = SONG_LANGUAGES.filter((l) => langs.includes(l))
+  const queues = LOCALES.filter((l) => langs.includes(l))
     .map((l) => all.filter((s) => songLanguage(s) === l))
     .filter((q) => q.length > 0);
-  if (queues.length === 0) return langs === SONG_LANGUAGES ? all : shuffled(seed);
+  if (queues.length === 0) {
+    return langs === LOCALES ? all : shuffled(seed);
+  }
   const [first] = queues;
-  if (queues.length === 1 && first) return first;
+  if (queues.length === 1 && first) {
+    return first;
+  }
 
   const coin = mulberry32(hashString(`${seed}:mix`));
   const out: Song[] = [];
@@ -30,9 +38,13 @@ function shuffled(seed: string, langs: readonly SongLanguage[] = SONG_LANGUAGES)
   while (live.length > 0) {
     const pick = live[Math.floor(coin() * live.length)];
     const song = pick?.songs[pick.next++];
-    if (!pick || !song) break;
+    if (!pick || !song) {
+      break;
+    }
     out.push(song);
-    if (pick.next === pick.songs.length) live = live.filter((q) => q !== pick);
+    if (pick.next === pick.songs.length) {
+      live = live.filter((q) => q !== pick);
+    }
   }
   return out;
 }
@@ -41,14 +53,18 @@ function shuffled(seed: string, langs: readonly SongLanguage[] = SONG_LANGUAGES)
  * The 5 songs for the "Daily Five" puzzle, in the order they are played. Everyone
  * gets the same songs on the same calendar day. Years are kept distinct.
  */
-export function sortSongsFor(day: string, langs?: readonly SongLanguage[]): Song[] {
+export function sortSongsFor(day: string, langs?: readonly Locale[]): Song[] {
   const picked: Song[] = [];
   const years = new Set<number>();
   for (const song of shuffled(`sort:${day}`, langs)) {
-    if (years.has(song.year)) continue;
+    if (years.has(song.year)) {
+      continue;
+    }
     picked.push(song);
     years.add(song.year);
-    if (picked.length === SORT_SIZE) break;
+    if (picked.length === SORT_SIZE) {
+      break;
+    }
   }
   return picked;
 }
@@ -57,20 +73,20 @@ export function sortSongsFor(day: string, langs?: readonly SongLanguage[]): Song
  * The starting year card for the daily five, e.g. 1980. Taken from another song
  * in the catalog (so it's a realistic year) whose year differs from all five.
  */
-export function anchorYearFor(day: string, langs?: readonly SongLanguage[]): number {
+export function anchorYearFor(day: string, langs?: readonly Locale[]): number {
   const used = new Set(sortSongsFor(day, langs).map((s) => s.year));
   const pick = shuffled(`anchor:${day}`, langs).find((s) => !used.has(s.year));
-  return pick?.year ?? 1990;
+  return pick?.year ?? FALLBACK_YEAR;
 }
 
 /** Starting year for a new Daily Timeline, different from the first song's year. */
 export function timelineAnchorYearFor(
   day: string,
   songYear: number,
-  langs?: readonly SongLanguage[],
+  langs?: readonly Locale[],
 ): number {
   const pick = shuffled(`timeline-anchor:${day}`, langs).find((s) => s.year !== songYear);
-  return pick?.year ?? 1990;
+  return pick?.year ?? FALLBACK_YEAR;
 }
 
 /**
@@ -81,7 +97,7 @@ export function timelineAnchorYearFor(
 export function timelineSongFor(
   day: string,
   exclude: ReadonlySet<string>,
-  langs?: readonly SongLanguage[],
+  langs?: readonly Locale[],
 ): Song | undefined {
   const sortIds = new Set(sortSongsFor(day, langs).map((s) => s.id));
   const ok = (s: Song) => !sortIds.has(s.id) && !exclude.has(s.id);

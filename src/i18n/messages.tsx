@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import type { SongLanguage } from "@/lib/songs";
 import type { SlotLabels } from "@/lib/timeline";
 import type { Locale } from "./config";
 
@@ -11,7 +10,6 @@ import type { Locale } from "./config";
  * <bdi> when they appear inside a sentence so they don't scramble right-to-left text.
  */
 export type Messages = {
-  langName: string;
   meta: {
     title: string;
     description: string;
@@ -77,12 +75,12 @@ export type Messages = {
     name: string;
     songsHeading: string;
     songsIntro: string;
-    kinds: Record<SongLanguage, { name: string; desc: string }>;
+    kinds: Record<Locale, { name: string; desc: string }>;
     count: (n: number) => string;
     lastOne: string;
     applyNote: string;
     /** Added to share text when only one kind is on, since the puzzle differs. */
-    shareTag: Record<SongLanguage, string>;
+    shareTag: Record<Locale, string>;
     back: string;
   };
   timeline: {
@@ -108,7 +106,6 @@ export type Messages = {
 const enSongs = (n: number) => `${n} song${n === 1 ? "" : "s"}`;
 
 const en: Messages = {
-  langName: "English",
   meta: {
     title: "Spindle — the daily music timeline game",
     description:
@@ -250,7 +247,6 @@ const en: Messages = {
 const heSongs = (n: number) => (n === 1 ? "שיר אחד" : `${n} שירים`);
 
 const he: Messages = {
-  langName: "עברית",
   meta: {
     title: "Spindle — משחק ציר הזמן המוזיקלי היומי",
     description:

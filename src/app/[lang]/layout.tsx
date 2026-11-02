@@ -1,10 +1,10 @@
-import "../globals.css";
+import "@/app/globals.css";
 import type { Metadata, Viewport } from "next";
 import { Heebo, Roboto, Roboto_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { lang as langParam } from "next/root-params";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
-import { dirOf, hasLocale, LOCALES } from "@/i18n/config";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { dirOf, hasLocale, localeParams, localePath, LOCALES } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { MESSAGES } from "@/i18n/messages";
 
@@ -26,18 +26,20 @@ const heebo = Heebo({
 });
 
 export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
+  return localeParams();
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await langParam();
-  if (!hasLocale(lang)) return {};
+  if (!hasLocale(lang)) {
+    return {};
+  }
   const t = MESSAGES[lang];
   return {
     title: t.meta.title,
     description: t.meta.description,
     alternates: {
-      languages: Object.fromEntries(LOCALES.map((l) => [l, `/${l}`])),
+      languages: Object.fromEntries(LOCALES.map((l) => [l, localePath(l, "/")])),
     },
   };
 }
@@ -48,7 +50,9 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
   const lang = await langParam();
-  if (!hasLocale(lang)) notFound();
+  if (!hasLocale(lang)) {
+    notFound();
+  }
   return (
     <html
       lang={lang}

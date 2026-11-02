@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { RecordSvg } from "@/lib/recordSvg";
+import { RecordSvg } from "@/components/RecordSvg";
 
 // Favicon: the same record as the link preview image, with fewer, thicker grooves so it
 // reads at 32px.

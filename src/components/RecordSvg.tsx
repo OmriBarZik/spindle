@@ -2,7 +2,7 @@
 // (The in-page record is plain CSS: `.record` in globals.css.)
 
 export const RECORD_BACKGROUND = "#0b0b10";
-export const RECORD_LABEL = "#8b5cf6";
+const RECORD_LABEL = "#8b5cf6";
 
 const R = 250; // drawn in a 500 x 500 box, scaled to `size`
 

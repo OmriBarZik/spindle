@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useLayoutEffect } from "react";
-import { preloadGames } from "@/components/ClientOnly";
+import Link, { type LinkProps } from "next/link";
+import { type ComponentProps, useEffect, useLayoutEffect } from "react";
+import { preloadGames } from "@/components/LazyScreens";
+import { launchRecordFlight } from "@/hooks/recordFlight";
 import { holdHidden } from "@/lib/motion";
-import { launchRecordFlight } from "@/lib/recordFlight";
 
 /** The home page's content, faded out on click (see below). */
 let homeFade: Animation | null = null;
@@ -19,13 +19,16 @@ function fadeOutHome(main: HTMLElement | null) {
  * A link into a game that sends the home page's record flying into the game's
  * Deck, and starts the game at the top of the page.
  */
-export default function ModeLink(props: React.ComponentProps<typeof Link>) {
+export function ModeLink(props: LinkProps & Omit<ComponentProps<"a">, keyof LinkProps>) {
   // Load the game code while the player reads the home page, so the record
   // has somewhere to land right away (slow first loads broke the flight).
   useEffect(() => {
     // Safari has no requestIdleCallback.
-    if ("requestIdleCallback" in window) window.requestIdleCallback(preloadGames);
-    else setTimeout(preloadGames, 300);
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(preloadGames);
+    } else {
+      setTimeout(preloadGames, 300);
+    }
   }, []);
 
   // Next may keep the home page around and show it again on Back: make sure
@@ -59,8 +62,9 @@ export default function ModeLink(props: React.ComponentProps<typeof Link>) {
           e.ctrlKey ||
           e.shiftKey ||
           e.altKey
-        )
+        ) {
           return;
+        }
         // Pin the record where it is now (it's position: fixed, so scrolling
         // won't move it), hide the rest of the home page so the jump below
         // isn't seen, then start the game at the top of the page.

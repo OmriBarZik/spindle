@@ -12,7 +12,7 @@ const GA_MEASUREMENT_ID = "G-EJN20HSMCH";
  * mounts and sends its first event (`track()` in `src/lib/analytics.ts`). gtag queues
  * calls in `dataLayer` until the library itself, loaded after hydration, processes them.
  */
-export default function GoogleAnalytics() {
+export function GoogleAnalytics() {
   return (
     <>
       {/*

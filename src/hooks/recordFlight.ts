@@ -1,7 +1,7 @@
 "use client";
 
 import { type RefObject, useEffect, useLayoutEffect } from "react";
-import { canAnimate, holdHidden } from "./motion";
+import { canAnimate, holdHidden } from "@/lib/motion";
 
 /**
  * The record "flight" from the home page into a game.
@@ -30,7 +30,7 @@ const SPIN_SLOW_MS = 8000;
 /** `landing` is set while a Deck has taken over the flight. */
 type Flight = {
   ghost: HTMLElement;
-  timer: ReturnType<typeof setTimeout>;
+  timer: number;
   landing: boolean;
   /** Stops listening for Back/Forward. */
   unlisten: () => void;
@@ -41,7 +41,9 @@ let flight: Flight | null = null;
 function angleOf(el: Element): number {
   const t = getComputedStyle(el).transform;
   const m = t && t !== "none" ? /matrix(?:3d)?\(([^)]+)\)/.exec(t) : null;
-  if (!m) return 0;
+  if (!m) {
+    return 0;
+  }
   const [a = 1, b = 0] = (m[1] ?? "").split(",").map(Number);
   const deg = (Math.atan2(b, a) * 180) / Math.PI;
   return (deg + 360) % 360;
@@ -67,9 +69,13 @@ function surroundings(box: HTMLElement): HTMLElement[] {
   const out: HTMLElement[] = [];
   for (let el: HTMLElement | null = box; el && el.tagName !== "MAIN"; el = el.parentElement) {
     const parent: HTMLElement | null = el.parentElement;
-    if (!parent) break;
+    if (!parent) {
+      break;
+    }
     for (const sib of Array.from(parent.children)) {
-      if (sib !== el && sib instanceof HTMLElement) out.push(sib);
+      if (sib !== el && sib instanceof HTMLElement) {
+        out.push(sib);
+      }
     }
   }
   return out;
@@ -77,14 +83,18 @@ function surroundings(box: HTMLElement): HTMLElement[] {
 
 /** Forget the current flight (if it is `f`) and stop its timers and listeners. */
 function endFlight(f: Flight) {
-  if (flight === f) flight = null;
-  clearTimeout(f.timer);
+  if (flight === f) {
+    flight = null;
+  }
+  window.clearTimeout(f.timer);
   f.unlisten();
 }
 
 function removeGhost(fade: boolean) {
   const f = flight;
-  if (!f) return;
+  if (!f) {
+    return;
+  }
   endFlight(f);
   if (!fade) {
     f.ghost.remove();
@@ -99,7 +109,9 @@ function removeGhost(fade: boolean) {
 
 /** Start a flight from the home record. Call it from the link's click handler. */
 export function launchRecordFlight(record: HTMLElement | null) {
-  if (!record || !canAnimate()) return;
+  if (!record || !canAnimate()) {
+    return;
+  }
   removeGhost(false);
 
   const { cx, cy, size } = boxOf(record);
@@ -130,7 +142,7 @@ export function launchRecordFlight(record: HTMLElement | null) {
   window.addEventListener("popstate", onPop);
   flight = {
     ghost,
-    timer: setTimeout(() => removeGhost(true), TIMEOUT),
+    timer: window.setTimeout(() => removeGhost(true), TIMEOUT),
     landing: false,
     unlisten: () => window.removeEventListener("popstate", onPop),
   };
@@ -139,7 +151,9 @@ export function launchRecordFlight(record: HTMLElement | null) {
 /** Let a game screen without a Deck (e.g. a finished Daily Five) fade the ghost out. */
 export function useDropRecordFlight() {
   useEffect(() => {
-    if (!flight?.landing) removeGhost(true);
+    if (!flight?.landing) {
+      removeGhost(true);
+    }
   }, []);
 }
 
@@ -168,9 +182,11 @@ export function useRecordLanding(
   useLayoutEffect(() => {
     const f = flight;
     const boxEl = box.current;
-    if (!f || !boxEl) return;
+    if (!f || !boxEl) {
+      return;
+    }
 
-    clearTimeout(f.timer);
+    window.clearTimeout(f.timer);
     f.landing = true;
     setHidden(boxEl, true);
     const around = surroundings(boxEl);
@@ -182,10 +198,13 @@ export function useRecordLanding(
       endFlight(f);
       f.ghost.remove();
       setHidden(boxEl, false);
-      holds.forEach((h) => h?.cancel());
+      for (const hold of holds) {
+        hold?.cancel();
+      }
       const fadeIn = { duration: FADE_IN, easing: "ease-out" };
-      for (const el of around)
+      for (const el of around) {
         el.animate([{ opacity: 0 }, { opacity: getComputedStyle(el).opacity }], fadeIn);
+      }
       const btn = button.current;
       btn?.animate([{ opacity: 0 }, { opacity: getComputedStyle(btn).opacity }], fadeIn);
     };
@@ -228,12 +247,16 @@ export function useRecordLanding(
         f.ghost.style.animation = "";
       }
       setHidden(boxEl, false);
-      holds.forEach((h) => h?.cancel());
+      for (const hold of holds) {
+        hold?.cancel();
+      }
       f.landing = false;
       // Unmounted mid-flight, e.g. Back to the home page: drop the record
       // right away. Waiting one tick lets React's dev double-mount pick the
       // flight up again first (the re-run clears this timer).
-      if (flight === f) f.timer = setTimeout(() => removeGhost(false), 0);
+      if (flight === f) {
+        f.timer = window.setTimeout(() => removeGhost(false), 0);
+      }
     };
   }, [box, button]);
 }

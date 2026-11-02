@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`daily picks are stable > for en 1`] = `
+exports[`daily picks are stable: for en 1`] = `
 [
   "2026-10-20 h_D3VFfhvs4,CvBfHwUxHIk,0J2QdDbelmY,KQ6zr6kCPj8,JGwWNGJdvx8 1989 My2FRPA3Gf8 2000",
   "2026-10-21 ZSM3w1v-A_Y,129kuDCQtHs,8UVNT4wvIGY,dvgZkm1xWPE,XFkzRNyygfk 2024 CD-E-LDc384 2015",
@@ -35,7 +35,7 @@ exports[`daily picks are stable > for en 1`] = `
 ]
 `;
 
-exports[`daily picks are stable > for en+he 1`] = `
+exports[`daily picks are stable: for en+he 1`] = `
 [
   "2026-10-20 h_D3VFfhvs4,IA7d3pBUoHU,sSrGgJsF2ik,CvBfHwUxHIk,nTOzfxxHVSo 1989 My2FRPA3Gf8 1983",
   "2026-10-21 CziHrYYSyPc,ZSM3w1v-A_Y,129kuDCQtHs,8UVNT4wvIGY,kwxUssHx0LI 2008 CD-E-LDc384 1982",
@@ -70,7 +70,7 @@ exports[`daily picks are stable > for en+he 1`] = `
 ]
 `;
 
-exports[`daily picks are stable > for he 1`] = `
+exports[`daily picks are stable: for he 1`] = `
 [
   "2026-10-20 IA7d3pBUoHU,sSrGgJsF2ik,nTOzfxxHVSo,B0xWYu3zasE,vxSgBqLXS9E 1976 z81U2sLEtdY 1976",
   "2026-10-21 CziHrYYSyPc,kwxUssHx0LI,VFzp7cJExnw,af3HQdvWKKs,3kDiXedZWro 1995 B0xWYu3zasE 1982",
@@ -105,9 +105,9 @@ exports[`daily picks are stable > for he 1`] = `
 ]
 `;
 
-exports[`random > hashes with FNV-1a 1`] = `4106903584`;
+exports[`random: hashes with FNV-1a 1`] = `4106903584`;
 
-exports[`random > is a deterministic PRNG in [0, 1) 1`] = `
+exports[`random: is a deterministic PRNG in [0, 1) 1`] = `
 [
   0.6011037519201636,
   0.44829055899754167,
@@ -117,7 +117,7 @@ exports[`random > is a deterministic PRNG in [0, 1) 1`] = `
 ]
 `;
 
-exports[`random > shuffles without losing or changing items 1`] = `
+exports[`random: shuffles without losing or changing items 1`] = `
 [
   11,
   8,

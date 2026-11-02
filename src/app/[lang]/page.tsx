@@ -1,6 +1,6 @@
-import ExternalLink from "@/components/ExternalLink";
-import Header from "@/components/Header";
-import ModeLink from "@/components/ModeLink";
+import { ExternalLink } from "@/components/ExternalLink";
+import { Header } from "@/components/Header";
+import { ModeLink } from "@/components/ModeLink";
 import { localePath } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 

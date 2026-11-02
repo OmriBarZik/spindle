@@ -3,8 +3,12 @@
  * player hasn't asked for reduced motion. Everything animated works without it.
  */
 export function canAnimate(): boolean {
-  if (typeof window === "undefined" || typeof document === "undefined") return false;
-  if (typeof document.body.animate !== "function") return false;
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return false;
+  }
+  if (typeof document.body.animate !== "function") {
+    return false;
+  }
   return typeof window.matchMedia !== "function"
     ? true
     : !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -16,6 +20,8 @@ export function canAnimate(): boolean {
  * Returns null where the Web Animations API is missing.
  */
 export function holdHidden(el: HTMLElement): Animation | null {
-  if (typeof el.animate !== "function") return null;
+  if (typeof el.animate !== "function") {
+    return null;
+  }
   return el.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 0, fill: "forwards" });
 }
