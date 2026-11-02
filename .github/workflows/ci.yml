@@ -51,7 +51,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-      # axe on every page, in both languages, with the real CSS (colour contrast included).
-      - name: Accessibility
-        run: pnpm a11y

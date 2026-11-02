@@ -1,3 +1,4 @@
+import "@/app/globals.css";
 import { cleanup, render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import type { ReactElement } from "react";
@@ -73,15 +74,17 @@ export function savedData(): SaveData {
   return JSON.parse(window.localStorage.getItem("spindle:v1") ?? "null") as SaveData;
 }
 
-/** Fails with a readable list if axe finds accessibility problems. */
+/** Fails with a readable list if axe finds accessibility problems (with the real site CSS). */
 export async function expectAccessible(container: HTMLElement) {
   const result = await axe.run(container, {
-    // Tests load components without the site CSS, so colours are not the real ones.
-    rules: { "color-contrast": { enabled: false } },
+    runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"],
   });
   const problems = result.violations.map(
     (v) => `${v.id}: ${v.help}\n  ${v.nodes.map((n) => n.html).join("\n  ")}`,
   );
+  // The test viewport is phone width: the page must not scroll sideways (WCAG 1.4.10, reflow).
+  const root = document.documentElement;
+  if (root.scrollWidth > root.clientWidth) problems.push("the page scrolls sideways");
   expect(problems).toEqual([]);
 }
 

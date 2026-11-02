@@ -35,7 +35,7 @@ describe("messages", () => {
           : [k],
       );
     expect(shape(MESSAGES.he).toSorted()).toEqual(shape(MESSAGES.en).toSorted());
-    expect(MESSAGES.he.home.rules.length).toBe(MESSAGES.en.home.rules.length);
+    expect(MESSAGES.he.home.rules).toHaveLength(MESSAGES.en.home.rules.length);
   });
   it("labels slots in Hebrew", () => {
     const cards = [{ year: 1994 }, { year: 1997 }, { year: 2000 }];

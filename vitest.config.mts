@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import { playwright } from "@vitest/browser-playwright";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
@@ -16,6 +17,7 @@ export default defineConfig({
       {
         // Components: rendered in a real (headless) Chromium via Playwright.
         resolve: { alias },
+        plugins: [tailwindcss()],
         test: {
           name: "browser",
           include: ["src/components/**/*.test.tsx"],
@@ -23,7 +25,7 @@ export default defineConfig({
             enabled: true,
             headless: true,
             provider: playwright(),
-            instances: [{ browser: "chromium" }],
+            instances: [{ browser: "chromium", viewport: { width: 390, height: 844 } }],
             screenshotFailures: false,
           },
         },
