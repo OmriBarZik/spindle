@@ -31,7 +31,7 @@ export function SongLanguageSwitch({
       disabled={locked}
       title={locked ? t.settings.lastOne : undefined}
       onClick={onToggle}
-      className="flex w-full items-center gap-4 rounded-xl border border-line p-3 text-start transition hover:bg-white/5 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      className="flex w-full items-center gap-200 rounded-control border border-line p-150 text-start transition hover:bg-hover disabled:cursor-not-allowed disabled:hover:bg-transparent"
     >
       <span className="min-w-0 flex-1">
         <span id={`${id}-name`} className="block font-semibold">
@@ -45,15 +45,15 @@ export function SongLanguageSwitch({
       <span
         aria-hidden
         className={clsx(
-          "relative h-7 w-12 shrink-0 rounded-full transition-colors",
-          on ? "bg-green-500" : "bg-white/15",
+          "relative h-350 w-600 shrink-0 rounded-full transition-colors",
+          on ? "bg-switch-on" : "bg-switch-off",
           locked && "opacity-60",
         )}
       >
         <span
           className={clsx(
-            "absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all",
-            on ? "start-6" : "start-1",
+            "absolute top-50 size-250 rounded-full bg-switch-knob shadow-knob transition-all",
+            on ? "start-300" : "start-50",
           )}
         />
       </span>

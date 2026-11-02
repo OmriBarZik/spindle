@@ -54,3 +54,23 @@ function. Split the code rather than raising a limit.
 
 `src/i18n/config.ts` is the only place that lists the supported languages. Everywhere else loops
 over `LOCALES` or uses the `Locale` type (not linted).
+
+## Styling
+
+Every style comes from the design tokens in `src/app/styles/tokens.css` (see "Styling" in
+CLAUDE.md). stylelint (`spindle/tokens-only`, `spindle/spacing-grid`) and oxlint
+(`spindle/no-raw-style`) enforce it.
+
+```tsx
+// NEVER
+<p className="mt-3 text-[13px] text-white" />
+.card { padding: 0.75rem; color: #a1a1aa; }
+
+// ALWAYS
+<p className="mt-150 text-sm text-ink" />
+.card { padding: var(--spacing-150); color: var(--color-muted); }
+```
+
+- Spacing is named in hundreds: 100 = 0.5rem, on a 4px grid. Sizes are built from spacing tokens.
+- Colours by role (`primary`, `secondary`, `muted`, `success`, `marathon`, …), never by hue.
+- A value that has no token yet gets one in `tokens.css`, built from the scales there.

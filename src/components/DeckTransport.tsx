@@ -22,21 +22,21 @@ export function DeckTransport({
 }) {
   const { t } = useI18n();
   return (
-    <div className={small ? "flex items-center gap-4" : "contents"}>
+    <div className={small ? "flex items-center gap-200" : "contents"}>
       {label ? (
-        <div className="mt-1 text-xs font-bold tracking-[0.3em] text-muted uppercase rtl:tracking-normal">
+        <div className="mt-50 text-xs font-bold tracking-widest text-muted uppercase rtl:tracking-normal">
           {label}
         </div>
       ) : null}
-      <div className="flex items-center gap-3 text-sm text-muted">
-        <span dir="ltr" className="w-12 text-end font-mono tabular-nums">
+      <div className="flex items-center gap-150 text-sm text-muted">
+        <span dir="ltr" className="w-600 text-end font-mono tabular-nums">
           {formatTime(time ?? 0)}
         </span>
         <button
           type="button"
           disabled={time === null}
           onClick={onRestart}
-          className="rounded-full border border-line px-3 py-1 transition hover:bg-white/5 disabled:opacity-40"
+          className="rounded-full border border-line px-150 py-50 transition hover:bg-hover disabled:opacity-40"
         >
           {t.common.restart}
         </button>

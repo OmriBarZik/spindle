@@ -8,15 +8,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next typegen && oxlint",
-    "lint:fix": "next typegen && oxlint --fix",
+    "lint:fix": "next typegen && oxlint --fix && stylelint \"**/*.css\" --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "knip": "knip",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm format:check && pnpm lint && pnpm knip && pnpm typecheck && pnpm test",
-    "validate-songs": "node scripts/validate-songs.mts"
+    "check": "pnpm format:check && pnpm lint && pnpm lint:css && pnpm knip && pnpm typecheck && pnpm test",
+    "validate-songs": "node scripts/validate-songs.mts",
+    "lint:css": "stylelint \"**/*.css\""
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -39,6 +40,8 @@
     "oxlint": "^1.90.0",
     "oxlint-tsgolint": "^7.0.2005",
     "playwright": "1.63.0",
+    "stylelint": "17.16.0",
+    "stylelint-config-standard": "40.0.0",
     "tailwindcss": "^4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

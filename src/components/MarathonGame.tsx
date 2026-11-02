@@ -90,7 +90,7 @@ export function MarathonGame() {
   );
 
   return (
-    <ScreenMain>
+    <ScreenMain game="marathon">
       <MarathonHeader anchorYear={state.anchorYear} hearts={hearts} hits={hits} />
 
       <Announce>

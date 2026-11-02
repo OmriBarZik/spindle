@@ -15,17 +15,47 @@ pnpm install            # install dependencies (pnpm is pinned in package.json's
 pnpm dev                # http://localhost:3000
 pnpm test               # vitest projects: unit (node), lint-rules, browser (Chromium) and performance (Chromium on a slowed CPU)
 pnpm lint               # oxlint (.oxlintrc.json): React Compiler rules, type-aware TS, jsx-a11y, Next.js
-pnpm lint:fix           # oxlint --fix
+pnpm lint:css           # stylelint (.stylelintrc.json): every style on the design tokens
+pnpm lint:fix           # oxlint --fix and stylelint --fix
 pnpm format             # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind classes
 pnpm typecheck          # next typegen + tsc --noEmit (TypeScript 7, the native compiler)
 pnpm knip               # unused files, exports and dependencies
-pnpm check              # format check + lint + knip + typecheck + tests (what CI runs, minus the build)
+pnpm check              # format check + lint + CSS lint + knip + typecheck + tests (what CI runs, minus the build)
 pnpm build              # production build; all routes are static
 pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node runs the .mts directly)
 ```
 
 Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
-runs format, lint, knip, typecheck, tests and build on every PR and on `main`.
+runs format, lint, CSS lint, knip, typecheck, tests and build on every PR and on `main`.
+
+## Styling: design tokens only
+
+All styles come from `src/app/styles/tokens.css`. Nothing else holds a raw colour, length or
+duration, and the linters enforce it.
+
+- **Spacing is named in hundreds on a 4px grid:** `--spacing-100` = 0.5rem (8px), `50` = 4px,
+  `150` = 12px, `200` = 1rem. Tailwind uses the same scale (`p-100`, `gap-150`, `w-600`,
+  `-inset-150`); Tailwind's own numbers (`p-3`) are switched off. `25` (2px) is only for hairlines
+  and optical nudges. The root font size stays 16px. Component sizes (`--swipe-*`, `--size-record*`,
+  …) are built from spacing tokens (`var(--spacing-1300)`, `calc()` of them), never raw rem.
+- **Colours have roles:** `page`, `surface`, `line`, `ink` / `muted` / `faint` (text), `hover`,
+  `primary` (the main action: Place it, Share, play), `secondary` (Spindle's violet: focus, the line's
+  glow, the starting year), `tertiary` (quiet fills: off, still to come), `success` / `danger` /
+  `warning-ink`, `heart`, and one set per game mode: `daily`, `marathon`, `timeline` (sleeve colour,
+  `-ink` for text on it, `-label` for its record). Use them as Tailwind classes (`bg-surface`,
+  `text-muted`) or `var(--color-…)`. Raw colours live only in `--palette-*`.
+- **Light and dark:** each themed role is `light-dark(light, dark)` and follows the system setting.
+  A browser without `light-dark()` gets the dark values. The vinyl record stays black in both.
+  Component tests run in both schemes (`browser-dark`, `browser-light`), so axe checks contrast in each.
+- **Game colours:** a game screen passes `game` to `ScreenMain` (`.game-*` sets the record's label
+  colour); a home sleeve passes `game` to `ModeSleeve`.
+- **Lint:** stylelint (`stylelint-config-standard` plus `lint/stylelint-tokens.mjs`):
+  `spindle/tokens-only` rejects raw colours outside `--palette-*`, lengths outside `--spacing-*`,
+  `--text-*`, `--border-thin`/`--border-thick` and `--tracking-*`, and durations outside
+  `--duration-*`; `spindle/spacing-grid` checks that `--spacing-N` is `N / 200` rem and on the 4px
+  grid. In TS/TSX, oxlint's `spindle/no-raw-style` rejects hex/rgb colours, Tailwind's own colours
+  (`text-white`), arbitrary values (`text-[13px]`) and off-scale spacing (`gap-3`). The only
+  exception is `src/lib/palette.ts` (the link preview image and favicon can't read CSS).
 
 ## Game modes
 
@@ -147,8 +177,8 @@ is a "default" served without a prefix.
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen (hidden page) |
 | `src/components/MarathonGame.tsx` | Marathon screen (with `MarathonHeader`, `Hearts`, `MarathonFeedback`, `MarathonResult`) |
-| `src/app/[lang]/page.tsx` | Home page: each mode is a record sleeve (`ModeSleeve`, `.sleeve-*` in `globals.css`) whose record flies into the game (`ModeLink` launches the clicked sleeve's `[data-flight-record]`), then `WeekStrip` and "How to play" |
-| `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. With `browse` (a finished Marathon), `SwipeBrowse` adds Earlier / Later buttons that scroll the strip a card at a time (`DONE_PITCH`), so players can look through the run and open songs on YouTube. Styles are the `.swipe-*` classes in `globals.css`. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match the gap + card widths in CSS); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
+| `src/app/[lang]/page.tsx` | Home page: each mode is a record sleeve (`ModeSleeve`, `.sleeve-*` in `styles/home.css`) whose record flies into the game (`ModeLink` launches the clicked sleeve's `[data-flight-record]`), then `WeekStrip` and "How to play" |
+| `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. With `browse` (a finished Marathon), `SwipeBrowse` adds Earlier / Later buttons that scroll the strip a card at a time (`DONE_PITCH`), so players can look through the run and open songs on YouTube. Styles are the `.swipe-*` classes in `styles/swipe.css`, sized by the `--swipe-*` tokens. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match `--swipe-gap-width` + `--swipe-card-width`); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
 | `src/components/PlaceButton.tsx` | Says where the song goes ("Between 1992 and 1997", from `t.placeAt`); its accessible name adds "Place it: " |
 | `src/components/Announce.tsx` | Screen-reader live region |
 | `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
@@ -159,7 +189,9 @@ is a "default" served without a prefix.
 | `src/components/Settings.tsx` | Settings page (song-language switches) |
 | `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
 | `src/app/[lang]/opengraph-image.tsx` | Link preview image (the record + "Spindle"), drawn with `next/og` as SVG and prerendered per language |
-| `src/app/globals.css` | Theme tokens and custom classes (`.card`, `.btn-primary`, `.record`, `.loading-ring`, …) |
+| `src/app/styles/tokens.css` | The design tokens: palette, colour roles (light/dark), spacing, type, radii, shadows, motion, component sizes |
+| `src/app/globals.css` | Imports Tailwind and the tokens, plus shared classes (`.card`, `.btn-primary`, `.game-*`); `styles/home.css`, `record.css` (`.record`, `.loading-ring`, the swap animation) and `swipe.css` (`.swipe-*`) hold the rest |
+| `src/lib/palette.ts` | The few raw colours TypeScript needs (link preview image, favicon, theme colour); mirrors `tokens.css` |
 | `scripts/validate-songs.mts` | oEmbed check for missing or non-embeddable videos |
 
 ## Save format (`spindle:v1`)
@@ -208,14 +240,14 @@ is a "default" served without a prefix.
   `react/purity`, …) are strict. Avoid `setState` inside effects and ref
   access during render. Prefer lazy `useState(() => ...)` initialisers in `ssr: false`
   components.
-- **Tailwind v4.** `.card` and the other classes in `globals.css` are unlayered, so they
+- **Tailwind v4.** `.card` and the other classes in the CSS files are unlayered, so they
   **beat Tailwind utilities**. To change a card's border or background, add a custom class
   (like `.card-good`, `.card-bad` or `.card-anchor`) instead of utility classes.
-- **CSS minifier:** in `globals.css`, an `animation` shorthand without a name is
+- **CSS minifier:** in the CSS files, an `animation` shorthand without a name is
   minified to `animation: none`. Use longhands (`animation-duration`, …) when the name is set
   by another class, and check the built CSS in `.next/static/chunks/*.css`. If a CSS edit
   doesn't show up there, Turbopack's cache is stale: `rm -rf .next` and build again.
-- The site has a dark theme only.
+- The site has a light and a dark theme (see "Styling"). Check new colours in both.
 - **Song years** are the original release year of the song (single or album), not the
   video or a remaster.
 
@@ -240,8 +272,8 @@ is a "default" served without a prefix.
      fails if the page scrolls sideways. The home page is a server component and isn't covered.
      axe can't measure contrast over the gradient at the top of the page (it reports
      "needs review" there, which doesn't fail), and it skips `aria-hidden` text. Check those by hand:
-     small text needs **4.5:1** (`--muted` on the background is 7.7:1; the rail's faint years use
-     `#8a8a96`, 5.7:1), and icons and borders need 3:1.
+     small text needs **4.5:1** in both themes (`--color-muted` and the rail's `--color-faint`), and
+     icons and borders need 3:1.
 - Every control needs an accessible name; decorative emoji/SVGs get `aria-hidden`; results are
   announced through `Announce`; the YouTube host is `inert`. Anything that moves respects
   `prefers-reduced-motion` (CSS media query, or `canAnimate()` in JavaScript). Focus rings must
@@ -258,7 +290,7 @@ is a "default" served without a prefix.
   you added songs on purpose, then run `pnpm vitest -u`).
 - Component tests live in `src/components/__tests__/` and run in **Vitest Browser Mode**
   (headless Chromium through `@vitest/browser-playwright`; the `browser` project in
-  `vitest.config.mts`). The site CSS is loaded (`globals.css` via `@tailwindcss/vite`) and the viewport is 390px wide. Click with `await userEvent.click(el)`
+  `vitest.config.mts`). The site CSS is loaded (`globals.css` via `@tailwindcss/vite`) and the viewport is 390px wide, in both colour schemes. Click with `await userEvent.click(el)`
   from `vitest/browser` (real pointer events), so helpers that click are `async`. Locally,
   a fresh machine needs `pnpm exec playwright install chromium` once. `setupGameTests()` installs a fake YouTube API under the real
   `useHiddenPlayer` (see `fakeYouTube`), render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).

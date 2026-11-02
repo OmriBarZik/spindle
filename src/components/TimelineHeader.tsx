@@ -26,8 +26,8 @@ export function TimelineHeader({
   return (
     <section className="text-center">
       <h1 className="text-2xl font-bold">{t.timeline.name}</h1>
-      <p className="mt-1 text-sm text-muted">{intro()}</p>
-      <p className="mt-2 text-xs tracking-widest text-muted uppercase rtl:tracking-normal">
+      <p className="mt-50 text-sm text-muted">{intro()}</p>
+      <p className="mt-100 text-xs tracking-wider text-muted uppercase rtl:tracking-normal">
         {t.timeline.dayLine(dayNumber, best)}
       </p>
     </section>

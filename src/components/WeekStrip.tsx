@@ -22,17 +22,17 @@ export function WeekStrip() {
 
   return (
     <section aria-labelledby="week-heading" className="card week-card">
-      <div className="flex items-baseline justify-between gap-3 text-sm">
+      <div className="flex items-baseline justify-between gap-150 text-sm">
         <h2 id="week-heading" className="font-bold">
           {t.home.weekHeading}
         </h2>
         <span className="text-muted">{t.home.weekCount(count)}</span>
       </div>
-      <ol className="grid grid-cols-7 gap-1.5 text-center font-mono text-xs text-muted">
+      <ol className="grid grid-cols-7 gap-100 text-center font-mono text-xs text-muted">
         {days.map(({ day, played, future }) => (
           <li
             key={day}
-            className={clsx("flex flex-col items-center gap-1", day === today && "text-foreground")}
+            className={clsx("flex flex-col items-center gap-50", day === today && "text-ink")}
           >
             <span
               aria-hidden

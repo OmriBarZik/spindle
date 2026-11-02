@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import { Profiler } from "react";
 import { afterEach, expect, it } from "vitest";
 import { MarathonGame } from "@/components/MarathonGame";
+import { PITCH } from "@/hooks/useSwipeTrack";
 import { marathonAnchorYearFor, marathonSongsFor } from "@/lib/daily";
 import { emptySave, writeSave } from "@/lib/storage";
 import { correctSlot } from "@/lib/timeline";
@@ -73,7 +74,7 @@ it("keeps swiping cheap on a slow phone", async () => {
   commits.length = 0;
 
   await setCpuThrottling(4);
-  const frames = await swipe(track, 260 * SONGS_ON_LINE, 200);
+  const frames = await swipe(track, PITCH * SONGS_ON_LINE, 200);
 
   // Crossing a gap only re-renders the place button and the overview bar. Rendering the
   // whole game per gap costs about six times as much, and drops frames.

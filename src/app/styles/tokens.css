@@ -1,0 +1,323 @@
+/*
+ * Spindle's design tokens. This is the only file allowed raw values (hex colours, px,
+ * rem): everything else uses these variables, and stylelint enforces it
+ * (`.stylelintrc.json`).
+ *
+ * - Spacing is a 4px grid named in hundreds: 100 = 0.5rem (8px), 50 = 0.25rem (4px),
+ *   200 = 1rem (16px). Tailwind gets the same scale (`p-100`, `gap-150`, `w-600`),
+ *   and Tailwind's own numeric scale (`p-3`) is switched off. 25 (2px) is only for
+ *   hairlines and optical nudges. The root font size stays the browser's 16px.
+ * - Colours have roles (primary, secondary, tertiary, success, one per game mode …),
+ *   built from the raw palette below. Each role holds a light and a dark value through
+ *   `light-dark()`; a browser without `light-dark()` gets the dark theme.
+ */
+
+/* ---------- Palette: raw colours (only the colour roles use these), and the tokens that
+   aren't Tailwind utilities. ---------- */
+:root {
+  --palette-white: #fff;
+  --palette-black: #000;
+  --palette-neutral-25: #f4f4f5;
+  --palette-neutral-50: #f7f7fb;
+  --palette-neutral-200: #d9d9e3;
+  --palette-neutral-300: #a1a1aa;
+  --palette-neutral-400: #8a8a96;
+  --palette-neutral-500: #6b6b78;
+  --palette-neutral-600: #52525b;
+  --palette-neutral-700: #2e2e3a;
+  --palette-neutral-800: #17171f;
+  --palette-neutral-900: #0b0b10;
+  --palette-violet-100: #ede9fe;
+  --palette-violet-200: #e4dafb;
+  --palette-violet-400: #a78bfa;
+  --palette-violet-500: #8b5cf6;
+  --palette-violet-600: #7c3aed;
+  --palette-violet-700: #5b3fc4;
+  --palette-violet-950: #2a1846;
+  --palette-amber-100: #fef3c7;
+  --palette-amber-300: #fcd34d;
+  --palette-amber-500: #f59e0b;
+  --palette-amber-800: #92400e;
+  --palette-teal-100: #ccfbf1;
+  --palette-teal-400: #2dd4bf;
+  --palette-teal-700: #0f766e;
+  --palette-green-300: #86efac;
+  --palette-green-500: #22c55e;
+  --palette-green-600: #16a34a;
+  --palette-green-700: #15803d;
+  --palette-green-800: #166534;
+  --palette-red-300: #fca5a5;
+  --palette-red-600: #dc2626;
+  --palette-red-800: #991b1b;
+  --palette-rose-500: #f43f5e;
+  --palette-vinyl-edge: #000;
+  --palette-vinyl: #111;
+  --palette-vinyl-groove: #1b1b1b;
+  --palette-vinyl-rim: #333;
+  --palette-sheen-faint: rgb(255 255 255 / 4%);
+  --palette-sheen: rgb(255 255 255 / 7%);
+  --palette-sheen-strong: rgb(255 255 255 / 8%);
+  --palette-shadow-soft: rgb(0 0 0 / 30%);
+  --palette-shadow: rgb(0 0 0 / 40%);
+  --palette-shadow-deep: rgb(0 0 0 / 60%);
+  --palette-mask: #000;
+
+  /* ---------- Everything else that isn't a Tailwind utility. ---------- */
+
+  /* Without light-dark() support the page stays dark (see the @supports block below). */
+  color-scheme: dark;
+
+  /* Lines. 1px and 2px are the only sizes off the 4px grid. */
+  --border-thin: 1px;
+  --border-thick: 2px;
+  --border-heavy: var(--spacing-50);
+  --focus-ring: var(--border-thick) solid var(--color-secondary-bright);
+  --focus-ring-offset: var(--spacing-25);
+  --radius-pill: calc(infinity * var(--spacing-100));
+
+  /* Masks only read alpha: this is "fully shown". */
+  --mask-solid: var(--palette-mask);
+  --mask-fade: var(--spacing-250);
+
+  /* Motion. */
+  --duration-instant: 0.1s;
+  --duration-fast: 0.15s;
+  --duration-medium: 0.2s;
+  --duration-slow: 0.3s;
+  --duration-loading: 0.9s;
+  --duration-loading-reduced: 2.5s;
+  --duration-swap: 2s;
+  --duration-swap-last: 1.6s;
+  --duration-spin: 2.4s;
+  --duration-spin-slow: 8s;
+
+  /* Shadows and glows. */
+  --shadow-record:
+    0 var(--spacing-250) var(--spacing-600) var(--palette-shadow-deep),
+    inset 0 0 0 var(--border-thick) var(--color-vinyl-edge);
+  --shadow-sleeve: inset 0 0 0 var(--border-thin) var(--palette-sheen-strong);
+  --glow-small: var(--spacing-150);
+  --glow-medium: var(--spacing-200);
+  --glow-large: var(--spacing-600);
+
+  /* Records. */
+  --size-record-mini: var(--spacing-250);
+  --size-record-small: var(--spacing-1700);
+  --size-record: var(--spacing-2800);
+  --size-record-large: var(--spacing-3200);
+
+  /*
+   * The swipe line (SwipeLine.tsx). PITCH in useSwipeTrack.ts is gap + card width
+   * (160 + 104 = 264px), and DONE_PITCH in SwipeLine.tsx is a card plus its margins
+   * on a finished line (120px): keep them in step with these.
+   */
+  --swipe-height: var(--spacing-3000);
+  --swipe-card-width: var(--spacing-1300);
+  --swipe-card-height: var(--spacing-1900);
+  --swipe-gap-width: var(--spacing-2000);
+  --swipe-pitch: calc(var(--swipe-gap-width) + var(--swipe-card-width));
+  --swipe-done-margin: var(--spacing-100);
+  --swipe-stem: var(--spacing-250);
+  --swipe-node: var(--spacing-150);
+  --swipe-pin: var(--spacing-300);
+  --swipe-drop: var(--spacing-300);
+  --swipe-track-top: var(--spacing-100);
+  /* The rail runs through the nodes' middle, measured from the top of the list. */
+  --swipe-rail: calc(var(--swipe-card-height) + var(--swipe-stem) + var(--swipe-node) / 2);
+
+  /* The violet glow at the top of every page. */
+  --page-glow: radial-gradient(
+    calc(5 * var(--spacing-3200)) calc(2.5 * var(--spacing-3200)) at 50%
+      calc(-1 * var(--spacing-2400)),
+    var(--color-page-glow) 0%,
+    transparent 70%
+  );
+
+  /* Home page. */
+  --sleeve-record-peek: var(--spacing-450);
+  --sleeve-top: var(--spacing-1400);
+  --week-card-height: var(--spacing-1200);
+}
+
+/* ---------- Tailwind's theme: these make the utilities (`bg-surface`, `p-100`, …). ---------- */
+/* `static`: every variable is emitted, since the CSS files use them through var(). */
+@theme static {
+  /* Only Spindle's scales: Tailwind's defaults (`p-3`, `bg-red-500`, `rounded-xl`) are off. */
+  --spacing-*: initial;
+  --color-*: initial;
+  --text-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
+  --container-*: initial;
+  --font-*: initial;
+
+  /* Spacing and sizes: 100 = 0.5rem, a 4px grid. */
+  --spacing-0: 0;
+  --spacing-25: 0.125rem;
+  --spacing-50: 0.25rem;
+  --spacing-100: 0.5rem;
+  --spacing-150: 0.75rem;
+  --spacing-200: 1rem;
+  --spacing-250: 1.25rem;
+  --spacing-300: 1.5rem;
+  --spacing-350: 1.75rem;
+  --spacing-400: 2rem;
+  --spacing-450: 2.25rem;
+  --spacing-500: 2.5rem;
+  --spacing-550: 2.75rem;
+  --spacing-600: 3rem;
+  --spacing-650: 3.25rem;
+  --spacing-700: 3.5rem;
+  --spacing-750: 3.75rem;
+  --spacing-800: 4rem;
+  --spacing-850: 4.25rem;
+  --spacing-900: 4.5rem;
+  --spacing-950: 4.75rem;
+  --spacing-1000: 5rem;
+  --spacing-1100: 5.5rem;
+  --spacing-1200: 6rem;
+  --spacing-1300: 6.5rem;
+  --spacing-1400: 7rem;
+  --spacing-1500: 7.5rem;
+  --spacing-1600: 8rem;
+  --spacing-1700: 8.5rem;
+  --spacing-1800: 9rem;
+  --spacing-1900: 9.5rem;
+  --spacing-2000: 10rem;
+  --spacing-2200: 11rem;
+  --spacing-2400: 12rem;
+  --spacing-2600: 13rem;
+  --spacing-2800: 14rem;
+  --spacing-3000: 15rem;
+  --spacing-3200: 16rem;
+  --spacing-4000: 20rem;
+  --spacing-4800: 24rem;
+  --spacing-7200: 36rem;
+
+  /* Page widths (`max-w-page`, …). */
+  --container-narrow: var(--spacing-4000);
+  --container-prose: var(--spacing-4800);
+  --container-page: var(--spacing-7200);
+
+  /* Type: rem sizes on the 16px root, every line height on the 4px grid. */
+  --font-sans: var(--font-roboto), var(--font-hebrew), system-ui, sans-serif;
+  --font-mono: var(--font-roboto-mono), ui-monospace, monospace;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: var(--spacing-200);
+  --text-xs: 0.75rem;
+  --text-xs--line-height: var(--spacing-200);
+  --text-sm: 0.875rem;
+  --text-sm--line-height: var(--spacing-250);
+  --text-base: 1rem;
+  --text-base--line-height: var(--spacing-300);
+  --text-lg: 1.125rem;
+  --text-lg--line-height: var(--spacing-350);
+  --text-xl: 1.25rem;
+  --text-xl--line-height: var(--spacing-350);
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: var(--spacing-400);
+  --text-3xl: 2rem;
+  --text-3xl--line-height: var(--spacing-500);
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: var(--spacing-500);
+  --leading-none: 1;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.06em;
+  --tracking-wider: 0.1em;
+  --tracking-widest: 0.3em;
+
+  --radius-control: var(--spacing-150);
+  --radius-card: var(--spacing-200);
+
+  --shadow-raised: 0 var(--spacing-100) var(--spacing-200) var(--palette-shadow);
+  --shadow-knob: 0 var(--border-thin) var(--border-thick) var(--palette-shadow-soft);
+
+  /*
+   * Colour roles. These are the dark values, which a browser without light-dark()
+   * keeps; the @supports block below gives each themed role its light value too.
+   */
+  /* The page and the things on it. */
+  --color-page: var(--palette-neutral-900);
+  --color-page-glow: var(--palette-violet-950);
+  --color-surface: var(--palette-neutral-800);
+  --color-line: var(--palette-neutral-700);
+  --color-line-strong: var(--palette-neutral-500);
+  /* Text: `ink` for body text, `muted` for secondary text, `faint` for the rail's years. */
+  --color-ink: var(--palette-neutral-25);
+  --color-muted: var(--palette-neutral-300);
+  --color-faint: var(--palette-neutral-400);
+  /* Hover wash and quiet fills follow the text colour, so they work on either theme. */
+  --color-hover: color-mix(in srgb, var(--color-ink) 5%, transparent);
+  /* Primary: the main action (Place it, Share, play, the chosen language). */
+  --color-primary: var(--palette-white);
+  --color-on-primary: var(--palette-black);
+  /* Secondary: Spindle's violet. Highlights: focus, the line's glow, the starting year. */
+  --color-secondary: var(--palette-violet-500);
+  --color-secondary-bright: var(--palette-violet-400);
+  --color-on-secondary: var(--palette-white);
+  /* Tertiary: quiet fills for things that are off or still to come. */
+  --color-tertiary: color-mix(in srgb, var(--color-ink) 15%, transparent);
+  /* Feedback. `*-ink` is text on a tinted background. */
+  --color-success: var(--palette-green-600);
+  --color-success-bright: var(--palette-green-500);
+  --color-success-ink: var(--palette-green-300);
+  --color-danger: var(--palette-red-600);
+  --color-danger-ink: var(--palette-red-300);
+  --color-warning-ink: var(--palette-amber-300);
+  /* On/off switches (Settings): a white knob on a track that reads in both themes. */
+  --color-switch-on: var(--color-success-bright);
+  --color-switch-off: var(--color-line-strong);
+  --color-switch-knob: var(--palette-white);
+  --color-heart: var(--palette-rose-500);
+  --color-heart-empty: var(--palette-neutral-500);
+  /* Game modes: each has a sleeve colour, text on it, and its record's label. */
+  --color-daily: var(--palette-violet-700);
+  --color-daily-ink: var(--palette-violet-100);
+  --color-daily-label: var(--palette-violet-500);
+  --color-marathon: var(--palette-amber-800);
+  --color-marathon-ink: var(--palette-amber-100);
+  --color-marathon-label: var(--palette-amber-500);
+  --color-timeline: var(--palette-teal-700);
+  --color-timeline-ink: var(--palette-teal-100);
+  --color-timeline-label: var(--palette-teal-400);
+  /* Text on any game colour. */
+  --color-on-game: var(--palette-white);
+  /* The vinyl record is black in both themes: it has to hide the YouTube player. */
+  --color-vinyl: var(--palette-vinyl);
+  --color-vinyl-groove: var(--palette-vinyl-groove);
+  --color-vinyl-edge: var(--palette-vinyl-edge);
+  --color-vinyl-rim: var(--palette-vinyl-rim);
+  --color-vinyl-sheen: var(--palette-sheen);
+  --color-vinyl-sheen-faint: var(--palette-sheen-faint);
+  --color-vinyl-track: var(--palette-sheen-strong);
+}
+
+/* ---------- Light and dark: each themed role as light-dark(light, dark). ---------- */
+@supports (color: light-dark(#000, #fff)) {
+  :root {
+    color-scheme: light dark;
+    --color-page: light-dark(var(--palette-neutral-50), var(--palette-neutral-900));
+    --color-page-glow: light-dark(var(--palette-violet-200), var(--palette-violet-950));
+    --color-surface: light-dark(var(--palette-white), var(--palette-neutral-800));
+    --color-line: light-dark(var(--palette-neutral-200), var(--palette-neutral-700));
+    --color-ink: light-dark(var(--palette-neutral-800), var(--palette-neutral-25));
+    --color-muted: light-dark(var(--palette-neutral-600), var(--palette-neutral-300));
+    --color-faint: light-dark(var(--palette-neutral-500), var(--palette-neutral-400));
+    --color-primary: light-dark(var(--palette-neutral-800), var(--palette-white));
+    --color-on-primary: light-dark(var(--palette-white), var(--palette-black));
+    --color-secondary: light-dark(var(--palette-violet-600), var(--palette-violet-500));
+    --color-secondary-bright: light-dark(var(--palette-violet-500), var(--palette-violet-400));
+    --color-success: light-dark(var(--palette-green-700), var(--palette-green-600));
+    --color-success-bright: light-dark(var(--palette-green-600), var(--palette-green-500));
+    --color-success-ink: light-dark(var(--palette-green-800), var(--palette-green-300));
+    --color-danger-ink: light-dark(var(--palette-red-800), var(--palette-red-300));
+    --color-warning-ink: light-dark(var(--palette-amber-800), var(--palette-amber-300));
+  }
+}

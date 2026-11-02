@@ -18,8 +18,8 @@ export function MarathonHeader({
   return (
     <section className="text-center">
       <h1 className="text-2xl font-bold">{t.marathon.name}</h1>
-      <p className="mt-1 text-sm text-muted">{t.marathon.intro(anchorYear)}</p>
-      <div className="mt-3 flex items-center justify-center gap-4">
+      <p className="mt-50 text-sm text-muted">{t.marathon.intro(anchorYear)}</p>
+      <div className="mt-150 flex items-center justify-center gap-200">
         <Hearts
           left={hearts}
           total={MARATHON_HEARTS}

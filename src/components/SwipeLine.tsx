@@ -25,7 +25,7 @@ import type { LineItem } from "@/lib/timeline";
  * on `focus`.
  */
 /** A card plus its margins on a finished line: `.swipe-item` width + `.swipe-done .swipe-item` margins. */
-const DONE_PITCH = 116;
+const DONE_PITCH = 120;
 
 export function SwipeLine({
   items,
@@ -81,7 +81,7 @@ export function SwipeLine({
   const flank = (i: number) => choosing && (i === slot - 1 || i === slot);
 
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="flex w-full flex-col gap-150">
       <div className={placing ? "swipe" : "swipe swipe-done"}>
         {/* Scrollable, so it must be reachable by keyboard. */}
         <div

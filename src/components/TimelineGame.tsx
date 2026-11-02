@@ -34,7 +34,7 @@ export function TimelineGame() {
   const { cards, today } = timeline;
   const song = getSong(today?.songId);
   if (!today || !song) {
-    return <main className="p-8 text-center text-muted">{t.timeline.noSong}</main>;
+    return <main className="p-400 text-center text-muted">{t.timeline.noSong}</main>;
   }
 
   const { pending, wrong, songs, dayNumber, firstDayYear } = timelineView(timeline, today);
@@ -83,7 +83,7 @@ export function TimelineGame() {
   );
 
   return (
-    <ScreenMain>
+    <ScreenMain game="timeline">
       <TimelineHeader
         pending={pending}
         firstDayYear={firstDayYear}

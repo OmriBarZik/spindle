@@ -2,7 +2,7 @@ import { clsx } from "clsx";
 
 /** The big button's icon: a pause sign, or a play triangle nudged to look centered. */
 export function DeckPlayIcon({ pause, small }: { pause: boolean; small: boolean }) {
-  const size = small ? "h-6 w-6" : "h-7 w-7";
+  const size = small ? "size-300" : "size-350";
   if (pause) {
     return (
       <svg viewBox="0 0 24 24" className={size} fill="currentColor" aria-hidden>
@@ -14,7 +14,7 @@ export function DeckPlayIcon({ pause, small }: { pause: boolean; small: boolean 
   return (
     <svg
       viewBox="0 0 24 24"
-      className={clsx(size, small ? "ml-0.5" : "ml-1")}
+      className={clsx(size, small ? "ml-25" : "ml-50")}
       fill="currentColor"
       aria-hidden
     >

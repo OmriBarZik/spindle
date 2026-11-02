@@ -5,7 +5,14 @@ import { join, resolve } from "node:path";
 import { afterAll, expect, it } from "vitest";
 
 const OXLINT = resolve("node_modules/.bin/oxlint");
-const RULES = ["no-barrel", "no-describe", "no-jsx-and", "no-typeof-type", "specific-file-name"];
+const RULES = [
+  "no-barrel",
+  "no-describe",
+  "no-jsx-and",
+  "no-raw-style",
+  "no-typeof-type",
+  "specific-file-name",
+];
 const dir = mkdtempSync(join(tmpdir(), "spindle-rules-"));
 
 afterAll(() => rmSync(dir, { recursive: true }));
@@ -46,6 +53,33 @@ it.for([
   { name: "a re-export", rule: "no-barrel", code: 'export { a } from "./a";' },
   { name: "`describe`", rule: "no-describe", code: 'describe("a", () => {});' },
   { name: "`describe.for`", rule: "no-describe", code: 'describe.for([])("a", () => {});' },
+  { name: "a hex colour", rule: "no-raw-style", code: 'export const a = "#8b5cf6";' },
+  { name: "an rgb() colour", rule: "no-raw-style", code: 'export const a = "rgb(0 0 0)";' },
+  {
+    name: "a Tailwind colour",
+    rule: "no-raw-style",
+    code: 'export const A = () => <p className="text-white" />;',
+  },
+  {
+    name: "an arbitrary value",
+    rule: "no-raw-style",
+    code: 'export const A = () => <p className="text-[13px]" />;',
+  },
+  {
+    name: "an arbitrary property",
+    rule: "no-raw-style",
+    code: 'export const A = () => <p className="[animation-play-state:paused]" />;',
+  },
+  {
+    name: "Tailwind's own spacing",
+    rule: "no-raw-style",
+    code: 'export const A = () => <p className="flex gap-3" />;',
+  },
+  {
+    name: "off-scale spacing in a variant",
+    rule: "no-raw-style",
+    code: 'export const A = () => <p className="sm:-mt-75" />;',
+  },
 ])("flags $name", ({ rule, code }) => {
   expect(lint("sample.tsx", code)).toEqual([`spindle(${rule})`]);
 });
@@ -61,6 +95,8 @@ it("allows the code the rules ask for", () => {
   const code = `
     const a = true;
     export const A = () => <p className={a && "b"}>{a ? <b /> : null}</p>;
+    export const B = () => <p className="gap-150 p-100 -inset-150 w-(--size-record) bg-surface top-1/2" />;
+    export const sel = "[data-gap]";
     export const isText = (v) => typeof v === "string";
     export const b = 1;
   `;

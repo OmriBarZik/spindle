@@ -7,6 +7,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { dirOf, hasLocale, localeParams, localePath, LOCALES } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { MESSAGES } from "@/i18n/messages";
+import { PALETTE } from "@/lib/palette";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -45,7 +46,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0b0b10",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: PALETTE.pageLight },
+    { media: "(prefers-color-scheme: dark)", color: PALETTE.page },
+  ],
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {

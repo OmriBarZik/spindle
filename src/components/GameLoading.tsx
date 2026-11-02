@@ -11,7 +11,7 @@ export function GameLoading() {
   // While the home record is flying in, it stands in for the loading text.
   const [flying] = useState(isRecordFlying);
   return (
-    <p className={clsx("p-8 text-center text-muted", flying && "invisible")}>
+    <p className={clsx("p-400 text-center text-muted", flying && "invisible")}>
       {t.common.loadingGame}
     </p>
   );

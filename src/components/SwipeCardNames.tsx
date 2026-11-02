@@ -13,10 +13,7 @@ export function SwipeCardNames({ song }: { song: SongRef }) {
     <>
       {/* Each name runs in its own direction (dir="auto"), so a long English name is cut
           at its end even on a Hebrew page; `.swipe-name` keeps it on the page's side. */}
-      <span
-        dir="auto"
-        className="swipe-name swipe-title line-clamp-2 text-sm leading-snug font-bold"
-      >
+      <span dir="auto" className="swipe-name swipe-title line-clamp-2 text-sm font-bold">
         {title}
       </span>
       <span dir="auto" className="swipe-name truncate text-xs text-muted">
@@ -24,7 +21,7 @@ export function SwipeCardNames({ song }: { song: SongRef }) {
       </span>
       <ExternalLink
         href={`https://www.youtube.com/watch?v=${youtubeId}`}
-        className="mt-auto text-xs text-muted underline decoration-dotted underline-offset-2 hover:text-white"
+        className="mt-auto text-xs text-muted underline decoration-dotted underline-offset-2 hover:text-ink"
       >
         {t.common.watch}
       </ExternalLink>

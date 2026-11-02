@@ -15,11 +15,19 @@ const browserProject = {
   plugins: [tailwindcss()],
 };
 
-const chromium = (name: string) => ({
+type ColorScheme = "light" | "dark";
+
+/** One Chromium at phone width per colour scheme: axe checks contrast in each theme. */
+const chromium = (name: string, schemes: readonly ColorScheme[]) => ({
   enabled: true,
   headless: true,
   provider: playwright(),
-  instances: [{ browser: "chromium" as const, name, viewport: { width: 390, height: 844 } }],
+  instances: schemes.map((colorScheme) => ({
+    browser: "chromium" as const,
+    name: `${name}-${colorScheme}`,
+    viewport: { width: 390, height: 844 },
+    provider: playwright({ contextOptions: { colorScheme } }),
+  })),
   screenshotFailures: false,
 });
 
@@ -62,7 +70,7 @@ export default defineConfig({
           include: ["src/components/**/*.test.tsx"],
           exclude: ["**/*.perf.test.tsx"],
           sequence: { groupOrder: 0 },
-          browser: chromium("browser"),
+          browser: chromium("browser", ["dark", "light"]),
         },
       },
       {
@@ -74,7 +82,7 @@ export default defineConfig({
           sequence: { groupOrder: 1 },
           // Timing on a busy machine can be off once; a real slowdown fails every time.
           retry: 2,
-          browser: { ...chromium("performance"), commands: { setCpuThrottling } },
+          browser: { ...chromium("performance", ["dark"]), commands: { setCpuThrottling } },
         },
       },
     ],

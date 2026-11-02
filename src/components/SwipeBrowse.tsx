@@ -6,7 +6,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 export function SwipeBrowse({ onStep }: { onStep: (delta: number) => void }) {
   const { t } = useI18n();
   return (
-    <div className="flex justify-center gap-3">
+    <div className="flex justify-center gap-150">
       <button
         type="button"
         onClick={() => onStep(-1)}

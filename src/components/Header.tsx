@@ -7,15 +7,15 @@ import { getI18n } from "@/i18n/server";
 export async function Header({ title, path }: { title?: string; path: string }) {
   const { lang, t } = await getI18n();
   return (
-    <header className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 px-4 py-4">
+    <header className="mx-auto flex w-full max-w-page items-center justify-between gap-150 px-200 py-200">
       <Link
         href={localePath(lang, "/")}
-        className="flex items-center gap-2 font-bold tracking-tight"
+        className="flex items-center gap-100 font-bold tracking-tight"
       >
         <span className="mini-record" aria-hidden />
         Spindle
       </Link>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-100">
         {/* Hidden on phones to fit the switch and settings; each page repeats it in its <h1>. */}
         {title ? <span className="hidden text-sm text-muted sm:inline">{title}</span> : null}
         <LanguageSwitch path={path} />
@@ -24,11 +24,11 @@ export async function Header({ title, path }: { title?: string; path: string }) 
             href={localePath(lang, "/settings")}
             aria-label={t.settings.name}
             title={t.settings.name}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted transition hover:text-white"
+            className="flex size-400 items-center justify-center rounded-full border border-line text-muted transition hover:text-ink"
           >
             <svg
               viewBox="0 0 24 24"
-              className="h-4 w-4"
+              className="size-200"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"

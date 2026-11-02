@@ -83,7 +83,7 @@ export function Deck({
     <div
       className={clsx(
         "flex flex-col items-center",
-        small ? "gap-2" : "gap-4",
+        small ? "gap-100" : "gap-200",
         swap && "overflow-x-clip",
       )}
     >

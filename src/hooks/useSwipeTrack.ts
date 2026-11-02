@@ -7,7 +7,7 @@ import type { LiveSlot } from "@/lib/liveSlot";
 import { canAnimate } from "@/lib/motion";
 
 /** Distance between neighbouring gaps: a gap (156px) plus a card (104px), as in `globals.css`. */
-export const PITCH = 260;
+export const PITCH = 264;
 
 /**
  * Light gap `slot` and the cards either side of it, ahead of React. React renders

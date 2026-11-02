@@ -58,13 +58,19 @@ export function DeckRecord({
   }, [swapping]);
 
   return (
-    <div ref={boxRef} className={clsx("relative aspect-square", small ? "w-34" : "w-56 sm:w-64")}>
+    <div
+      ref={boxRef}
+      className={clsx(
+        "relative aspect-square",
+        small ? "w-(--size-record-small)" : "w-(--size-record) sm:w-(--size-record-large)",
+      )}
+    >
       {/* Loading ring: always mounted and faded in/out so nothing shifts. */}
       <div
         aria-hidden
         className={clsx(
-          "loading-ring pointer-events-none absolute -inset-2.5 rounded-full transition-opacity duration-300",
-          busy ? "opacity-100" : "opacity-0 [animation-play-state:paused]",
+          "loading-ring pointer-events-none absolute -inset-150 rounded-full transition-opacity duration-300",
+          busy ? "opacity-100" : "loading-ring-idle opacity-0",
         )}
       />
       {/*
@@ -109,8 +115,8 @@ export function DeckRecord({
           onClick={onToggle}
           aria-label={active ? t.common.pause : t.common.play}
           className={clsx(
-            "absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40",
-            small ? "h-12 w-12" : "h-16 w-16",
+            "record-button absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition hover:scale-105 active:scale-95 disabled:opacity-40",
+            small ? "size-600" : "size-800",
           )}
         >
           <DeckPlayIcon pause={active} small={small} />
