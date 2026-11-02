@@ -2,6 +2,7 @@
 
 import { type RefObject, useLayoutEffect, useRef } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useDesign } from "@/lib/design";
 import { useRecordLanding } from "@/lib/recordFlight";
 import { smoothScrollToCenter } from "@/lib/smoothScroll";
 import { formatTime, type HiddenPlayer } from "@/lib/youtube";
@@ -44,6 +45,8 @@ export default function Deck({
   onSwapEnd,
 }: Props) {
   const { t } = useI18n();
+  // The new layouts use a small record with its controls beside it, to save height.
+  const mini = useDesign() !== "classic";
   const isCurrent = videoId !== null && player.currentId === videoId;
   const playing = isCurrent && player.status === "playing";
   const loading = isCurrent && player.status === "loading";
@@ -68,94 +71,156 @@ export default function Deck({
     return smoothScrollToCenter(box);
   }, [swapping]);
 
+  const record = (
+    <div
+      ref={boxRef}
+      className={`relative aspect-square shrink-0 ${mini ? "w-16" : "w-56 sm:w-64"}`}
+    >
+      {/* Loading ring: always mounted and faded in/out so nothing shifts. */}
+      <div
+        aria-hidden
+        className={`loading-ring pointer-events-none absolute rounded-full transition-opacity duration-300 ${
+          mini ? "-inset-1.5" : "-inset-2.5"
+        } ${busy ? "opacity-100" : "opacity-0 [animation-play-state:paused]"}`}
+      />
+      {/*
+        The player, record and button move together, so the iframe stays
+        covered for the whole swipe.
+      */}
+      <div
+        className={`absolute inset-0 ${swap ? `deck-swap deck-swap-${swap.kind}` : ""}`}
+        onAnimationEnd={(e) => {
+          if (e.target === e.currentTarget) onSwapEnd?.();
+        }}
+      >
+        {/*
+          Hidden player: must stay mounted and must stay covered. `inert` also keeps
+          the YouTube iframe out of the Tab order and away from screen readers.
+        */}
+        <div
+          ref={hostRef}
+          inert
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
+        />
+        {/* Opaque record covering the player entirely. */}
+        <div className={`record absolute inset-0 rounded-full ${playing ? "spin" : ""}`}>
+          <div className="record-label" />
+        </div>
+        {/* Green or red glow over the record after a guess. */}
+        <div
+          aria-hidden
+          className={`deck-glow pointer-events-none absolute inset-0 rounded-full ${
+            swap ? (swap.correct ? "deck-glow-good" : "deck-glow-bad") : ""
+          }`}
+        />
+        <button
+          ref={buttonRef}
+          type="button"
+          disabled={!player.ready || !videoId || Boolean(swap)}
+          onClick={() => {
+            if (!videoId) return;
+            if (!playing && !loading) onPlay?.();
+            player.toggle(videoId, start);
+          }}
+          aria-label={playing || loading ? t.common.pause : t.common.play}
+          className={`absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40 ${
+            mini ? "h-9 w-9" : "h-16 w-16"
+          }`}
+        >
+          {playing || loading ? (
+            <svg
+              viewBox="0 0 24 24"
+              className={mini ? "h-4 w-4" : "h-7 w-7"}
+              fill="currentColor"
+              aria-hidden
+            >
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              className={mini ? "ml-0.5 h-4 w-4" : "ml-1 h-7 w-7"}
+              fill="currentColor"
+              aria-hidden
+            >
+              {/* Play icons point right in every language, so this offset stays physical. */}
+              <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  const clock = (
+    <div className={`flex items-center gap-3 text-muted ${mini ? "text-xs" : "text-sm"}`}>
+      <span dir="ltr" className="w-12 text-end font-mono tabular-nums">
+        {isCurrent ? formatTime(player.time) : "0:00"}
+      </span>
+      <button
+        type="button"
+        disabled={!isCurrent}
+        onClick={() => player.restart(start)}
+        className={`rounded-full border border-line transition hover:bg-white/5 disabled:opacity-40 ${
+          mini ? "px-2.5 py-0.5" : "px-3 py-1"
+        }`}
+      >
+        {t.common.restart}
+      </button>
+    </div>
+  );
+
+  const problem = errored && (
+    <div className={`text-amber-300 ${mini ? "text-xs" : "max-w-xs text-center text-sm"}`}>
+      {t.common.cantPlay}
+      {onSkip && (
+        <button
+          type="button"
+          onClick={onSkip}
+          className={`underline ${mini ? "ms-1" : "mt-2 block w-full"}`}
+        >
+          {t.common.differentSong}
+        </button>
+      )}
+    </div>
+  );
+
+  if (mini) {
+    return (
+      <div className={`flex items-center gap-4 ${swap ? "overflow-x-clip" : ""}`}>
+        {record}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {label && (
+            <div className="text-xs font-bold tracking-[0.2em] text-muted uppercase rtl:tracking-normal">
+              {label}
+            </div>
+          )}
+          {clock}
+          {/* Fixed-height status line so the bar doesn't jump when loading ends. */}
+          {problem || (
+            <p role="status" aria-live="polite" className="h-4 text-xs leading-4 text-muted">
+              {statusText}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     // While the record swipes, clip sideways so the page doesn't scroll horizontally.
     // Only then, so the flight from the home page is never clipped.
     <div className={`flex flex-col items-center gap-4 ${swap ? "overflow-x-clip" : ""}`}>
-      <div ref={boxRef} className="relative aspect-square w-56 sm:w-64">
-        {/* Loading ring: always mounted and faded in/out so nothing shifts. */}
-        <div
-          aria-hidden
-          className={`loading-ring pointer-events-none absolute -inset-2.5 rounded-full transition-opacity duration-300 ${
-            busy ? "opacity-100" : "opacity-0 [animation-play-state:paused]"
-          }`}
-        />
-        {/*
-          The player, record and button move together, so the iframe stays
-          covered for the whole swipe.
-        */}
-        <div
-          className={`absolute inset-0 ${swap ? `deck-swap deck-swap-${swap.kind}` : ""}`}
-          onAnimationEnd={(e) => {
-            if (e.target === e.currentTarget) onSwapEnd?.();
-          }}
-        >
-          {/*
-            Hidden player: must stay mounted and must stay covered. `inert` also keeps
-            the YouTube iframe out of the Tab order and away from screen readers.
-          */}
-          <div
-            ref={hostRef}
-            inert
-            aria-hidden
-            className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
-          />
-          {/* Opaque record covering the player entirely. */}
-          <div className={`record absolute inset-0 rounded-full ${playing ? "spin" : ""}`}>
-            <div className="record-label" />
-          </div>
-          {/* Green or red glow over the record after a guess. */}
-          <div
-            aria-hidden
-            className={`deck-glow pointer-events-none absolute inset-0 rounded-full ${
-              swap ? (swap.correct ? "deck-glow-good" : "deck-glow-bad") : ""
-            }`}
-          />
-          <button
-            ref={buttonRef}
-            type="button"
-            disabled={!player.ready || !videoId || Boolean(swap)}
-            onClick={() => {
-              if (!videoId) return;
-              if (!playing && !loading) onPlay?.();
-              player.toggle(videoId, start);
-            }}
-            aria-label={playing || loading ? t.common.pause : t.common.play}
-            className="absolute top-1/2 left-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-black/40 transition hover:scale-105 active:scale-95 disabled:opacity-40"
-          >
-            {playing || loading ? (
-              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor" aria-hidden>
-                <rect x="6" y="5" width="4" height="14" rx="1" />
-                <rect x="14" y="5" width="4" height="14" rx="1" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7" fill="currentColor" aria-hidden>
-                {/* Play icons point right in every language, so this offset stays physical. */}
-                <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
+      {record}
 
       {label && (
         <div className="mt-1 text-xs font-bold tracking-[0.3em] text-muted uppercase rtl:tracking-normal">
           {label}
         </div>
       )}
-      <div className="flex items-center gap-3 text-sm text-muted">
-        <span dir="ltr" className="w-12 text-end font-mono tabular-nums">
-          {isCurrent ? formatTime(player.time) : "0:00"}
-        </span>
-        <button
-          type="button"
-          disabled={!isCurrent}
-          onClick={() => player.restart(start)}
-          className="rounded-full border border-line px-3 py-1 transition hover:bg-white/5 disabled:opacity-40"
-        >
-          {t.common.restart}
-        </button>
-      </div>
+      {clock}
 
       {/* Fixed-height status line so the page doesn't jump when loading ends. */}
       {!errored && (
@@ -163,16 +228,7 @@ export default function Deck({
           {statusText}
         </p>
       )}
-      {errored && (
-        <div className="max-w-xs text-center text-sm text-amber-300">
-          {t.common.cantPlay}
-          {onSkip && (
-            <button type="button" onClick={onSkip} className="mt-2 block w-full underline">
-              {t.common.differentSong}
-            </button>
-          )}
-        </div>
-      )}
+      {problem}
     </div>
   );
 }

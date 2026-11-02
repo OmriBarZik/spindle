@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Design } from "@/lib/design";
 import type { SongLanguage } from "@/lib/songs";
 import type { SlotLabels } from "@/lib/timeline";
 import type { Locale } from "./config";
@@ -44,6 +45,8 @@ export type Messages = {
     songs: (n: number) => string;
   };
   slots: SlotLabels;
+  /** The layout picker shown while the placement designs are tried out. */
+  design: { label: string; names: Record<Design, string>; hint: string };
   home: {
     tagline: string;
     sortDesc: string;
@@ -144,6 +147,11 @@ const en: Messages = {
     after: (y) => `After ${y}`,
     in: (y) => `In ${y}`,
     between: (a, b) => `${a} – ${b}`,
+  },
+  design: {
+    label: "Layout",
+    names: { classic: "Classic", compact: "Compact", dock: "Dock", chips: "Year chips" },
+    hint: "Trying out layouts. Pick one to compare; your game is kept.",
   },
   home: {
     tagline:
@@ -282,6 +290,11 @@ const he: Messages = {
     after: (y) => `אחרי ${y}`,
     in: (y) => `ב־${y}`,
     between: (a, b) => `${a} – ${b}`,
+  },
+  design: {
+    label: "פריסה",
+    names: { classic: "קלאסית", compact: "קומפקטית", dock: "סרגל תחתון", chips: "שנים בשורה" },
+    hint: "מנסים פריסות. בחרו אחת להשוואה; המשחק שלכם נשמר.",
   },
   home: {
     tagline: "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ונחשו מתי הם יצאו.",

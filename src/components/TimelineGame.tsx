@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Deck, { type DeckSwap } from "@/components/Deck";
+import DesignPicker from "@/components/DesignPicker";
+import PlayArea from "@/components/PlayArea";
 import ShareButton from "@/components/ShareButton";
 import {
   AnchorCard,
@@ -15,6 +17,7 @@ import {
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
+import { DesignContext, readDesign } from "@/lib/design";
 import { timelineShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
 import { ensureTimelineDay, placeTimelineCard, skipTimelineSong } from "@/lib/storage";
@@ -25,6 +28,7 @@ import { useHiddenPlayer } from "@/lib/youtube";
 export default function TimelineGame() {
   const { lang, t: tr } = useI18n();
   const [day] = useState(dayKey);
+  const [design] = useState(readDesign);
   const [data, update] = useSave((d) => ensureTimelineDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
@@ -61,110 +65,125 @@ export default function TimelineGame() {
     ? tr.timeline.wrongMsg(songNames(song, lang).title, song.year, songs)
     : tr.timeline.correctMsg(songs);
 
+  const place = (at: number) => {
+    if (!pending) return;
+    player.stop();
+    const correct = isSlotCorrect(t.cards, at, song.year);
+    setSwap({ correct, kind: "flash" });
+    track("song_place", { mode: "timeline", turn: songs + 1, correct });
+    if (!correct) track("run_end", { mode: "timeline", songs });
+    update((d) => placeTimelineCard(d, day, at));
+  };
+
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
-      <section className="text-center">
-        <h1 className="text-2xl font-bold">{tr.timeline.name}</h1>
-        <p className="mt-1 text-sm text-muted">
-          {firstDay && startYear !== undefined
-            ? tr.timeline.introFirst(startYear)
-            : pending
-              ? tr.timeline.introPending
-              : tr.timeline.introDone}
-        </p>
-        <p className="mt-2 text-xs tracking-widest text-muted uppercase rtl:tracking-normal">
-          {tr.timeline.dayLine(dayNumber, t.best)}
-        </p>
-      </section>
+    <DesignContext value={design}>
+      <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">
+        <DesignPicker />
+        <section className="text-center">
+          <h1 className="text-2xl font-bold">{tr.timeline.name}</h1>
+          <p className="mt-1 text-sm text-muted">
+            {firstDay && startYear !== undefined
+              ? tr.timeline.introFirst(startYear)
+              : pending
+                ? tr.timeline.introPending
+                : tr.timeline.introDone}
+          </p>
+          <p className="mt-2 text-xs tracking-widest text-muted uppercase rtl:tracking-normal">
+            {tr.timeline.dayLine(dayNumber, t.best)}
+          </p>
+        </section>
 
-      <Deck
-        hostRef={hostRef}
-        player={player}
-        videoId={song.youtubeId}
-        start={song.start}
-        label={pending ? tr.timeline.today : String(song.year)}
-        onSkip={
-          pending
-            ? () => {
-                update((d) => skipTimelineSong(d, day));
-                track("song_skip", { mode: "timeline" });
+        <PlayArea
+          deck={
+            <Deck
+              hostRef={hostRef}
+              player={player}
+              videoId={song.youtubeId}
+              start={song.start}
+              label={pending ? tr.timeline.today : String(song.year)}
+              onSkip={
+                pending
+                  ? () => {
+                      update((d) => skipTimelineSong(d, day));
+                      track("song_skip", { mode: "timeline" });
+                    }
+                  : undefined
               }
-            : undefined
-        }
-        onPlay={() => track("song_play", { mode: "timeline", turn: songs + 1 })}
-        swap={swap}
-        onSwapEnd={() => setSwap(null)}
-      />
-
-      <SlotLine
-        cards={t.cards}
-        cardKey={(card) => card.id}
-        renderCard={(card, i) => (
-          <>
-            {wrongAt === i && misplaced}
-            {card.anchor ? (
-              <AnchorCard year={card.year} />
-            ) : (
-              <SongCard
-                song={card}
-                variant={today.result === "correct" && card.id === song.id ? "good" : "plain"}
+              onPlay={() => track("song_play", { mode: "timeline", turn: songs + 1 })}
+              swap={swap}
+              onSwapEnd={() => setSwap(null)}
+            />
+          }
+          line={
+            <SlotLine
+              cards={t.cards}
+              cardKey={(card) => card.id}
+              renderCard={(card, i) => (
+                <>
+                  {wrongAt === i && misplaced}
+                  {card.anchor ? (
+                    <AnchorCard year={card.year} />
+                  ) : (
+                    <SongCard
+                      song={card}
+                      variant={today.result === "correct" && card.id === song.id ? "good" : "plain"}
+                    />
+                  )}
+                </>
+              )}
+              after={wrongAt === t.cards.length && misplaced}
+              canPlace={pending}
+              selected={slot}
+              onSelect={setSlot}
+              onPlace={place}
+            />
+          }
+          place={
+            pending && (
+              <PlaceButton
+                cards={t.cards}
+                slot={slot}
+                pickSpot={tr.timeline.pickSpot}
+                onPlace={place}
               />
-            )}
-          </>
-        )}
-        after={wrongAt === t.cards.length && misplaced}
-        canPlace={pending}
-        selected={slot}
-        onSelect={setSlot}
-      />
-
-      <Announce>
-        {!pending && (
-          <>
-            {resultTitle} {resultText}
-          </>
-        )}
-      </Announce>
-
-      {pending ? (
-        <PlaceButton
-          cards={t.cards}
-          slot={slot}
-          pickSpot={tr.timeline.pickSpot}
-          onPlace={(at) => {
-            player.stop();
-            const correct = isSlotCorrect(t.cards, at, song.year);
-            setSwap({ correct, kind: "flash" });
-            track("song_place", { mode: "timeline", turn: songs + 1, correct });
-            if (!correct) track("run_end", { mode: "timeline", songs });
-            update((d) => placeTimelineCard(d, day, at));
-          }}
+            )
+          }
         />
-      ) : (
-        <ResultCard>
-          <div className="text-2xl font-bold">{resultTitle}</div>
-          <p className="text-sm text-muted">{resultText}</p>
-          <Stats
-            items={[
-              [tr.timeline.stats.songs, songs],
-              [tr.timeline.stats.best, t.best],
-              [tr.timeline.stats.runs, t.runs + 1],
-              [tr.timeline.stats.day, dayNumber],
-            ]}
-          />
-          <ShareButton
-            mode="timeline"
-            text={timelineShareText(
-              tr,
-              day,
-              songs,
-              wrong,
-              data.settings.songLanguages,
-              window.location.origin,
-            )}
-          />
-        </ResultCard>
-      )}
-    </main>
+
+        <Announce>
+          {!pending && (
+            <>
+              {resultTitle} {resultText}
+            </>
+          )}
+        </Announce>
+
+        {!pending && (
+          <ResultCard>
+            <div className="text-2xl font-bold">{resultTitle}</div>
+            <p className="text-sm text-muted">{resultText}</p>
+            <Stats
+              items={[
+                [tr.timeline.stats.songs, songs],
+                [tr.timeline.stats.best, t.best],
+                [tr.timeline.stats.runs, t.runs + 1],
+                [tr.timeline.stats.day, dayNumber],
+              ]}
+            />
+            <ShareButton
+              mode="timeline"
+              text={timelineShareText(
+                tr,
+                day,
+                songs,
+                wrong,
+                data.settings.songLanguages,
+                window.location.origin,
+              )}
+            />
+          </ResultCard>
+        )}
+      </main>
+    </DesignContext>
   );
 }
