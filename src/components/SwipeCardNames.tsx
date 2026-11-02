@@ -11,12 +11,16 @@ export function SwipeCardNames({ song }: { song: SongRef }) {
   const youtubeId = getSong(song.youtubeId)?.youtubeId ?? song.youtubeId;
   return (
     <>
-      {/* Titles and artists are mostly Latin; <bdi> keeps them intact in RTL pages. */}
-      <span className="line-clamp-2 text-sm leading-snug font-bold">
-        <bdi>{title}</bdi>
+      {/* Each name runs in its own direction (dir="auto"), so a long English name is cut
+          at its end even on a Hebrew page; `.swipe-name` keeps it on the page's side. */}
+      <span
+        dir="auto"
+        className="swipe-name swipe-title line-clamp-2 text-sm leading-snug font-bold"
+      >
+        {title}
       </span>
-      <span className="truncate text-xs text-muted">
-        <bdi>{artist}</bdi>
+      <span dir="auto" className="swipe-name truncate text-xs text-muted">
+        {artist}
       </span>
       <ExternalLink
         href={`https://www.youtube.com/watch?v=${youtubeId}`}

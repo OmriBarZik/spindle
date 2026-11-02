@@ -134,8 +134,8 @@ export function sortView(d: SortDay) {
   };
 }
 
-/** The line as swipe-line cards. `movedHere` marks a song that was placed wrong. */
-export function sortLineItems(line: readonly SortLineCard[], movedHere: string): LineItem[] {
+/** The line as swipe-line cards. A song placed wrong is red, at its real spot. */
+export function sortLineItems(line: readonly SortLineCard[]): LineItem[] {
   return line.map((card) =>
     card.kind === "anchor"
       ? { key: "anchor", year: card.year, song: null }
@@ -144,7 +144,6 @@ export function sortLineItems(line: readonly SortLineCard[], movedHere: string):
           year: card.year,
           song: card.song,
           variant: card.correct ? "good" : "bad",
-          note: card.correct ? undefined : movedHere,
         },
   );
 }

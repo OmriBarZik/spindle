@@ -8,7 +8,7 @@ it("i18n routing: prefixes every language the same way", () => {
   expect(localePath("en", "/")).toBe("/en");
   expect(localePath("he", "/")).toBe("/he");
   expect(localePath("en", "/sort")).toBe("/en/sort");
-  expect(localePath("he", "/timeline")).toBe("/he/timeline");
+  expect(localePath("he", "/marathon")).toBe("/he/marathon");
 });
 it("i18n routing: splits a language prefix off a path", () => {
   expect(splitLocale("/he/sort")).toEqual(["he", "/sort"]);

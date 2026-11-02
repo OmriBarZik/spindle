@@ -2,9 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { GameLoading } from "@/components/GameLoading";
+import { WeekStripLoading } from "@/components/WeekStripLoading";
 
 const loadSort = () => import("@/components/SortGame").then((m) => m.SortGame);
 const loadTimeline = () => import("@/components/TimelineGame").then((m) => m.TimelineGame);
+const loadMarathon = () => import("@/components/MarathonGame").then((m) => m.MarathonGame);
 
 /**
  * Fetch the game screens' code ahead of time (from the home page), so that
@@ -12,7 +14,7 @@ const loadTimeline = () => import("@/components/TimelineGame").then((m) => m.Tim
  */
 export function preloadGames() {
   void loadSort().catch(ignore);
-  void loadTimeline().catch(ignore);
+  void loadMarathon().catch(ignore);
 }
 
 function ignore(): void {
@@ -24,7 +26,13 @@ export const SortGameClient = dynamic(loadSort, {
   loading: GameLoading,
 });
 
+/** Daily Timeline, kept as a hidden page (not linked or preloaded from the home page). */
 export const TimelineGameClient = dynamic(loadTimeline, {
+  ssr: false,
+  loading: GameLoading,
+});
+
+export const MarathonGameClient = dynamic(loadMarathon, {
   ssr: false,
   loading: GameLoading,
 });
@@ -34,5 +42,13 @@ export const SettingsClient = dynamic(
   {
     ssr: false,
     loading: GameLoading,
+  },
+);
+
+export const WeekStripClient = dynamic(
+  () => import("@/components/WeekStrip").then((m) => m.WeekStrip),
+  {
+    ssr: false,
+    loading: WeekStripLoading,
   },
 );

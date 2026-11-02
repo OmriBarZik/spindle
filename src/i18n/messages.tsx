@@ -14,6 +14,7 @@ export type Messages = {
     title: string;
     description: string;
     sortTitle: string;
+    marathonTitle: string;
     timelineTitle: string;
     settingsTitle: string;
   };
@@ -47,10 +48,16 @@ export type Messages = {
   /** What the place button says: where today's song goes, as a phrase. */
   placeAt: SlotLabels;
   home: {
+    headline: string;
     tagline: string;
+    modesLabel: string;
+    sortTag: string;
     sortDesc: string;
-    timelineDesc: string;
-    playCta: string;
+    marathonTag: string;
+    marathonDesc: string;
+    weekHeading: string;
+    weekCount: (n: number) => string;
+    weekDay: (day: string, played: boolean) => string;
     howTo: string;
     rules: ReactNode[];
     footer: string;
@@ -64,7 +71,6 @@ export type Messages = {
     correct: string;
     wrong: string;
     reveal: (title: string, artist: string, year: number) => ReactNode;
-    movedHere: string;
     perfect: string;
     score: (hits: number, total: number) => string;
     stats: { played: string; perfect: string; streak: string; bestStreak: string };
@@ -82,6 +88,20 @@ export type Messages = {
     /** Added to share text when only one kind is on, since the puzzle differs. */
     shareTag: Record<Locale, string>;
     back: string;
+  };
+  marathon: {
+    name: string;
+    intro: (year: number) => ReactNode;
+    hearts: (left: number, total: number) => string;
+    score: (hits: number) => string;
+    deckLabel: (n: number) => string;
+    lostHeart: string;
+    over: string;
+    ranOut: string;
+    final: (hits: number) => string;
+    stats: { today: string; best: string; played: string; average: string };
+    tomorrow: string;
+    shareHead: (n: number, hits: number) => string;
   };
   timeline: {
     name: string;
@@ -111,6 +131,7 @@ const en: Messages = {
     description:
       "Listen to songs without seeing the titles and put them in order by release year. A new puzzle every day.",
     sortTitle: "Daily Five · Spindle",
+    marathonTitle: "Marathon · Spindle",
     timelineTitle: "Daily Timeline · Spindle",
     settingsTitle: "Settings · Spindle",
   },
@@ -151,13 +172,17 @@ const en: Messages = {
     between: (a, b) => `Between ${a} and ${b}`,
   },
   home: {
+    headline: "When did this song come out?",
     tagline:
-      "A daily music game. Listen to songs — no titles, no thumbnails — and figure out when they came out.",
-    sortDesc:
-      "Start from one year, then place five songs on the line, one at a time. Same songs for everyone.",
-    timelineDesc:
-      "One song a day. Slot it into your growing timeline. Every day you keep it alive, it gets harder.",
-    playCta: "Play →",
+      "A daily music game. Listen to songs — no titles, no thumbnails — and place them on a timeline.",
+    modesLabel: "Games",
+    sortTag: "5 songs",
+    sortDesc: "Place five songs on one line. Same songs for everyone.",
+    marathonTag: "3 hearts",
+    marathonDesc: "As many songs as you can. Three wrong and you're out.",
+    weekHeading: "This week",
+    weekCount: (n) => `${n} of 7 days played`,
+    weekDay: (day, played) => `${day}: ${played ? "played" : "not played"}`,
     howTo: "How to play",
     rules: [
       <>
@@ -167,12 +192,11 @@ const en: Messages = {
         right placement is a 🟩.
       </>,
       <>
-        <b className="text-white">Daily Timeline:</b> a new timeline starts with a free year (say,
-        1997). Day 1: is the song <i>before 1997</i> or <i>after 1997</i>? Get it right and it joins
-        your timeline — day 2 might be <i>before 1997</i>, <i>1997–2000</i> or <i>after 2000</i>,
-        and so on.
+        <b className="text-white">Marathon:</b> the same idea, without the limit. Keep placing songs
+        on one growing line for as long as you can. Each wrong placement costs a ❤️ — after three,
+        your score for the day is how many you got right.
       </>,
-      "A wrong guess — or a missed day — ends your timeline and a new one starts. Songs from the same year count either way.",
+      "Songs from the same year count either way.",
       "Everything is saved in your browser. A new day starts at your local midnight.",
     ],
     footer: "Songs play straight from YouTube; Spindle hosts no audio.",
@@ -195,7 +219,6 @@ const en: Messages = {
         “<bdi>{title}</bdi>” by <bdi>{artist}</bdi> is from <b>{year}</b>.
       </>
     ),
-    movedHere: "moved here",
     perfect: "Perfect! 🎉",
     score: (hits, total) => `${hits} / ${total} placed right`,
     stats: { played: "Played", perfect: "Perfect", streak: "Streak", bestStreak: "Best streak" },
@@ -216,6 +239,25 @@ const en: Messages = {
       "Changes apply to puzzles you haven't started yet. With only one kind on, your daily puzzle is different from players who have both.",
     shareTag: { en: "International songs only", he: "Israeli songs only" },
     back: "Back to the games",
+  },
+  marathon: {
+    name: "Marathon",
+    intro: (year) => (
+      <>
+        Your line starts at <b className="text-white">{year}</b>. Place as many songs as you can —
+        three wrong and the run is over.
+      </>
+    ),
+    hearts: (left, total) => `${left} of ${total} hearts left`,
+    score: (hits) => `Score: ${hits}`,
+    deckLabel: (n) => `Song ${n}`,
+    lostHeart: "You lost a heart.",
+    over: "Out of hearts!",
+    ranOut: "You placed every song we have!",
+    final: (hits) => `${enSongs(hits)} placed right`,
+    stats: { today: "Today", best: "Best", played: "Played", average: "Average" },
+    tomorrow: "A new marathon tomorrow.",
+    shareHead: (n, hits) => `Spindle Marathon #${n} · ${hits} 🎵`,
   },
   timeline: {
     name: "Daily Timeline",
@@ -252,6 +294,7 @@ const he: Messages = {
     description:
       "האזינו לשירים בלי לראות את השמות שלהם וסדרו אותם לפי שנת היציאה. חידה חדשה בכל יום.",
     sortTitle: "החמישייה היומית · Spindle",
+    marathonTitle: "מרתון · Spindle",
     timelineTitle: "ציר הזמן היומי · Spindle",
     settingsTitle: "הגדרות · Spindle",
   },
@@ -292,11 +335,16 @@ const he: Messages = {
     between: (a, b) => `בין ${a} ל־${b}`,
   },
   home: {
-    tagline: "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ונחשו מתי הם יצאו.",
-    sortDesc: "מתחילים משנה אחת, ואז משבצים חמישה שירים על הציר, אחד אחרי השני. אותם שירים לכולם.",
-    timelineDesc:
-      "שיר אחד ביום. שבצו אותו בציר הזמן שלכם, שהולך וגדל. כל יום שהוא שורד, זה נהיה קשה יותר.",
-    playCta: "לשחק ←",
+    headline: "מתי השיר הזה יצא?",
+    tagline: "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ושבצו אותם על ציר הזמן.",
+    modesLabel: "משחקים",
+    sortTag: "5 שירים",
+    sortDesc: "משבצים חמישה שירים על ציר אחד. אותם שירים לכולם.",
+    marathonTag: "3 לבבות",
+    marathonDesc: "כמה שיותר שירים. שלוש טעויות ואתם בחוץ.",
+    weekHeading: "השבוע",
+    weekCount: (n) => `שיחקתם ${n} מתוך 7 ימים`,
+    weekDay: (day, played) => `${day}: ${played ? "שיחקתם" : "לא שיחקתם"}`,
     howTo: "איך משחקים",
     rules: [
       <>
@@ -305,12 +353,11 @@ const he: Messages = {
         רווח אחד לבחור ממנו. חמישה שירים, אחד בכל פעם — כל שיבוץ נכון הוא 🟩.
       </>,
       <>
-        <b className="text-white">ציר הזמן היומי:</b> ציר זמן חדש מתחיל בשנה חינמית (נגיד 1997).
-        ביום הראשון: השיר יצא <i>לפני 1997</i> או <i>אחרי 1997</i>? צדקתם — והוא מצטרף לציר שלכם.
-        ביום השני האפשרויות יכולות להיות <i>לפני 1997</i>, <i>1997–2000</i> או <i>אחרי 2000</i>, וכן
-        הלאה.
+        <b className="text-white">מרתון:</b> אותו רעיון, בלי הגבלה. ממשיכים לשבץ שירים על ציר אחד
+        שהולך וגדל, כמה שאפשר. כל שיבוץ שגוי עולה ❤️ — אחרי שלוש טעויות, הניקוד היומי שלכם הוא מספר
+        השירים ששיבצתם נכון.
       </>,
-      "ניחוש שגוי — או יום שפספסתם — מסיים את ציר הזמן, ומתחיל ציר חדש. שירים מאותה שנה נחשבים נכונים בשני הצדדים.",
+      "שירים מאותה שנה נחשבים נכונים בשני הצדדים.",
       "הכול נשמר בדפדפן שלכם. יום חדש מתחיל בחצות לפי השעה המקומית שלכם.",
     ],
     // \u200f (RLM) keeps the semicolon on the Hebrew side of "YouTube".
@@ -334,7 +381,6 @@ const he: Messages = {
         ״<bdi>{title}</bdi>״ של <bdi>{artist}</bdi> יצא ב־<b>{year}</b>.
       </>
     ),
-    movedHere: "הועבר לכאן",
     perfect: "מושלם! 🎉",
     score: (hits, total) => `${hits} / ${total} במקום הנכון`,
     stats: { played: "משחקים", perfect: "מושלמים", streak: "רצף", bestStreak: "רצף שיא" },
@@ -355,6 +401,25 @@ const he: Messages = {
       "השינויים חלים על חידות שעוד לא התחלתם. כשרק סוג אחד מסומן, החידה היומית שלכם שונה משל שחקנים שמסמנים את שניהם.",
     shareTag: { en: "רק שירים בינלאומיים", he: "רק שירים ישראליים" },
     back: "חזרה למשחקים",
+  },
+  marathon: {
+    name: "מרתון",
+    intro: (year) => (
+      <>
+        הציר שלכם מתחיל ב־<b className="text-white">{year}</b>. שבצו כמה שיותר שירים — שלוש טעויות
+        והמרתון נגמר.
+      </>
+    ),
+    hearts: (left, total) => `נשארו ${left} מתוך ${total} לבבות`,
+    score: (hits) => `ניקוד: ${hits}`,
+    deckLabel: (n) => `שיר ${n}`,
+    lostHeart: "איבדתם לב.",
+    over: "נגמרו הלבבות!",
+    ranOut: "שיבצתם את כל השירים שיש לנו!",
+    final: (hits) => `${heSongs(hits)} במקום הנכון`,
+    stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע" },
+    tomorrow: "מרתון חדש מחר.",
+    shareHead: (n, hits) => `Spindle מרתון #${n} · ${hits} 🎵`,
   },
   timeline: {
     name: "ציר הזמן היומי",

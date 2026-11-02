@@ -79,6 +79,33 @@ export function anchorYearFor(day: string, langs?: readonly Locale[]): number {
   return pick?.year ?? FALLBACK_YEAR;
 }
 
+/**
+ * The day's Marathon songs, in the order they're played: the whole (chosen-language)
+ * catalog, seeded by the day, without the day's Daily Five songs (no spoilers).
+ * Everyone with the same setting gets the same run of songs.
+ */
+export function marathonSongsFor(day: string, langs?: readonly Locale[]): Song[] {
+  // The screen asks on every render, and the answer never changes: shuffle once.
+  const key = `${day}|${(langs ?? LOCALES).join(",")}`;
+  if (marathonCache?.key !== key) {
+    const five = new Set(sortSongsFor(day, langs).map((s) => s.id));
+    marathonCache = {
+      key,
+      songs: shuffled(`marathon:${day}`, langs).filter((s) => !five.has(s.id)),
+    };
+  }
+  return marathonCache.songs;
+}
+
+let marathonCache: { key: string; songs: Song[] } | null = null;
+
+/** The Marathon's starting year, different from the first song's year. */
+export function marathonAnchorYearFor(day: string, langs?: readonly Locale[]): number {
+  const first = marathonSongsFor(day, langs)[0];
+  const pick = shuffled(`marathon-anchor:${day}`, langs).find((s) => s.year !== first?.year);
+  return pick?.year ?? FALLBACK_YEAR;
+}
+
 /** Starting year for a new Daily Timeline, different from the first song's year. */
 export function timelineAnchorYearFor(
   day: string,

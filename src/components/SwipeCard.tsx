@@ -19,7 +19,7 @@ export function SwipeCard({ item, index, lit }: { item: LineItem; index: number;
         ) : (
           <span className="text-sm text-muted">{t.common.startingYear}</span>
         )}
-        {item.note ? <span className="text-xs font-semibold">{item.note}</span> : null}
+        {item.note ? <span className="swipe-note text-xs font-semibold">{item.note}</span> : null}
       </div>
       {/* The card's spot on the time rail. */}
       <span aria-hidden className="swipe-stem" />

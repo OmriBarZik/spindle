@@ -31,6 +31,27 @@ export type SortStats = {
   distribution: number[];
 };
 
+type MarathonPlacement = { songId: string; slot: number; correct: boolean };
+
+export type MarathonDay = {
+  /** The year card the day's line starts with. */
+  anchorYear: number;
+  /** Song languages the day was picked from. */
+  languages: Locale[];
+  /** Every song placed so far, in order. */
+  placements: MarathonPlacement[];
+  /** Songs skipped because the video couldn't play. */
+  skipped: string[];
+};
+
+export type MarathonStats = {
+  played: number;
+  /** Most songs placed right in one day. */
+  best: number;
+  /** Songs placed right over every finished day, for the average. */
+  totalHits: number;
+};
+
 export type TimelineToday = {
   date: string;
   songId: string;
@@ -64,5 +85,6 @@ export type SaveData = {
   version: 1;
   sort: { days: Record<string, SortDay>; stats: SortStats };
   timeline: TimelineState;
+  marathon: { days: Record<string, MarathonDay>; stats: MarathonStats };
   settings: SaveSettings;
 };

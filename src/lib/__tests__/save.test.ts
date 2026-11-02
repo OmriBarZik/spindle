@@ -49,7 +49,7 @@ it("loadSave: starts fresh on broken JSON or an unknown version", () => {
 
 it("loadSave: round-trips a save", () => {
   const d = emptySave();
-  d.timeline.best = 7;
+  d.marathon.stats.best = 7;
   d.sort.stats.played = 3;
   writeSave(d);
   expect(loadSave()).toEqual(d);
@@ -58,12 +58,16 @@ it("loadSave: round-trips a save", () => {
 it("loadSave: fills in fields missing from older saves", () => {
   storage.store.set(
     KEY,
-    JSON.stringify({ version: 1, sort: { stats: { played: 4 } }, timeline: { best: 2 } }),
+    JSON.stringify({
+      version: 1,
+      sort: { stats: { played: 4 } },
+      marathon: { stats: { best: 2 } },
+    }),
   );
   const d = loadSave();
   expect(d.sort.days).toEqual({});
   expect(d.sort.stats).toEqual({ ...emptySave().sort.stats, played: 4 });
-  expect(d.timeline).toEqual({ ...emptySave().timeline, best: 2 });
+  expect(d.marathon).toEqual({ days: {}, stats: { ...emptySave().marathon.stats, best: 2 } });
   expect(d.settings.songLanguages).toEqual(["en", "he"]);
 });
 
@@ -84,4 +88,14 @@ it("writeSave: ignores storage errors", () => {
   storage = fakeStorage(true);
   (globalThis as { window?: unknown }).window = { localStorage: storage };
   expect(() => writeSave(emptySave())).not.toThrow();
+});
+
+it("loadSave: gives a save from before Marathon an empty one, and keeps the rest", () => {
+  const timeline = { cards: [], best: 3 };
+  storage.store.set(KEY, JSON.stringify({ version: 1, sort: { stats: { played: 1 } }, timeline }));
+  const d = loadSave();
+  expect(d.marathon).toEqual(emptySave().marathon);
+  expect(d.sort.stats.played).toBe(1);
+  // The hidden Daily Timeline keeps its progress.
+  expect(d.timeline).toEqual({ ...emptySave().timeline, ...timeline });
 });

@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import axe from "axe-core";
 import { isValidElement, type ReactNode } from "react";
 import { expect, it, vi } from "vitest";
+import * as Marathon from "@/app/[lang]/marathon/page";
 import HomePage from "@/app/[lang]/page";
 import * as Settings from "@/app/[lang]/settings/page";
 import * as Sort from "@/app/[lang]/sort/page";
@@ -23,6 +24,11 @@ setupGameTests();
 const PAGES = [
   { path: "/", page: { default: HomePage }, title: (t: Messages) => t.meta.title },
   { path: "/sort", page: Sort, title: (t: Messages) => t.meta.sortTitle },
+  {
+    path: "/marathon",
+    page: Marathon,
+    title: (t: Messages) => t.meta.marathonTitle,
+  },
   {
     path: "/timeline",
     page: Timeline,

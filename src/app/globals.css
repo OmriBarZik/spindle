@@ -53,14 +53,133 @@ body {
   border-color: #8b5cf6;
   background: color-mix(in srgb, #8b5cf6 14%, var(--surface));
 }
-.mode-card {
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease;
+/* ---------- Home page: each game mode is a record sleeve (ModeSleeve.tsx) ---------- */
+/* The sleeves share their rows (tag, name, description) through a subgrid, so each row
+   lines up with its neighbour even when one name wraps (as "החמישייה היומית" does). */
+.sleeves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto 1fr;
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
 }
-.mode-card:hover {
+.sleeve {
+  --sleeve: #5b3fc4;
+  --sleeve-ink: #ede9fe;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  align-content: start;
+  border-radius: 0.875rem;
+  background: var(--sleeve);
+  /* The other home cards' inset (1rem + their 1px border), so all text shares one edge. */
+  padding: calc(1rem + 1px);
+  /* Clear the record peeking out of the top corner. */
+  padding-top: 6.75rem;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  transition: transform 0.15s ease;
+}
+.sleeve:hover {
   transform: translateY(-2px);
-  border-color: #6d5bd0;
+}
+.sleeve:active {
+  transform: scale(0.98);
+}
+.sleeve-violet {
+  --sleeve: #5b3fc4;
+  --sleeve-ink: #ede9fe;
+}
+.sleeve-amber {
+  --sleeve: #92400e;
+  --sleeve-ink: #fef3c7;
+}
+/* The record slides half out of the sleeve's top corner. */
+.sleeve-record {
+  position: absolute;
+  top: -2.25rem;
+  inset-inline-end: -2.25rem;
+  width: 8.5rem;
+  height: 8.5rem;
+  border-radius: 9999px;
+}
+.sleeve-amber .sleeve-record {
+  --label: #f59e0b;
+}
+.sleeve-tag {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sleeve-ink);
+}
+/* Wide letter-spacing breaks Hebrew. */
+[dir="rtl"] .sleeve-tag {
+  letter-spacing: normal;
+}
+.sleeve-desc {
+  color: var(--sleeve-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sleeve {
+    transition: none;
+  }
+  .sleeve:hover,
+  .sleeve:active {
+    transform: none;
+  }
+}
+
+/* Home page text all starts on one edge, in both directions: a card's 1rem padding
+   plus its 1px border (`.home-inset` for the headline, which has no card). */
+.home-inset {
+  padding-inline: calc(1rem + 1px);
+}
+.home-card {
+  padding: 1rem;
+}
+
+/* "This week" on the home page (WeekStrip.tsx): Sunday to Saturday, in reading direction. The fixed height keeps the loading
+   placeholder (WeekStripLoading.tsx) the same size. */
+.week-card {
+  display: flex;
+  height: 5.75rem;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+}
+.week-bar {
+  display: block;
+  width: 100%;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: var(--line);
+}
+.week-bar-on {
+  background: #8b5cf6;
+}
+.week-bar-future {
+  opacity: 0.4;
+}
+.week-bar-today:not(.week-bar-on) {
+  box-shadow: inset 0 0 0 1px var(--muted);
+}
+
+/* Marathon hearts (Hearts.tsx). */
+.heart {
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.heart-full {
+  fill: #f43f5e;
+  stroke: #f43f5e;
+}
+.heart-empty {
+  fill: none;
+  stroke: #71717a;
 }
 
 .btn-primary {
@@ -453,6 +572,24 @@ body {
   padding: 10px;
   overflow: hidden;
 }
+/* Fixed rows, so a card's year, title, artist, "watch" and note sit at the same
+   height as its neighbours', whatever the language or the title's length. */
+.swipe-title {
+  /* Two lines of text-sm leading-snug (0.875rem × 1.375), even for a one-line title. */
+  height: 2.40625rem;
+  flex: none;
+}
+/* Names have dir="auto"; align them with the page, not with their own language. */
+.swipe-name {
+  text-align: left;
+}
+[dir="rtl"] .swipe-name {
+  text-align: right;
+}
+.swipe-note {
+  height: 1rem;
+  flex: none;
+}
 .swipe-lit .swipe-card:not(.card-good, .card-bad) {
   border-color: rgb(167 139 250 / 0.6);
 }
@@ -567,7 +704,8 @@ body {
   position: relative;
   inset: auto;
   width: 100%;
-  padding-bottom: 4px;
+  /* Room for the years, which are scaled up under answered cards. */
+  padding-bottom: 14px;
   padding-inline: calc(50% - 58px);
   scroll-snap-type: x proximity;
 }

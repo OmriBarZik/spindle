@@ -26,6 +26,16 @@ export function defaultSlot(count: number): number {
   return Math.ceil(count / 2);
 }
 
+/** The gap the record is on: beside the song just placed while it glows, else the player's. */
+export function recordSlot(
+  swapping: boolean,
+  lastAt: number,
+  slot: number | null,
+  cards: number,
+): number {
+  return swapping && lastAt >= 0 ? lastAt + 1 : (slot ?? defaultSlot(cards));
+}
+
 export function anchorCard(year: number): TimelineCard {
   return { id: `anchor:${year}`, title: "", artist: "", year, youtubeId: "", anchor: true };
 }

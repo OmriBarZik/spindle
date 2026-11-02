@@ -11,17 +11,13 @@ single year card (e.g. *1980*). Place the first song *before* or *after* it, the
 song into one of the gaps, and so on. Each right placement scores a 🟩; a wrong one is shown
 in red and moved to its real spot so the line stays accurate. Perfect days build a streak.
 
-### 📈 Daily Timeline
-One song per day, and a timeline that grows the longer you keep playing:
+### ❤️ Marathon
+Once a day, as many songs as you can. The line starts with a single year card, and songs
+keep coming one at a time, each placed into one of the gaps. A wrong placement costs one of
+your **three hearts** (and the song moves to its real spot). When the last heart is gone,
+your score for the day is how many songs you placed right. Same songs for everyone.
 
-- A new timeline starts with a free **starting year**, e.g. *1997*.
-- **Day 1** – is today's song *before 1997* or *after 1997*? Get it right and it joins
-  the timeline (say *2000*).
-- **Day 2** – *before 1997*, *1997–2000*, or *after 2000*… and so on. More songs = more,
-  narrower gaps = harder.
-- A **wrong guess** or a **missed day** ends the timeline; a fresh one starts the next day.
-  Your best length (in songs) is kept.
-- Songs with the same year as a neighbour count as correct on either side.
+Songs with the same year as a neighbour count as correct on either side.
 
 Progress is stored in the browser (`localStorage`) — no accounts, no backend. A new day
 starts at the player's local midnight.
@@ -58,10 +54,10 @@ formatted with oxfmt.
 | --- | --- |
 | `src/data/songs.json` | The song catalog |
 | `src/lib/daily.ts` | Deterministic daily song selection (seeded by date) |
-| `src/lib/storage.ts`, `sortState.ts`, `timelineState.ts` | Save format and all game state transitions |
+| `src/lib/storage.ts`, `sortState.ts`, `marathonState.ts` | Save format and all game state transitions |
 | `src/lib/timeline.ts` | Slot / placement rules |
 | `src/hooks/useHiddenPlayer.ts` | Hidden YouTube player hook |
-| `src/components/` | `Deck` (turntable), `SortGame` (Daily Five), `TimelineGame`, `SwipeLine` (the line) |
+| `src/components/` | `Deck` (turntable), `SortGame` (Daily Five), `MarathonGame`, `SwipeLine` (the line) |
 
 ## Adding songs
 

@@ -8,7 +8,7 @@ import type { Locale } from "@/i18n/config";
  * people play, and they must never be able to reveal an answer.
  */
 
-export type GameMode = "daily_five" | "timeline";
+export type GameMode = "daily_five" | "marathon" | "timeline";
 
 type Events = {
   /** A game screen opened. `status` is the state of today's game at that moment. */
@@ -17,12 +17,17 @@ type Events = {
   song_play: { mode: GameMode; turn: number };
   /** A song was placed on the line. `turn` is 1-based. */
   song_place: { mode: GameMode; turn: number; correct: boolean };
-  /** Daily Five: all five songs are placed. */
-  game_complete: { mode: "daily_five"; score: number; total: number; perfect: boolean };
-  /** Daily Timeline: a wrong guess ended the run. `songs` is how many it had placed. */
+  /**
+   * The day's game is over: Daily Five has placed all five songs; a Marathon has lost its
+   * last heart. `score` is how many songs were placed right.
+   */
+  game_complete:
+    | { mode: "daily_five"; score: number; total: number; perfect: boolean }
+    | { mode: "marathon"; score: number };
+  /** Daily Timeline (hidden page): a wrong guess ended the run. `songs` is how many it had placed. */
   run_end: { mode: "timeline"; songs: number };
-  /** Daily Timeline: today's video wouldn't play, so the player asked for another. */
-  song_skip: { mode: "timeline" };
+  /** The current video wouldn't play, so the player asked for another. */
+  song_skip: { mode: "marathon" | "timeline" };
   /** The share button. `method` is what happened (GA's recommended `share` event). */
   share: { content_type: GameMode; method: "shared" | "copied" | "failed" };
   language_switch: { from: Locale; to: Locale };

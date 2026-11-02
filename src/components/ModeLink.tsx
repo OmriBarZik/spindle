@@ -68,7 +68,10 @@ export function ModeLink(props: LinkProps & Omit<ComponentProps<"a">, keyof Link
         // Pin the record where it is now (it's position: fixed, so scrolling
         // won't move it), hide the rest of the home page so the jump below
         // isn't seen, then start the game at the top of the page.
-        launchRecordFlight(document.querySelector<HTMLElement>("[data-flight-record]"));
+        launchRecordFlight(
+          e.currentTarget.querySelector<HTMLElement>("[data-flight-record]") ??
+            document.querySelector<HTMLElement>("[data-flight-record]"),
+        );
         fadeOutHome(e.currentTarget.closest("main"));
         window.scrollTo(0, 0);
       }}
