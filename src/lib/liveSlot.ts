@@ -16,9 +16,13 @@ export function createLiveSlot(): LiveSlot {
   return {
     get: () => value,
     set: (slot) => {
-      if (slot === value) return;
+      if (slot === value) {
+        return;
+      }
       value = slot;
-      for (const listener of listeners) listener();
+      for (const listener of listeners) {
+        listener();
+      }
     },
     subscribe: (listener) => {
       listeners.add(listener);

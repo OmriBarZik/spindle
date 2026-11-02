@@ -13,18 +13,19 @@ CI (`node-version-file`), and `@types/node` matches it. Change all of them toget
 ```bash
 pnpm install            # install dependencies (pnpm is pinned in package.json's packageManager)
 pnpm dev                # http://localhost:3000
-pnpm test               # vitest: logic tests in node (src/lib/__tests__) and component tests in Chromium (src/components/__tests__)
+pnpm test               # vitest projects: unit (node), lint-rules, browser (Chromium) and performance (Chromium on a slowed CPU)
 pnpm lint               # oxlint (.oxlintrc.json): React Compiler rules, type-aware TS, jsx-a11y, Next.js
 pnpm lint:fix           # oxlint --fix
 pnpm format             # oxfmt (.oxfmtrc.json): also sorts imports and Tailwind classes
 pnpm typecheck          # next typegen + tsc --noEmit (TypeScript 7, the native compiler)
-pnpm check              # format check + lint + typecheck + tests (what CI runs, minus the build)
+pnpm knip               # unused files, exports and dependencies
+pnpm check              # format check + lint + knip + typecheck + tests (what CI runs, minus the build)
 pnpm build              # production build; all routes are static
 pnpm validate-songs     # checks every YouTube ID via oEmbed (needs youtube.com access; Node runs the .mts directly)
 ```
 
 Run `pnpm check` and `pnpm build` before pushing. CI (`.github/workflows/ci.yml`)
-runs format, lint, typecheck, tests and build on every PR and on `main`.
+runs format, lint, knip, typecheck, tests and build on every PR and on `main`.
 
 ## Game modes
 
@@ -32,12 +33,11 @@ runs format, lint, typecheck, tests and build on every PR and on `main`.
 | --- | --- | --- | --- |
 | **Daily Five** | `/{lang}/sort` | "sort" (`SortGame`, `data.sort`, `sortSongsFor`) | The line starts with one **starting year**. Five songs come **one at a time**, and each is placed into a gap. A wrong placement is marked red and moved to its real spot. Score is x/5. Everyone gets the same songs each day. |
 | **Daily Timeline** | `/{lang}/timeline` | "timeline" | One song per day goes into a personal timeline that persists across days. A new timeline starts with a free starting year, so day 1 is already a guess. A wrong guess or a missed day ends the run, and a fresh one starts the next day. |
+| **Settings** | `/{lang}/settings` | `Settings` | Players choose which songs can appear: International (`en`) and/or Israeli (`he`) songs. Stored in `data.settings.songLanguages` (never empty). |
 
 The "sort" name is historical: the mode used to be "order all 5 at once". Keep the
 internal names (route, save keys, functions) so existing saves and links keep working;
 only the UI says "Daily Five".
-
-| **Settings** | `/{lang}/settings` | `Settings` | Players choose which songs can appear: International (`en`) and/or Israeli (`he`) songs. Stored in `data.settings.songLanguages` (never empty). |
 
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
@@ -51,6 +51,11 @@ Shared rules:
 
 The site is fully bilingual: **English (`en`) and Hebrew (`he`) are equal**. Neither one
 is a "default" served without a prefix.
+
+- `src/i18n/config.ts` is the **one place** that knows which languages exist: `Locale`, `LOCALES`,
+  and each language's name, direction and aliases. Never write out the language list anywhere
+  else; loop over `LOCALES`. Song pools use the same `Locale` codes, so `LOCALES` drives them too.
+  **Don't reorder it**: the daily picks walk it in order, so that would change everyone's puzzles.
 
 - Every page lives under `src/app/[lang]/` (`/en`, `/he/sort`, …). `[lang]/layout.tsx` is the
   root layout. It sets `<html lang dir>` (`rtl` for Hebrew) and statically generates both
@@ -77,17 +82,17 @@ is a "default" served without a prefix.
 ## Architecture
 
 - **No backend.** All state lives in `localStorage` under the key `spindle:v1`
-  (`src/lib/storage.ts`). There are no accounts and no API routes.
+  (`src/lib/storage.ts`, with the shape in `src/lib/saveData.ts`). There are no accounts and no API routes.
 - **Analytics.** Google Analytics 4 (`GA_MEASUREMENT_ID` in `src/components/GoogleAnalytics.tsx`,
   rendered by the root layout). Its init snippet is `beforeInteractive`, so `window.gtag` exists
   before the game screens mount. Custom events go through `track()` in `src/lib/analytics.ts`,
   whose `Events` type lists every event and its parameters (component tests check them with
   `trackedEvents()`). **Never send song details** (title, artist, year, video ID) to analytics.
 - **Client-only game screens.** `src/app/[lang]/{sort,timeline}/page.tsx` are server components
-  that render `SortGameClient` and `TimelineGameClient` from `src/components/ClientOnly.tsx`.
+  that render `SortGameClient` and `TimelineGameClient` from `src/components/LazyScreens.tsx`.
   These use `next/dynamic` with `ssr: false`, because the initial state reads
   `localStorage` and the local date. `ssr: false` is only allowed inside a client
-  component, which is why `ClientOnly.tsx` exists.
+  component, which is why `LazyScreens.tsx` exists.
 - **Deterministic daily picks.** `src/lib/daily.ts` runs `seededShuffle(SONGS, seed)`
   (`src/lib/random.ts`, FNV-1a + mulberry32) with these seed strings:
   `sort:${day}`, `anchor:${day}`, `timeline:${day}`, `timeline-anchor:${day}`.
@@ -103,10 +108,11 @@ is a "default" served without a prefix.
   past and future puzzles. Editing `songs.json` also reshuffles the picks, so add songs
   rather than reorder or remove them, and avoid doing it mid-day.
 - **Pure state transitions.** Every game action is a pure function
-  `(SaveData, day, ...) => SaveData` in `storage.ts`, for example `ensureSortDay`,
-  `placeSortSong`, `ensureTimelineDay`, `placeTimelineCard` and `skipTimelineSong`.
+  `(SaveData, day, ...) => SaveData`, for example `ensureSortDay` and `placeSortSong` in
+  `sortState.ts`, and `ensureTimelineDay`, `placeTimelineCard` and `skipTimelineSong` in
+  `timelineState.ts`.
   A no-op returns the **same object** (the tests check identity). Components call them
-  through `useSave()` (`src/lib/useSave.ts`), which persists only when the object changes.
+  through `useSave()` (`src/hooks/useSave.ts`), which persists only when the object changes.
 
 ### File map
 
@@ -115,19 +121,27 @@ is a "default" served without a prefix.
 | `src/data/songs.json` | Song catalog: `{ id?, artist, title, year, youtubeId, start?, titleHe?, artistHe? }`. The song `id` (stored in saves) is the `youtubeId`, unless the entry has its own `id`: when a video is swapped, keep the old video ID as `id` so saves keep working. Prefer audio-only uploads (an "Official Audio" or "- Topic" upload) over music videos and live clips, which often open with a long non-music intro. One shared pool: Israeli songs (with Hebrew names) sit alongside the rest, so both languages get the same daily puzzle. |
 | `src/lib/songs.ts` | Loads the catalog; `getSong(id)` (finds a song by stable `id` or current `youtubeId`) |
 | `src/lib/daily.ts` | Daily song and starting-year selection |
-| `src/lib/storage.ts` | Save format, migrations-on-load, all state transitions, stats |
-| `src/lib/timeline.ts` | `TimelineCard`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `slotLabel` |
-| `src/lib/youtube.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
+| `src/lib/saveData.ts` | The save format's types |
+| `src/lib/storage.ts` | Reading and writing the save (migrations-on-load), `emptySave`, `setSongLanguage` |
+| `src/lib/sortState.ts` | Daily Five: pure state transitions, stats, and what the screen shows (`sortView`, `sortLineItems`) |
+| `src/lib/timelineState.ts` | Daily Timeline: pure state transitions and what the screen shows (`timelineView`, `timelineLineItems`) |
+| `src/lib/timeline.ts` | `TimelineCard`, `LineItem`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `defaultSlot`, `slotLabel` |
+| `src/hooks/useHiddenPlayer.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
+| `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
+| `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
+| `src/hooks/recordFlight.ts` | The record's flight from the home page into a game |
 | `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `timelineShareText`) |
 | `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
 | `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
-| `src/components/Deck.tsx` | Turntable UI: opaque record over the hidden iframe, play/pause, loading ring, status line |
+| `src/components/Deck.tsx` | Turntable UI, built from `DeckRecord` (opaque record over the hidden iframe, play/pause, loading ring), `DeckTransport` and `DeckStatus` |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |
-| `src/components/SwipeLine.tsx` | The line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. Styles are the `.swipe-*` classes in `globals.css`. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match the gap + card widths in CSS); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
-| `src/components/TimelineParts.tsx` | Parts both games share: `PlaceButton` (says where the song goes, "Between 1992 and 1997", from `t.placeAt`; its accessible name adds "Place it: "), `ResultCard`, `Stats`, `Announce` (screen-reader live region) |
+| `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. Styles are the `.swipe-*` classes in `globals.css`. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match the gap + card widths in CSS); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
+| `src/components/PlaceButton.tsx` | Says where the song goes ("Between 1992 and 1997", from `t.placeAt`); its accessible name adds "Place it: " |
+| `src/components/Announce.tsx` | Screen-reader live region |
 | `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
-| `src/test/` | Test setup and helpers (fake YouTube player, `renderIn(lang, ui)`, axe check) |
+| `src/test/` | Test setup and fakes: `fakeYouTube`, `fakeAnalytics`, `fakeClipboard`, `setupGameTests`, `renderIn(lang, ui)`, `expectAccessible`, `recordControls` |
+| `lint/spindle-rules.mjs` | House lint rules oxlint has no built-in rule for |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
 | `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
 | `src/components/Settings.tsx` | Settings page (song-language switches) |
@@ -201,6 +215,8 @@ is a "default" served without a prefix.
 - TypeScript is strict with `noUncheckedIndexedAccess`: indexing an array or record gives
   `T | undefined`, so handle the missing case (`getSong` accepts `undefined` for this).
 - Lint is strict and type-aware. Don't silence a rule without a comment saying why.
+- House style (one component per file, specific file names, no barrels, `a ? <B /> : null`, no
+  `typeof` in types, …) is in `.claude/rules/code-style.md`; lint enforces most of it.
 - **Accessibility is checked in two layers; keep both green:**
   1. **Lint:** every `jsx-a11y` rule is an error in `.oxlintrc.json` (listed explicitly, since
      oxlint only turns on some of them by category). Only `prefer-tag-over-role` is off, with its reason.
@@ -219,7 +235,7 @@ is a "default" served without a prefix.
 
 ## Testing tips
 
-- Project test rules live in `.claude/rules/` (e.g. parameterized tests use `it.for`, never a loop around `it`); oxlint enforces them.
+- Project test rules live in `.claude/rules/testing.md` (import everything, never use `describe`, avoid mocks, parameterized tests use `it.for`); oxlint enforces them.
 
 - Put logic tests in `src/lib/__tests__/` (vitest, node environment, `@/` alias set in
   `vitest.config.mts`).
@@ -230,9 +246,8 @@ is a "default" served without a prefix.
   (headless Chromium through `@vitest/browser-playwright`; the `browser` project in
   `vitest.config.mts`). The site CSS is loaded (`globals.css` via `@tailwindcss/vite`) and the viewport is 390px wide. Click with `await userEvent.click(el)`
   from `vitest/browser` (real pointer events), so helpers that click are `async`. Locally,
-  a fresh machine needs `pnpm exec playwright install chromium` once. Mock the player with
-  `vi.mock("@/lib/youtube", async (o) => (await import("@/test/helpers")).mockYoutube(o as never))`,
-  render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).
+  a fresh machine needs `pnpm exec playwright install chromium` once. `setupGameTests()` installs a fake YouTube API under the real
+  `useHiddenPlayer` (see `fakeYouTube`), render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).
   Fire `animationEnd` on `.deck-swap` to finish the record animation.
 - For UI checks, use the pre-installed Playwright/Chromium against `next start`. YouTube
   may be blocked in sandboxes, so stub the API with

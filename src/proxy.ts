@@ -16,7 +16,9 @@ import {
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const [lang] = splitLocale(pathname);
-  if (lang) return NextResponse.next();
+  if (lang) {
+    return NextResponse.next();
+  }
 
   const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
   const preferred = hasLocale(cookie)

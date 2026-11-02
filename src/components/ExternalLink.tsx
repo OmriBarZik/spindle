@@ -4,7 +4,7 @@ import type { ComponentProps } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 
 /** A link that opens in a new tab, and says so to screen readers. */
-export default function ExternalLink({
+export function ExternalLink({
   children,
   ...props
 }: Omit<ComponentProps<"a">, "target" | "rel"> & { href: string }) {

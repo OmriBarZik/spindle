@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
-import { LOCALES } from "@/i18n/config";
-import { RECORD_BACKGROUND, RecordSvg } from "@/lib/recordSvg";
+import { RECORD_BACKGROUND, RecordSvg } from "@/components/RecordSvg";
+import { localeParams } from "@/i18n/config";
 
 // Link preview image: the Spindle record, the same one that spins on the home page
 // and the game screens. Text-free apart from the Latin wordmark, so one design works
@@ -11,7 +11,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
+  return localeParams();
 }
 
 const RECORD = 500;

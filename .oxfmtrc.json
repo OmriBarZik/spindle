@@ -21,7 +21,6 @@
     "build/",
     "coverage/",
     "node_modules/",
-    "package-lock.json",
     "next-env.d.ts",
     "**/__snapshots__/",
     "src/data/songs.json",

@@ -1,7 +1,8 @@
+import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 import { puzzleNumber } from "./dates";
-import type { SongLanguage } from "./songs";
-import type { SortDay } from "./storage";
+import type { SortDay } from "./saveData";
+import { sortHits } from "./sortState";
 
 /** Shares through the phone's share sheet, or copies to the clipboard elsewhere. */
 export async function shareOrCopy(text: string): Promise<"shared" | "copied" | "failed"> {
@@ -25,7 +26,7 @@ export async function shareOrCopy(text: string): Promise<"shared" | "copied" | "
 }
 
 /** " · Israeli songs only" when a puzzle came from one kind of song, since it differs. */
-function onlyTag(t: Messages, langs: readonly SongLanguage[] | undefined): string {
+function onlyTag(t: Messages, langs: readonly Locale[] | undefined): string {
   const [only] = langs ?? [];
   return langs?.length === 1 && only ? ` · ${t.settings.shareTag[only]}` : "";
 }
@@ -37,8 +38,11 @@ const lines = (...parts: string[]) => parts.join("\n");
 
 /** Daily Five share text: head, one square per song, link to the game. */
 export function sortShareText(t: Messages, day: string, sortDay: SortDay, origin: string): string {
-  const hits = sortDay.placements.filter((p) => p.correct).length;
-  const head = t.sort.shareHead(puzzleNumber(day), hits, sortDay.songIds.length);
+  const head = t.sort.shareHead(
+    puzzleNumber(day),
+    sortHits(sortDay.placements),
+    sortDay.songIds.length,
+  );
   return lines(`${head}${onlyTag(t, sortDay.languages)}`, sortEmoji(sortDay), `${origin}/sort`);
 }
 
@@ -50,9 +54,7 @@ export function sortEmoji(sortDay: SortDay): string {
 export function timelineShareText(
   t: Messages,
   day: string,
-  songs: number,
-  wrong: boolean,
-  langs: readonly SongLanguage[],
+  { songs, wrong, langs }: { songs: number; wrong: boolean; langs: readonly Locale[] },
   origin: string,
 ): string {
   const head = `${t.timeline.shareHead(puzzleNumber(day))}${onlyTag(t, langs)}`;

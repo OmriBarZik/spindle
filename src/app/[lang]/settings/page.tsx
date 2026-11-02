@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { SettingsClient } from "@/components/ClientOnly";
-import Header from "@/components/Header";
+import { Header } from "@/components/Header";
+import { SettingsClient } from "@/components/LazyScreens";
 import { getI18n } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {

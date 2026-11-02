@@ -1,10 +1,10 @@
 import Link from "next/link";
-import LanguageSwitch from "@/components/LanguageSwitch";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { localePath } from "@/i18n/config";
 import { getI18n } from "@/i18n/server";
 
 /** `path` is the current page without its language prefix, for the language switch. */
-export default async function Header({ title, path }: { title?: string; path: string }) {
+export async function Header({ title, path }: { title?: string; path: string }) {
   const { lang, t } = await getI18n();
   return (
     <header className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 px-4 py-4">
@@ -17,9 +17,9 @@ export default async function Header({ title, path }: { title?: string; path: st
       </Link>
       <div className="flex items-center gap-2">
         {/* Hidden on phones to fit the switch and settings; each page repeats it in its <h1>. */}
-        {title && <span className="hidden text-sm text-muted sm:inline">{title}</span>}
+        {title ? <span className="hidden text-sm text-muted sm:inline">{title}</span> : null}
         <LanguageSwitch path={path} />
-        {path !== "/settings" && (
+        {path === "/settings" ? null : (
           <Link
             href={localePath(lang, "/settings")}
             aria-label={t.settings.name}

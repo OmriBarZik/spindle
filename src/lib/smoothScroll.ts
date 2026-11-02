@@ -1,5 +1,6 @@
 "use client";
 
+import { clamp } from "./clamp";
 import { canAnimate } from "./motion";
 
 const SCROLL_KEYS = ["wheel", "touchstart", "keydown"] as const;
@@ -26,16 +27,20 @@ export function smoothScrollToCenter(el: HTMLElement): () => void {
   const r = el.getBoundingClientRect();
   const maxY = document.documentElement.scrollHeight - window.innerHeight;
   const from = window.scrollY;
-  const to = Math.min(maxY, Math.max(0, from + r.top + r.height / 2 - window.innerHeight / 2));
+  const to = clamp(from + r.top + r.height / 2 - window.innerHeight / 2, 0, maxY);
   const distance = to - from;
-  if (Math.abs(distance) < 1) return nothingToStop;
+  if (Math.abs(distance) < 1) {
+    return nothingToStop;
+  }
 
   window.scrollTo({ top: to, behavior: "instant" });
-  if (!canAnimate()) return nothingToStop;
+  if (!canAnimate()) {
+    return nothingToStop;
+  }
   const page = document.body;
 
   // Longer trips take a little longer, but always end well before the record swipes.
-  const duration = Math.min(800, Math.max(500, 350 + Math.abs(distance) * 0.5));
+  const duration = clamp(350 + Math.abs(distance) * 0.5, 500, 800);
   // Start where the content was before the jump, then glide to where it is now.
   const glide = page.animate([{ transform: `translateY(${distance}px)` }, { transform: "none" }], {
     duration,
@@ -45,9 +50,13 @@ export function smoothScrollToCenter(el: HTMLElement): () => void {
   // If the player grabs the page, finish at once rather than fight them.
   const end = () => {
     glide.finish();
-    for (const ev of SCROLL_KEYS) window.removeEventListener(ev, end);
+    for (const ev of SCROLL_KEYS) {
+      window.removeEventListener(ev, end);
+    }
   };
-  for (const ev of SCROLL_KEYS) window.addEventListener(ev, end, { passive: true });
+  for (const ev of SCROLL_KEYS) {
+    window.addEventListener(ev, end, { passive: true });
+  }
   glide.onfinish = end;
   return end;
 }

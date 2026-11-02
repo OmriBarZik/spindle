@@ -1,5 +1,4 @@
 import type { Locale } from "@/i18n/config";
-import type { SongLanguage } from "@/lib/songs";
 
 /**
  * Custom Google Analytics events that follow a player through the game. GA itself is
@@ -27,10 +26,11 @@ type Events = {
   /** The share button. `method` is what happened (GA's recommended `share` event). */
   share: { content_type: GameMode; method: "shared" | "copied" | "failed" };
   language_switch: { from: Locale; to: Locale };
-  song_languages_change: { song_language: SongLanguage; enabled: boolean };
+  song_languages_change: { song_language: Locale; enabled: boolean };
 };
 
-export type EventName = keyof Events;
+/** How a game screen reports opening. */
+export type GameOpenEvent = Events["game_open"];
 
 declare global {
   // Adding a field to the global Window needs declaration merging, which only interfaces do.
@@ -42,7 +42,9 @@ declare global {
 }
 
 /** Sends a GA event. Does nothing when GA isn't loaded (tests, ad blockers). */
-export function track<K extends EventName>(name: K, params: Events[K]): void {
-  if (typeof window === "undefined") return;
+export function track<K extends keyof Events>(name: K, params: Events[K]): void {
+  if (typeof window === "undefined") {
+    return;
+  }
   window.gtag?.("event", name, params);
 }

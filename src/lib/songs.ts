@@ -18,6 +18,9 @@ export type Song = {
   artistHe?: string;
 };
 
+/** What's needed to show a song: a full `Song` or a card saved on a timeline. */
+export type SongRef = Pick<Song, "title" | "artist" | "youtubeId">;
+
 type RawSong = Omit<Song, "id"> & { id?: string };
 
 // Runs once at load; a fresh object per song keeps the JSON module untouched.
@@ -32,14 +35,11 @@ export const SONGS: Song[] = (songsData as RawSong[]).map((s) => ({
  * with Hebrew names) are "he"; everything else is "en". A few Israeli entries are sung
  * in English, so the UI calls these "Israeli" and "International" songs.
  */
-export type SongLanguage = "en" | "he";
-export const SONG_LANGUAGES: readonly SongLanguage[] = ["en", "he"];
-
-export function songLanguage(song: Pick<Song, "titleHe">): SongLanguage {
+export function songLanguage(song: Pick<Song, "titleHe">): Locale {
   return song.titleHe ? "he" : "en";
 }
 
-export const SONG_BY_ID = new Map(SONGS.map((s) => [s.id, s]));
+const SONG_BY_ID = new Map(SONGS.map((s) => [s.id, s]));
 const SONG_BY_VIDEO = new Map(SONGS.map((s) => [s.youtubeId, s]));
 
 /** Finds a song by its stable id, or by its current `youtubeId`. */
@@ -52,10 +52,7 @@ export function getSong(id: string | undefined): Song | undefined {
  * timeline cards saved in localStorage only carry the English names. Older saved cards
  * hold the song's original video, which is also its stable id, so either one resolves.
  */
-export function songNames(
-  song: { title: string; artist: string; youtubeId: string },
-  lang: Locale,
-): { title: string; artist: string } {
+export function songNames(song: SongRef, lang: Locale): { title: string; artist: string } {
   const full = getSong(song.youtubeId);
   if (lang === "he" && full) {
     return { title: full.titleHe ?? song.title, artist: full.artistHe ?? song.artist };

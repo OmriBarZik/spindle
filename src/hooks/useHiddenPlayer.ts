@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /* Minimal typings for the parts of the YouTube IFrame API we use. */
 type YTPlayer = {
-  loadVideoById(opts: { videoId: string; startSeconds?: number }): void;
-  playVideo(): void;
-  pauseVideo(): void;
-  stopVideo(): void;
-  seekTo(seconds: number, allowSeekAhead: boolean): void;
-  getCurrentTime(): number;
-  destroy(): void;
+  loadVideoById: (opts: { videoId: string; startSeconds?: number }) => void;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  stopVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  getCurrentTime: () => number;
+  destroy: () => void;
 };
 
 type YTNamespace = {
@@ -42,12 +42,16 @@ declare global {
 let apiPromise: Promise<YTNamespace> | null = null;
 
 function loadYouTubeApi(): Promise<YTNamespace> {
-  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (window.YT?.Player) {
+    return Promise.resolve(window.YT);
+  }
   apiPromise ??= new Promise((resolve) => {
     const previous = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => {
       previous?.();
-      if (window.YT) resolve(window.YT);
+      if (window.YT) {
+        resolve(window.YT);
+      }
     };
     const script = document.createElement("script");
     script.src = "https://www.youtube.com/iframe_api";
@@ -57,9 +61,19 @@ function loadYouTubeApi(): Promise<YTNamespace> {
   return apiPromise;
 }
 
-export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
+type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
 
-export type HiddenPlayer = ReturnType<typeof useHiddenPlayer>["player"];
+export type HiddenPlayer = {
+  ready: boolean;
+  currentId: string | null;
+  status: PlayerStatus;
+  time: number;
+  play: (videoId: string, start?: number) => void;
+  pause: () => void;
+  toggle: (videoId: string, start?: number) => void;
+  restart: (start?: number) => void;
+  stop: () => void;
+};
 
 /**
  * A YouTube player whose iframe is mounted into `hostRef` and is expected to be
@@ -79,7 +93,9 @@ export function useHiddenPlayer() {
     let cancelled = false;
     const host = hostRef.current;
     void loadYouTubeApi().then((YT) => {
-      if (cancelled || !host) return;
+      if (cancelled || !host) {
+        return;
+      }
       const mount = document.createElement("div");
       host.appendChild(mount);
       playerRef.current = new YT.Player(mount, {
@@ -98,12 +114,19 @@ export function useHiddenPlayer() {
         events: {
           onReady: () => !cancelled && setReady(true),
           onStateChange: (e) => {
-            if (cancelled) return;
+            if (cancelled) {
+              return;
+            }
             // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
-            if (e.data === 1) setStatus("playing");
-            else if (e.data === 2) setStatus("paused");
-            else if (e.data === 0) setStatus("ended");
-            else if (e.data === 3) setStatus("loading");
+            if (e.data === 1) {
+              setStatus("playing");
+            } else if (e.data === 2) {
+              setStatus("paused");
+            } else if (e.data === 0) {
+              setStatus("ended");
+            } else if (e.data === 3) {
+              setStatus("loading");
+            }
           },
           onError: () => !cancelled && setStatus("error"),
         },
@@ -118,12 +141,16 @@ export function useHiddenPlayer() {
       }
       playerRef.current = null;
       currentRef.current = null;
-      if (host) host.innerHTML = "";
+      if (host) {
+        host.innerHTML = "";
+      }
     };
   }, []);
 
   useEffect(() => {
-    if (status !== "playing") return;
+    if (status !== "playing") {
+      return;
+    }
     const id = window.setInterval(() => {
       setTime(playerRef.current?.getCurrentTime() ?? 0);
     }, 250);
@@ -132,7 +159,9 @@ export function useHiddenPlayer() {
 
   const play = useCallback((videoId: string, start = 0) => {
     const p = playerRef.current;
-    if (!p) return;
+    if (!p) {
+      return;
+    }
     if (currentRef.current !== videoId) {
       currentRef.current = videoId;
       setCurrentId(videoId);
@@ -159,7 +188,9 @@ export function useHiddenPlayer() {
 
   const restart = useCallback((start = 0) => {
     const p = playerRef.current;
-    if (!p || !currentRef.current) return;
+    if (!p || !currentRef.current) {
+      return;
+    }
     p.seekTo(start, true);
     p.playVideo();
   }, []);
@@ -172,14 +203,9 @@ export function useHiddenPlayer() {
     setTime(0);
   }, []);
 
-  const player = useMemo(
+  const player = useMemo<HiddenPlayer>(
     () => ({ ready, currentId, status, time, play, pause, toggle, restart, stop }),
     [ready, currentId, status, time, play, pause, toggle, restart, stop],
   );
   return { hostRef, player };
-}
-
-export function formatTime(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }

@@ -26,8 +26,12 @@ let index = 0;
 const describe = (song: Song) => `${song.youtubeId}  ${song.artist} – ${song.title}`;
 
 function failureReason(status: number): string {
-  if (status === 401 || status === 403) return "embedding disabled";
-  if (status === 404) return "not found / private";
+  if (status === 401 || status === 403) {
+    return "embedding disabled";
+  }
+  if (status === 404) {
+    return "not found / private";
+  }
   return `HTTP ${status}`;
 }
 
@@ -44,7 +48,9 @@ async function check(song: Song): Promise<void> {
       return;
     }
     const info = (await res.json()) as OEmbed;
-    if (!quiet) console.log(`✅ ${describe(song)}\n      ↳ ${info.title}  [${info.author_name}]`);
+    if (!quiet) {
+      console.log(`✅ ${describe(song)}\n      ↳ ${info.title}  [${info.author_name}]`);
+    }
   } catch (err) {
     problems.push({ song, reason: String(err) });
     console.log(`⚠️  ${describe(song)}  (${String(err)})`);
@@ -63,4 +69,6 @@ await Promise.all(
 );
 
 console.log(`\n${songs.length - problems.length}/${songs.length} songs OK.`);
-if (problems.length > 0) process.exit(1);
+if (problems.length > 0) {
+  process.exit(1);
+}
