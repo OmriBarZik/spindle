@@ -50,6 +50,8 @@
     "spindle/specific-file-name": "error",
     "spindle/no-jsx-and": "error",
     "spindle/no-typeof-type": "error",
+    // Colours and sizes come from the design tokens (src/app/styles/tokens.css).
+    "spindle/no-raw-style": "error",
 
     "eqeqeq": ["error", "always"],
     "no-console": ["error", { "allow": ["warn", "error"] }],
@@ -157,6 +159,11 @@
     "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "expectAccessible"] }]
   },
   "overrides": [
+    {
+      // The one TypeScript file allowed colour literals: images drawn by next/og can't read CSS.
+      "files": ["src/lib/palette.ts"],
+      "rules": { "spindle/no-raw-style": "off" }
+    },
     {
       // Next requires default exports for pages and its special files; so do the tool configs.
       "files": ["src/app/**", "*.config.*"],

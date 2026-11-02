@@ -23,13 +23,13 @@ export function Settings() {
     <ScreenMain>
       <h1 className="text-center text-2xl font-bold">{t.settings.name}</h1>
 
-      <section className="card flex flex-col gap-4 p-5">
+      <section className="card flex flex-col gap-200 p-250">
         <div>
           <h2 className="text-lg font-bold">{t.settings.songsHeading}</h2>
-          <p className="mt-1 text-sm text-muted">{t.settings.songsIntro}</p>
+          <p className="mt-50 text-sm text-muted">{t.settings.songsIntro}</p>
         </div>
 
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-100">
           {LOCALES.map((l) => {
             const on = chosen.includes(l);
             return (
@@ -50,7 +50,11 @@ export function Settings() {
         </ul>
 
         {/* Fixed height so the page doesn't jump when the hint appears. */}
-        <p role="status" aria-live="polite" className="min-h-5 text-sm leading-5 text-amber-300">
+        <p
+          role="status"
+          aria-live="polite"
+          className="min-h-250 text-sm leading-250 text-warning-ink"
+        >
           {chosen.length === 1 ? t.settings.lastOne : ""}
         </p>
         <p className="text-sm text-muted">{t.settings.applyNote}</p>

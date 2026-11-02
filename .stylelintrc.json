@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json.schemastore.org/stylelintrc.json",
+  "extends": ["stylelint-config-standard"],
+  "plugins": ["./lint/stylelint-tokens.mjs"],
+  "rules": {
+    "spindle/tokens-only": true,
+    "spindle/spacing-grid": true,
+    "color-named": "never",
+    "color-no-hex": null,
+    "declaration-no-important": true,
+    "custom-property-pattern": [
+      "^[a-z][a-z0-9]*(--?[a-z0-9]+)*(-\\*)?$",
+      {
+        "message": "Custom properties are kebab-case (Tailwind's `--text-sm--line-height` is fine)"
+      }
+    ],
+    "selector-class-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "theme",
+          "source",
+          "utility",
+          "variant",
+          "custom-variant",
+          "apply",
+          "reference",
+          "plugin",
+          "config"
+        ]
+      }
+    ],
+    "at-rule-no-deprecated": [
+      true,
+      {
+        "ignoreAtRules": ["apply"]
+      }
+    ],
+    "import-notation": "string",
+    "function-no-unknown": [
+      true,
+      {
+        "ignoreFunctions": ["theme", "--spacing", "--alpha"]
+      }
+    ],
+    "no-descending-specificity": null,
+    "comment-empty-line-before": null,
+    "custom-property-empty-line-before": null
+  }
+}

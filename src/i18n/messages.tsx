@@ -186,13 +186,13 @@ const en: Messages = {
     howTo: "How to play",
     rules: [
       <>
-        <b className="text-white">Daily Five:</b> your line starts with a single year (say 1980).
+        <b className="text-ink">Daily Five:</b> your line starts with a single year (say 1980).
         Listen to the first song and choose <i>before 1980</i> or <i>after 1980</i>. It joins the
         line, and the next song has one more gap to choose from. Five songs, one at a time — each
         right placement is a 🟩.
       </>,
       <>
-        <b className="text-white">Marathon:</b> the same idea, without the limit. Keep placing songs
+        <b className="text-ink">Marathon:</b> the same idea, without the limit. Keep placing songs
         on one growing line for as long as you can. Each wrong placement costs a ❤️ — after three,
         your score for the day is how many you got right.
       </>,
@@ -206,7 +206,7 @@ const en: Messages = {
     name: "Daily Five",
     intro: (year) => (
       <>
-        Your line starts at <b className="text-white">{year}</b>. Listen to each song and drop it
+        Your line starts at <b className="text-ink">{year}</b>. Listen to each song and drop it
         before or after the cards you already have — one song at a time.
       </>
     ),
@@ -244,7 +244,7 @@ const en: Messages = {
     name: "Marathon",
     intro: (year) => (
       <>
-        Your line starts at <b className="text-white">{year}</b>. Place as many songs as you can —
+        Your line starts at <b className="text-ink">{year}</b>. Place as many songs as you can —
         three wrong and the run is over.
       </>
     ),
@@ -348,12 +348,12 @@ const he: Messages = {
     howTo: "איך משחקים",
     rules: [
       <>
-        <b className="text-white">החמישייה היומית:</b> הציר שלכם מתחיל בשנה אחת (נגיד 1980). האזינו
+        <b className="text-ink">החמישייה היומית:</b> הציר שלכם מתחיל בשנה אחת (נגיד 1980). האזינו
         לשיר הראשון ובחרו <i>לפני 1980</i> או <i>אחרי 1980</i>. הוא מצטרף לציר, ולשיר הבא יש עוד
         רווח אחד לבחור ממנו. חמישה שירים, אחד בכל פעם — כל שיבוץ נכון הוא 🟩.
       </>,
       <>
-        <b className="text-white">מרתון:</b> אותו רעיון, בלי הגבלה. ממשיכים לשבץ שירים על ציר אחד
+        <b className="text-ink">מרתון:</b> אותו רעיון, בלי הגבלה. ממשיכים לשבץ שירים על ציר אחד
         שהולך וגדל, כמה שאפשר. כל שיבוץ שגוי עולה ❤️ — אחרי שלוש טעויות, הניקוד היומי שלכם הוא מספר
         השירים ששיבצתם נכון.
       </>,
@@ -368,8 +368,8 @@ const he: Messages = {
     name: "החמישייה היומית",
     intro: (year) => (
       <>
-        הציר שלכם מתחיל ב־<b className="text-white">{year}</b>. האזינו לכל שיר ושבצו אותו לפני או
-        אחרי הקלפים שכבר יש לכם — שיר אחד בכל פעם.
+        הציר שלכם מתחיל ב־<b className="text-ink">{year}</b>. האזינו לכל שיר ושבצו אותו לפני או אחרי
+        הקלפים שכבר יש לכם — שיר אחד בכל פעם.
       </>
     ),
     progress: (n, total) => `שיר ${n} מתוך ${total}`,
@@ -406,7 +406,7 @@ const he: Messages = {
     name: "מרתון",
     intro: (year) => (
       <>
-        הציר שלכם מתחיל ב־<b className="text-white">{year}</b>. שבצו כמה שיותר שירים — שלוש טעויות
+        הציר שלכם מתחיל ב־<b className="text-ink">{year}</b>. שבצו כמה שיותר שירים — שלוש טעויות
         והמרתון נגמר.
       </>
     ),

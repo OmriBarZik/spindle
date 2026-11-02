@@ -24,7 +24,7 @@ export function SortResult({
     <ResultCard>
       <div className="text-3xl font-bold">{score}</div>
       {/* The score above says the same for screen readers. */}
-      <div dir="ltr" aria-hidden className="text-2xl tracking-widest">
+      <div dir="ltr" aria-hidden className="text-2xl tracking-wider">
         {sortEmoji(state)}
       </div>
       <Stats

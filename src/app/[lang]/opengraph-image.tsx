@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
-import { RECORD_BACKGROUND, RecordSvg } from "@/components/RecordSvg";
+import { RecordSvg } from "@/components/RecordSvg";
 import { localeParams } from "@/i18n/config";
+import { PALETTE } from "@/lib/palette";
 
 // Link preview image: the Spindle record, the same one that spins on the home page
 // and the game screens. Text-free apart from the Latin wordmark, so one design works
@@ -26,15 +27,15 @@ export default function Image() {
         alignItems: "center",
         justifyContent: "center",
         gap: 72,
-        background: `radial-gradient(900px 500px at 50% -120px, #2a1846 0%, ${RECORD_BACKGROUND} 70%)`,
-        color: "#f4f4f5",
+        background: `radial-gradient(900px 500px at 50% -120px, ${PALETTE.glow} 0%, ${PALETTE.page} 70%)`,
+        color: PALETTE.ink,
       }}
     >
       <div
         style={{
           display: "flex",
           borderRadius: 9999,
-          boxShadow: "0 30px 80px rgba(0,0,0,0.7)",
+          boxShadow: `0 30px 80px ${PALETTE.shadow}`,
         }}
       >
         <RecordSvg size={RECORD} grooveGap={7} />

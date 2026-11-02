@@ -12,7 +12,7 @@ export function LanguageSwitch({ path }: { path: string }) {
   return (
     <nav
       aria-label={t.common.languageLabel}
-      className="flex rounded-full border border-line p-0.5 text-xs"
+      className="flex rounded-full border border-line p-25 text-xs"
     >
       {LOCALES.map((l) => (
         <Link
@@ -28,8 +28,8 @@ export function LanguageSwitch({ path }: { path: string }) {
             document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
           }}
           className={clsx(
-            "rounded-full px-2.5 py-1 transition",
-            l === lang ? "bg-white font-semibold text-black" : "text-muted hover:text-white",
+            "rounded-full px-100 py-50 transition",
+            l === lang ? "bg-primary font-semibold text-on-primary" : "text-muted hover:text-ink",
           )}
         >
           {languageName(l)}

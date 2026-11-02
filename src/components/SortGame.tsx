@@ -90,7 +90,7 @@ export function SortGame() {
   );
 
   return (
-    <ScreenMain>
+    <ScreenMain game="daily">
       <SortHeader state={state} />
 
       <Announce>{done ? score : feedback}</Announce>

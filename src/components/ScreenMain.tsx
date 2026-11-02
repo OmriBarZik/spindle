@@ -1,6 +1,19 @@
+import { clsx } from "clsx";
 import type { ReactNode } from "react";
 
-/** The page column of a game or settings screen. */
-export function ScreenMain({ children }: { children: ReactNode }) {
-  return <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-16">{children}</main>;
+/** A game mode, for its colours (`.game-*` in globals.css). */
+export type GameColor = "daily" | "marathon" | "timeline";
+
+/** The page column of a game or settings screen. A game screen passes its `game` colour. */
+export function ScreenMain({ game, children }: { game?: GameColor; children: ReactNode }) {
+  return (
+    <main
+      className={clsx(
+        "mx-auto flex w-full max-w-page flex-col gap-300 px-200 pb-800",
+        game && `game-${game}`,
+      )}
+    >
+      {children}
+    </main>
+  );
 }

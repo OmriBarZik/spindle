@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { ModeLink } from "@/components/ModeLink";
+import type { GameColor } from "@/components/ScreenMain";
 
 /**
  * A game mode on the home page, drawn as a record sleeve with its record peeking out.
@@ -7,25 +8,25 @@ import { ModeLink } from "@/components/ModeLink";
  */
 export function ModeSleeve({
   href,
-  tone,
+  game,
   tag,
   name,
   desc,
 }: {
   href: string;
-  tone: "violet" | "amber";
+  game: GameColor;
   tag: string;
   name: string;
   desc: string;
 }) {
   return (
-    <ModeLink href={href} className={clsx("sleeve", `sleeve-${tone}`)}>
+    <ModeLink href={href} className={clsx("sleeve", `sleeve-${game}`)}>
       <span className="sleeve-record record spin-slow" aria-hidden data-flight-record>
         <span className="record-label" />
       </span>
       <span className="sleeve-tag font-mono">{tag}</span>
-      <span className="text-xl leading-tight font-black">{name}</span>
-      <span className="sleeve-desc text-[13px] leading-snug">{desc}</span>
+      <span className="text-xl font-black">{name}</span>
+      <span className="sleeve-desc text-sm">{desc}</span>
     </ModeLink>
   );
 }
