@@ -1,11 +1,10 @@
 import { screen } from "@testing-library/react";
 import { Profiler } from "react";
 import { afterEach, expect, it } from "vitest";
-import { TimelineGame } from "@/components/TimelineGame";
-import { addDays } from "@/lib/dates";
-import { SONGS } from "@/lib/songs";
+import { MarathonGame } from "@/components/MarathonGame";
+import { marathonAnchorYearFor, marathonSongsFor } from "@/lib/daily";
 import { emptySave, writeSave } from "@/lib/storage";
-import { anchorCard, songCard } from "@/lib/timeline";
+import { correctSlot } from "@/lib/timeline";
 import { setCpuThrottling } from "@/test/cpuThrottling";
 import { renderIn } from "@/test/renderIn";
 import { setupGameTests } from "@/test/setupGameTests";
@@ -21,13 +20,19 @@ const MAX_FRAME_MS = 30;
 setupGameTests(`${DAY}T10:00:00`);
 afterEach(() => setCpuThrottling(1));
 
-/** A run many days long, so there's plenty of line to swipe across. */
-function saveLongTimeline() {
-  const songs = SONGS.slice(0, SONGS_ON_LINE).toSorted((a, b) => a.year - b.year);
+/** A long Marathon run, so there's plenty of line to swipe across. */
+function saveLongRun() {
   const save = emptySave();
-  save.timeline.cards = [anchorCard(1900), ...songs.map(songCard)];
-  save.timeline.runStart = "2026-09-01";
-  save.timeline.lastDate = addDays(DAY, -1);
+  const anchorYear = marathonAnchorYearFor(DAY);
+  const line = [{ year: anchorYear }];
+  const placements = marathonSongsFor(DAY)
+    .slice(0, SONGS_ON_LINE)
+    .map((song) => {
+      const slot = correctSlot(line, song.year);
+      line.splice(slot, 0, { year: song.year });
+      return { songId: song.id, slot, correct: true };
+    });
+  save.marathon.days[DAY] = { anchorYear, languages: ["en", "he"], placements, skipped: [] };
   writeSave(save);
 }
 
@@ -51,12 +56,12 @@ function swipe(track: Element, distance: number, frames: number): Promise<number
 }
 
 it("keeps swiping cheap on a slow phone", async () => {
-  saveLongTimeline();
+  saveLongRun();
   const commits: number[] = [];
   renderIn(
     "en",
     <Profiler id="game" onRender={(_id, _phase, duration) => commits.push(duration)}>
-      <TimelineGame />
+      <MarathonGame />
     </Profiler>,
   );
   const track = screen.getByRole("group", { name: /^Your timeline/ });

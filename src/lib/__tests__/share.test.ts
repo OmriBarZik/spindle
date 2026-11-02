@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { MESSAGES } from "@/i18n/messages";
-import type { SortDay } from "@/lib/saveData";
-import { sortShareText, timelineShareText } from "@/lib/share";
+import type { MarathonDay, SortDay } from "@/lib/saveData";
+import { marathonShareText, sortShareText } from "@/lib/share";
 
 const ORIGIN = "https://spindle.example";
 const day = (correct: boolean[], languages?: SortDay["languages"]): SortDay => ({
@@ -24,26 +24,32 @@ it("formats a Daily Five result", () => {
   );
 });
 
-it("formats a Daily Timeline result", () => {
+const marathon = (correct: boolean[], languages: MarathonDay["languages"]): MarathonDay => ({
+  anchorYear: 1990,
+  languages,
+  placements: correct.map((c, i) => ({ songId: String(i), slot: 0, correct: c })),
+  skipped: [],
+});
+
+it("formats a Marathon result, ten squares a row", () => {
+  const twelve = [...Array.from({ length: 10 }, () => true), false, false];
   expect(
-    timelineShareText(
+    marathonShareText(
       MESSAGES.en,
       "2026-11-02",
-      { songs: 3, wrong: false, langs: ["en", "he"] },
+      marathon([true, false, true, false, false], ["en", "he"]),
       ORIGIN,
     ),
-  ).toBe(`Spindle Timeline #2\n🔥 3 songs and counting\n🟩🟩🟩\n${ORIGIN}/timeline`);
-  expect(
-    timelineShareText(MESSAGES.en, "2026-11-02", { songs: 1, wrong: true, langs: ["he"] }, ORIGIN),
-  ).toBe(
-    `Spindle Timeline #2 · Israeli songs only\n❌ Timeline ended at 1 song\n🟩🟥\n${ORIGIN}/timeline`,
+  ).toBe(`Spindle Marathon #2 · 2 🎵\n🟩🟥🟩🟥🟥\n${ORIGIN}/marathon`);
+  expect(marathonShareText(MESSAGES.en, "2026-11-01", marathon(twelve, ["he"]), ORIGIN)).toBe(
+    `Spindle Marathon #1 · 10 🎵 · Israeli songs only\n${"🟩".repeat(10)}\n🟥🟥\n${ORIGIN}/marathon`,
   );
   expect(
-    timelineShareText(
+    marathonShareText(
       MESSAGES.he,
       "2026-11-01",
-      { songs: 0, wrong: true, langs: ["en", "he"] },
+      marathon([false, false, false], ["en", "he"]),
       ORIGIN,
     ),
-  ).toBe(`Spindle ציר הזמן #1\n❌ ציר הזמן נגמר אחרי 0 שירים\n🟥\n${ORIGIN}/timeline`);
+  ).toBe(`Spindle מרתון #1 · 0 🎵\n🟥🟥🟥\n${ORIGIN}/marathon`);
 });

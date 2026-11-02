@@ -32,12 +32,16 @@ runs format, lint, knip, typecheck, tests and build on every PR and on `main`.
 | Mode | Route | Internal name | Rules |
 | --- | --- | --- | --- |
 | **Daily Five** | `/{lang}/sort` | "sort" (`SortGame`, `data.sort`, `sortSongsFor`) | The line starts with one **starting year**. Five songs come **one at a time**, and each is placed into a gap. A wrong placement is marked red and moved to its real spot. Score is x/5. Everyone gets the same songs each day. |
-| **Daily Timeline** | `/{lang}/timeline` | "timeline" | One song per day goes into a personal timeline that persists across days. A new timeline starts with a free starting year, so day 1 is already a guess. A wrong guess or a missed day ends the run, and a fresh one starts the next day. |
+| **Marathon** | `/{lang}/marathon` | "marathon" (`MarathonGame`, `data.marathon`, `marathonSongsFor`) | Once a day. The line starts with one **starting year**, then songs come one at a time, as many as the player can place. Each wrong placement costs one of **3 hearts** (`MARATHON_HEARTS`) and the song is moved to its real spot; when the last heart goes, the day's score (songs placed right) is final. Everyone gets the same run of songs each day. |
 | **Settings** | `/{lang}/settings` | `Settings` | Players choose which songs can appear: International (`en`) and/or Israeli (`he`) songs. Stored in `data.settings.songLanguages` (never empty). |
 
 The "sort" name is historical: the mode used to be "order all 5 at once". Keep the
 internal names (route, save keys, functions) so existing saves and links keep working;
 only the UI says "Daily Five".
+
+Marathon replaced the old **Daily Timeline** (one song a day on a personal timeline).
+`next.config.ts` redirects `/{lang}/timeline` to `/{lang}/marathon`, and old saves keep
+their `timeline` data untouched (nothing reads it any more).
 
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
@@ -88,29 +92,31 @@ is a "default" served without a prefix.
   before the game screens mount. Custom events go through `track()` in `src/lib/analytics.ts`,
   whose `Events` type lists every event and its parameters (component tests check them with
   `trackedEvents()`). **Never send song details** (title, artist, year, video ID) to analytics.
-- **Client-only game screens.** `src/app/[lang]/{sort,timeline}/page.tsx` are server components
-  that render `SortGameClient` and `TimelineGameClient` from `src/components/LazyScreens.tsx`.
+- **Client-only game screens.** `src/app/[lang]/{sort,marathon}/page.tsx` are server components
+  that render `SortGameClient` and `MarathonGameClient` from `src/components/LazyScreens.tsx`.
+  The home page's "This week" strip (`WeekStripClient`) loads the same way.
   These use `next/dynamic` with `ssr: false`, because the initial state reads
   `localStorage` and the local date. `ssr: false` is only allowed inside a client
   component, which is why `LazyScreens.tsx` exists.
 - **Deterministic daily picks.** `src/lib/daily.ts` runs `seededShuffle(SONGS, seed)`
   (`src/lib/random.ts`, FNV-1a + mulberry32) with these seed strings:
-  `sort:${day}`, `anchor:${day}`, `timeline:${day}`, `timeline-anchor:${day}`.
+  `sort:${day}`, `anchor:${day}`, `marathon:${day}`, `marathon-anchor:${day}`.
+  (`timeline:` and `timeline-anchor:` belonged to the retired Daily Timeline.)
   `shuffled()` in `daily.ts` splits that shuffle by song language and interleaves the
   lists with a seeded 50/50 coin (seed `${seed}:mix`), so with both kinds on about half the
   picks are Israeli even though the catalog is mostly international. The song-language
   setting only chooses which lists take part; it never changes the seed. So everyone with both kinds on (the default) shares one puzzle,
   and players with the same setting match each other. A Daily Five day remembers its
-  `languages` and is re-picked only while no song has been placed; a pending Timeline song
-  in a turned-off language is swapped. Share text says "Israeli songs only" etc. when the
+  `languages` and is re-picked only while no song has been placed, and so is a Marathon day.
+  The Marathon plays the day's whole shuffle in order, minus the day's Daily Five songs. Share text says "Israeli songs only" etc. when the
   puzzle came from one kind.
   **Never change these strings or the shuffle algorithm**: doing so changes everyone's
   past and future puzzles. Editing `songs.json` also reshuffles the picks, so add songs
   rather than reorder or remove them, and avoid doing it mid-day.
 - **Pure state transitions.** Every game action is a pure function
   `(SaveData, day, ...) => SaveData`, for example `ensureSortDay` and `placeSortSong` in
-  `sortState.ts`, and `ensureTimelineDay`, `placeTimelineCard` and `skipTimelineSong` in
-  `timelineState.ts`.
+  `sortState.ts`, and `ensureMarathonDay`, `placeMarathonSong` and `skipMarathonSong` in
+  `marathonState.ts`.
   A no-op returns the **same object** (the tests check identity). Components call them
   through `useSave()` (`src/hooks/useSave.ts`), which persists only when the object changes.
 
@@ -124,18 +130,20 @@ is a "default" served without a prefix.
 | `src/lib/saveData.ts` | The save format's types |
 | `src/lib/storage.ts` | Reading and writing the save (migrations-on-load), `emptySave`, `setSongLanguage` |
 | `src/lib/sortState.ts` | Daily Five: pure state transitions, stats, and what the screen shows (`sortView`, `sortLineItems`) |
-| `src/lib/timelineState.ts` | Daily Timeline: pure state transitions and what the screen shows (`timelineView`, `timelineLineItems`) |
-| `src/lib/timeline.ts` | `TimelineCard`, `LineItem`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `defaultSlot`, `slotLabel` |
+| `src/lib/marathonState.ts` | Marathon: pure state transitions, hearts, stats and what the screen shows (`marathonView`) |
+| `src/lib/timeline.ts` | `LineItem`, `isSlotCorrect`, `correctSlot`, `recordSlot`, `slotLabel` |
+| `src/lib/week.ts` | `recentDays()`: the home page's "This week" (a day counts once any song was placed) |
 | `src/hooks/useHiddenPlayer.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
 | `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
 | `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
 | `src/hooks/recordFlight.ts` | The record's flight from the home page into a game |
-| `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `timelineShareText`) |
+| `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`) |
 | `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
 | `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
 | `src/components/Deck.tsx` | Turntable UI, built from `DeckRecord` (opaque record over the hidden iframe, play/pause, loading ring), `DeckTransport` and `DeckStatus` |
 | `src/components/SortGame.tsx` | Daily Five screen |
-| `src/components/TimelineGame.tsx` | Daily Timeline screen |
+| `src/components/MarathonGame.tsx` | Marathon screen (with `MarathonHeader`, `Hearts`, `MarathonFeedback`, `MarathonResult`) |
+| `src/app/[lang]/page.tsx` | Home page: each mode is a record sleeve (`ModeSleeve`, `.sleeve-*` in `globals.css`) whose record flies into the game (`ModeLink` launches the clicked sleeve's `[data-flight-record]`), then `WeekStrip` and "How to play" |
 | `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. Styles are the `.swipe-*` classes in `globals.css`. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / PITCH` (no layout reads; `PITCH` must match the gap + card widths in CSS); crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
 | `src/components/PlaceButton.tsx` | Says where the song goes ("Between 1992 and 1997", from `t.placeAt`); its accessible name adds "Place it: " |
 | `src/components/Announce.tsx` | Screen-reader live region |
@@ -155,14 +163,13 @@ is a "default" served without a prefix.
 - `sort.days[day]` = `{ anchorYear, songIds, placements: {slot, correct}[] }`. The day is
   done when `placements.length === songIds.length` (`sortDayDone`). `sortLine(sortDay)` rebuilds the visible
   line: the anchor plus placed songs, with wrong ones moved to their correct position.
-- `timeline.cards` is a `TimelineCard[]` **that includes the starting-year card**
-  (`anchor: true`, `id: "anchor:<year>"`). Always use `songCount(cards)` for scores,
-  "best", and share text; never use `cards.length`.
-- `timeline.today` = `{ date, songId, skipped, result: "pending" | "correct" | "wrong" }`.
-  Today's song is locked in the save when the day is first opened.
+- `marathon.days[day]` = `{ anchorYear, languages, placements: {songId, slot, correct}[], skipped }`.
+  The next song is the first of `marathonSongsFor(day, languages)` not yet placed or skipped;
+  the day is over after `MARATHON_HEARTS` wrong placements. `marathon.stats` =
+  `{ played, best, totalHits }`, updated once when a day ends.
 - **Be backward compatible.** Players already have saves. `loadSave()` merges with
-  defaults, `ensureSortDay` replaces old-format days, and `ensureTimelineDay` adds a
-  starting year to old mid-turn saves. Follow that pattern rather than bumping the version,
+  defaults (a save from before Marathon gets an empty `marathon`), and `ensureSortDay`
+  replaces old-format days. Follow that pattern rather than bumping the version,
   which would wipe everyone's progress.
 
 ## YouTube player rules (product requirement)
@@ -183,8 +190,8 @@ is a "default" served without a prefix.
   `[dir="rtl"]`) and the next record slides in. Keep `var()` out of `@keyframes`: Safari
   can't run those off the main thread, so they lag on a throttled CPU. Play and "Place it" stay locked until
   `onSwapEnd`. The player, record and button move together so the iframe stays covered.
-- If a video fails (`status === "error"`), Timeline offers "Give me a different song"
-  (`skipTimelineSong`).
+- If a video fails (`status === "error"`), Marathon offers "Give me a different song"
+  (`skipMarathonSong`); it costs no heart.
 
 ## Gotchas
 

@@ -2,10 +2,10 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import axe from "axe-core";
 import { isValidElement, type ReactNode } from "react";
 import { expect, it, vi } from "vitest";
+import * as Marathon from "@/app/[lang]/marathon/page";
 import HomePage from "@/app/[lang]/page";
 import * as Settings from "@/app/[lang]/settings/page";
 import * as Sort from "@/app/[lang]/sort/page";
-import * as Timeline from "@/app/[lang]/timeline/page";
 import { dirOf, type Locale, LOCALES } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { type Messages, MESSAGES } from "@/i18n/messages";
@@ -24,9 +24,9 @@ const PAGES = [
   { path: "/", page: { default: HomePage }, title: (t: Messages) => t.meta.title },
   { path: "/sort", page: Sort, title: (t: Messages) => t.meta.sortTitle },
   {
-    path: "/timeline",
-    page: Timeline,
-    title: (t: Messages) => t.meta.timelineTitle,
+    path: "/marathon",
+    page: Marathon,
+    title: (t: Messages) => t.meta.marathonTitle,
   },
   {
     path: "/settings",

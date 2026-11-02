@@ -1,14 +1,4 @@
-import type { Song, SongRef } from "./songs";
-
-export type TimelineCard = {
-  id: string;
-  title: string;
-  artist: string;
-  year: number;
-  youtubeId: string;
-  /** The free starting-year card a timeline begins with (not a song). */
-  anchor?: boolean;
-};
+import type { SongRef } from "./songs";
 
 type Dated = { year: number };
 
@@ -22,23 +12,18 @@ export type LineItem = {
 };
 
 /** The gap the record starts on: the middle of the line. */
-export function defaultSlot(count: number): number {
+function defaultSlot(count: number): number {
   return Math.ceil(count / 2);
 }
 
-export function anchorCard(year: number): TimelineCard {
-  return { id: `anchor:${year}`, title: "", artist: "", year, youtubeId: "", anchor: true };
-}
-
-/** The card saved on a timeline for a song (English names only; see `songNames`). */
-export function songCard(song: Song): TimelineCard {
-  const { id, title, artist, year, youtubeId } = song;
-  return { id, title, artist, year, youtubeId };
-}
-
-/** Number of songs (not counting the starting year) on a timeline. */
-export function songCount(cards: readonly TimelineCard[]): number {
-  return cards.filter((c) => !c.anchor).length;
+/** The gap the record is on: beside the song just placed while it glows, else the player's. */
+export function recordSlot(
+  swapping: boolean,
+  lastAt: number,
+  slot: number | null,
+  cards: number,
+): number {
+  return swapping && lastAt >= 0 ? lastAt + 1 : (slot ?? defaultSlot(cards));
 }
 
 /**

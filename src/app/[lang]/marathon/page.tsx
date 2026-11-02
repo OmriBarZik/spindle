@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
-import { TimelineGameClient } from "@/components/LazyScreens";
+import { MarathonGameClient } from "@/components/LazyScreens";
 import { getI18n } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
-  return { title: t.meta.timelineTitle };
+  return { title: t.meta.marathonTitle };
 }
 
-export default async function TimelinePage() {
+export default async function MarathonPage() {
   const { t } = await getI18n();
   return (
     <>
-      <Header title={t.timeline.name} path="/timeline" />
-      <TimelineGameClient />
+      <Header title={t.marathon.name} path="/marathon" />
+      <MarathonGameClient />
     </>
   );
 }

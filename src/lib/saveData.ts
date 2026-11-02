@@ -1,6 +1,5 @@
 import type { Locale } from "@/i18n/config";
 import type { Song } from "./songs";
-import type { TimelineCard } from "./timeline";
 
 export type SortPlacement = { slot: number; correct: boolean };
 
@@ -31,28 +30,25 @@ export type SortStats = {
   distribution: number[];
 };
 
-export type TimelineToday = {
-  date: string;
-  songId: string;
-  /** Songs skipped today because the video was unavailable. */
+type MarathonPlacement = { songId: string; slot: number; correct: boolean };
+
+export type MarathonDay = {
+  /** The year card the day's line starts with. */
+  anchorYear: number;
+  /** Song languages the day was picked from. */
+  languages: Locale[];
+  /** Every song placed so far, in order. */
+  placements: MarathonPlacement[];
+  /** Songs skipped because the video couldn't play. */
   skipped: string[];
-  /**
-   * pending: not answered yet
-   * correct / wrong: result of today's placement
-   */
-  result: "pending" | "correct" | "wrong";
-  slot?: number;
 };
 
-export type TimelineState = {
-  cards: TimelineCard[];
-  runStart: string | null;
-  /** Last day the player completed a turn in the current run. */
-  lastDate: string | null;
-  runOver: boolean;
+export type MarathonStats = {
+  played: number;
+  /** Most songs placed right in one day. */
   best: number;
-  runs: number;
-  today: TimelineToday | null;
+  /** Songs placed right over every finished day, for the average. */
+  totalHits: number;
 };
 
 type SaveSettings = {
@@ -63,6 +59,6 @@ type SaveSettings = {
 export type SaveData = {
   version: 1;
   sort: { days: Record<string, SortDay>; stats: SortStats };
-  timeline: TimelineState;
+  marathon: { days: Record<string, MarathonDay>; stats: MarathonStats };
   settings: SaveSettings;
 };

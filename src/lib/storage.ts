@@ -1,6 +1,6 @@
 import { type Locale, LOCALES } from "@/i18n/config";
 import { SORT_SIZE } from "./daily";
-import type { SaveData, SortDay, SortStats, TimelineState } from "./saveData";
+import type { MarathonDay, MarathonStats, SaveData, SortDay, SortStats } from "./saveData";
 
 const STORAGE_KEY = "spindle:v1";
 
@@ -18,15 +18,7 @@ export function emptySave(): SaveData {
         distribution: Array.from({ length: SORT_SIZE + 1 }, () => 0),
       },
     },
-    timeline: {
-      cards: [],
-      runStart: null,
-      lastDate: null,
-      runOver: false,
-      best: 0,
-      runs: 0,
-      today: null,
-    },
+    marathon: { days: {}, stats: { played: 0, best: 0, totalHits: 0 } },
     settings: { songLanguages: [...LOCALES] },
   };
 }
@@ -42,7 +34,7 @@ function cleanLanguages(value: unknown): Locale[] {
 type StoredSave = {
   version?: unknown;
   sort?: { days?: Record<string, SortDay>; stats?: Partial<SortStats> };
-  timeline?: Partial<TimelineState>;
+  marathon?: { days?: Record<string, MarathonDay>; stats?: Partial<MarathonStats> };
   settings?: { songLanguages?: unknown };
 } | null;
 
@@ -65,7 +57,10 @@ export function loadSave(): SaveData {
         days: parsed.sort?.days ?? {},
         stats: { ...base.sort.stats, ...parsed.sort?.stats },
       },
-      timeline: { ...base.timeline, ...parsed.timeline },
+      marathon: {
+        days: parsed.marathon?.days ?? {},
+        stats: { ...base.marathon.stats, ...parsed.marathon?.stats },
+      },
       settings: { songLanguages: cleanLanguages(parsed.settings?.songLanguages) },
     };
   } catch {

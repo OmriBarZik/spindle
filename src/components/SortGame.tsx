@@ -22,15 +22,10 @@ import {
   sortOpenEvent,
   sortView,
 } from "@/lib/sortState";
-import { defaultSlot, isSlotCorrect } from "@/lib/timeline";
+import { isSlotCorrect, recordSlot } from "@/lib/timeline";
 
 function sortScoreText(t: Messages, hits: number, total: number) {
   return hits === total ? t.sort.perfect : t.sort.score(hits, total);
-}
-
-/** The gap the record is on: beside the song just placed while it glows, else the player's. */
-function recordSlot(swapping: boolean, lastAt: number, slot: number | null, cards: number) {
-  return swapping && lastAt >= 0 ? lastAt + 1 : (slot ?? defaultSlot(cards));
 }
 
 /**

@@ -79,28 +79,29 @@ export function anchorYearFor(day: string, langs?: readonly Locale[]): number {
   return pick?.year ?? FALLBACK_YEAR;
 }
 
-/** Starting year for a new Daily Timeline, different from the first song's year. */
-export function timelineAnchorYearFor(
-  day: string,
-  songYear: number,
-  langs?: readonly Locale[],
-): number {
-  const pick = shuffled(`timeline-anchor:${day}`, langs).find((s) => s.year !== songYear);
-  return pick?.year ?? FALLBACK_YEAR;
+/**
+ * The day's Marathon songs, in the order they're played: the whole (chosen-language)
+ * catalog, seeded by the day, without the day's Daily Five songs (no spoilers).
+ * Everyone with the same setting gets the same run of songs.
+ */
+export function marathonSongsFor(day: string, langs?: readonly Locale[]): Song[] {
+  // The screen asks on every render, and the answer never changes: shuffle once.
+  const key = `${day}|${(langs ?? LOCALES).join(",")}`;
+  if (marathonCache?.key !== key) {
+    const five = new Set(sortSongsFor(day, langs).map((s) => s.id));
+    marathonCache = {
+      key,
+      songs: shuffled(`marathon:${day}`, langs).filter((s) => !five.has(s.id)),
+    };
+  }
+  return marathonCache.songs;
 }
 
-/**
- * Pick the daily "Timeline" song. The day's sort songs are excluded (no spoilers),
- * as are songs already on the player's timeline and any songs they skipped
- * because the video couldn't play.
- */
-export function timelineSongFor(
-  day: string,
-  exclude: ReadonlySet<string>,
-  langs?: readonly Locale[],
-): Song | undefined {
-  const sortIds = new Set(sortSongsFor(day, langs).map((s) => s.id));
-  const ok = (s: Song) => !sortIds.has(s.id) && !exclude.has(s.id);
-  // If the chosen languages run out (a very long run), fall back to any song.
-  return shuffled(`timeline:${day}`, langs).find(ok) ?? shuffled(`timeline:${day}`).find(ok);
+let marathonCache: { key: string; songs: Song[] } | null = null;
+
+/** The Marathon's starting year, different from the first song's year. */
+export function marathonAnchorYearFor(day: string, langs?: readonly Locale[]): number {
+  const first = marathonSongsFor(day, langs)[0];
+  const pick = shuffled(`marathon-anchor:${day}`, langs).find((s) => s.year !== first?.year);
+  return pick?.year ?? FALLBACK_YEAR;
 }
