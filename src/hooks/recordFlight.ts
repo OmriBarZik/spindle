@@ -121,6 +121,9 @@ export function launchRecordFlight(record: HTMLElement | null) {
   ghost.removeAttribute("data-flight-record");
   ghost.setAttribute("aria-hidden", "true");
   ghost.className = "record spin-slow";
+  // The ghost leaves the sleeve, which sets the game's label colour (`--label`):
+  // take the colour along, so the record keeps it all the way into the game.
+  ghost.style.setProperty("--label", getComputedStyle(record).getPropertyValue("--label"));
   Object.assign(ghost.style, {
     position: "fixed",
     left: `${cx - size / 2}px`,

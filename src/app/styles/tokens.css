@@ -27,6 +27,7 @@
   --palette-neutral-700: #2e2e3a;
   --palette-neutral-800: #17171f;
   --palette-neutral-900: #0b0b10;
+  --palette-violet-50: #f5f3ff;
   --palette-violet-100: #ede9fe;
   --palette-violet-200: #e4dafb;
   --palette-violet-400: #a78bfa;
@@ -38,6 +39,9 @@
   --palette-amber-300: #fcd34d;
   --palette-amber-500: #f59e0b;
   --palette-amber-800: #92400e;
+  --palette-orange-50: #fff7ed;
+  --palette-orange-700: #c2410c;
+  --palette-teal-50: #f0fdfa;
   --palette-teal-100: #ccfbf1;
   --palette-teal-400: #2dd4bf;
   --palette-teal-700: #0f766e;
@@ -319,5 +323,12 @@
     --color-success-ink: light-dark(var(--palette-green-800), var(--palette-green-300));
     --color-danger-ink: light-dark(var(--palette-red-800), var(--palette-red-300));
     --color-warning-ink: light-dark(var(--palette-amber-800), var(--palette-amber-300));
+
+    /* Game colours are brighter on the light page. Text on them stays at 4.5:1 or more. */
+    --color-daily: light-dark(var(--palette-violet-600), var(--palette-violet-700));
+    --color-daily-ink: light-dark(var(--palette-violet-50), var(--palette-violet-100));
+    --color-marathon: light-dark(var(--palette-orange-700), var(--palette-amber-800));
+    --color-marathon-ink: light-dark(var(--palette-orange-50), var(--palette-amber-100));
+    --color-timeline-ink: light-dark(var(--palette-teal-50), var(--palette-teal-100));
   }
 }
