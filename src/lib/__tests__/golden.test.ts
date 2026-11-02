@@ -10,25 +10,27 @@ import type { SongLanguage } from "../songs";
  * Only update it on purpose (e.g. after adding songs), never as part of a refactor.
  */
 describe("daily picks are stable", () => {
-  const settings: SongLanguage[][] = [["en", "he"], ["en"], ["he"]];
+  const settings: { name: string; langs: SongLanguage[] }[] = [
+    { name: "en+he", langs: ["en", "he"] },
+    { name: "en", langs: ["en"] },
+    { name: "he", langs: ["he"] },
+  ];
   const days = Array.from({ length: 30 }, (_, i) => addDays("2026-10-20", i));
 
-  for (const langs of settings) {
-    it(`for ${langs.join("+")}`, () => {
-      const picks = days.map((day) => {
-        const five = sortSongsFor(day, langs);
-        const timeline = timelineSongFor(day, new Set(), langs)!;
-        return [
-          day,
-          five.map((s) => s.id).join(","),
-          anchorYearFor(day, langs),
-          timeline.id,
-          timelineAnchorYearFor(day, timeline.year, langs),
-        ].join(" ");
-      });
-      expect(picks).toMatchSnapshot();
+  it.for(settings)("for $name", ({ langs }) => {
+    const picks = days.map((day) => {
+      const five = sortSongsFor(day, langs);
+      const timeline = timelineSongFor(day, new Set(), langs)!;
+      return [
+        day,
+        five.map((s) => s.id).join(","),
+        anchorYearFor(day, langs),
+        timeline.id,
+        timelineAnchorYearFor(day, timeline.year, langs),
+      ].join(" ");
     });
-  }
+    expect(picks).toMatchSnapshot();
+  });
 });
 
 describe("random", () => {
