@@ -1,9 +1,11 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import type { Locale } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
+import { MESSAGES } from "@/i18n/messages";
 import type { SaveData } from "@/lib/storage";
 import type * as Youtube from "@/lib/youtube";
 import type { HiddenPlayer } from "@/lib/youtube";
@@ -81,4 +83,23 @@ export async function expectAccessible(container: HTMLElement) {
     (v) => `${v.id}: ${v.help}\n  ${v.nodes.map((n) => n.html).join("\n  ")}`,
   );
   expect(problems).toEqual([]);
+}
+
+/** The gap the record is on, read from the line's overview bar. */
+export function recordGap(container: HTMLElement): number {
+  return [...container.querySelectorAll(".swipe-map-gap")].findIndex((g) =>
+    g.classList.contains("swipe-map-on"),
+  );
+}
+
+/** Moves the record to gap `slot` with the Earlier / Later buttons. */
+export async function moveRecordTo(container: HTMLElement, slot: number, lang: Locale = "en") {
+  const { earlier, later } = MESSAGES[lang].common;
+  for (let step = 0; recordGap(container) !== slot; step++) {
+    if (step > 50) throw new Error(`The record never reached gap ${slot}`);
+    const name = recordGap(container) < slot ? later : earlier;
+    // Each step depends on the one before.
+    // oxlint-disable-next-line no-await-in-loop
+    await userEvent.click(screen.getByRole("button", { name }));
+  }
 }

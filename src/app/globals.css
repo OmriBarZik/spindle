@@ -53,12 +53,6 @@ body {
   border-color: #8b5cf6;
   background: color-mix(in srgb, #8b5cf6 14%, var(--surface));
 }
-/* Today's song in the "Cards" layout: the card that's dragged into the line. */
-.mystery-card {
-  background: linear-gradient(160deg, #4c2a8a, #241640);
-  border: 2px solid #8b5cf6;
-  color: #fff;
-}
 .mode-card {
   transition:
     transform 0.15s ease,
@@ -345,4 +339,247 @@ body {
   border-radius: 9999px;
   background: radial-gradient(circle, var(--background) 0 12%, #8b5cf6 13% 34%, #111 35%);
   box-shadow: inset 0 0 0 1px #333;
+}
+
+/* ---------- The swipe line (SwipeLine.tsx) ----------
+   Cards hang off a time rail, each with its year on the rail. While placing, the
+   record sits still in the middle and the strip slides under it; the two cards
+   beside it light up and the rail between their years glows.
+   Vertical layout: track padding (8) + card (150) + stem (22) + node (10):
+   the rail runs through the nodes' middle, 185px from the top of the stage. */
+.swipe {
+  position: relative;
+  height: 236px;
+}
+.swipe-track {
+  position: absolute;
+  inset: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-top: 8px;
+  padding-inline: calc(50% - 78px);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 20px,
+    #000 calc(100% - 20px),
+    transparent
+  );
+}
+.swipe-track::-webkit-scrollbar {
+  display: none;
+}
+.swipe-list {
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+  background: linear-gradient(var(--line), var(--line)) 0 176px / 100% 2px no-repeat;
+}
+.swipe-gap {
+  flex: none;
+  width: 156px;
+  height: 1px;
+  scroll-snap-align: center;
+}
+.swipe-item {
+  flex: none;
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.swipe-card {
+  width: 104px;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  overflow: hidden;
+  transform-origin: center bottom;
+  transition: border-color 0.2s ease;
+}
+.swipe-lit .swipe-card:not(.card-good, .card-bad) {
+  border-color: rgb(167 139 250 / 0.6);
+}
+.swipe-stem {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+}
+.swipe-node {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #6b6b78;
+  box-shadow: 0 0 0 4px var(--background);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.card-anchor ~ .swipe-node {
+  background: #8b5cf6;
+}
+.card-good ~ .swipe-node {
+  background: var(--good);
+  transform: scale(1.5);
+}
+.card-bad ~ .swipe-node {
+  background: var(--bad);
+  transform: scale(1.5);
+}
+.swipe-lit .swipe-node {
+  background: #a78bfa;
+  transform: scale(1.5);
+  box-shadow:
+    0 0 0 3px var(--background),
+    0 0 16px rgb(167 139 250 / 0.9);
+}
+.swipe-year {
+  margin-top: 8px;
+  font-family: var(--font-roboto-mono), ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1;
+  color: #6b6b78;
+  font-variant-numeric: tabular-nums;
+  transition:
+    font-size 0.2s ease,
+    color 0.2s ease;
+}
+.swipe-lit .swipe-year,
+.card-good ~ .swipe-year,
+.card-bad ~ .swipe-year {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+/* The glowing stretch of rail between the two lit years (placed by SwipeLine). */
+.swipe-span {
+  position: absolute;
+  top: 182px;
+  height: 6px;
+  border-radius: 6px;
+  background: #a78bfa;
+  box-shadow: 0 0 18px rgb(167 139 250 / 0.65);
+  pointer-events: none;
+  z-index: 1;
+}
+/* No song on that side: "any time before / after", fading out to the edge. */
+.swipe-span-fade-left {
+  background: linear-gradient(to right, transparent, #a78bfa 70%);
+}
+.swipe-span-fade-right {
+  background: linear-gradient(to right, #a78bfa 30%, transparent);
+}
+.swipe-span-fade-left.swipe-span-fade-right {
+  background: linear-gradient(to right, transparent, #a78bfa, transparent);
+}
+.swipe-record {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 2;
+}
+.swipe-record > :first-child {
+  pointer-events: auto;
+}
+/* From the record down to where it lands on the rail. */
+.swipe-drop {
+  height: 23px;
+  border-inline-start: 2px dashed #a78bfa;
+}
+.swipe-pin {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #8b5cf6;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow:
+    0 0 0 3px var(--background),
+    0 0 18px rgb(139 92 246 / 0.9);
+}
+/* After answering, the record moves above the strip, which centers on the answer. */
+.swipe-done {
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.swipe-done .swipe-track {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  padding-bottom: 4px;
+  padding-inline: calc(50% - 58px);
+  scroll-snap-type: x proximity;
+}
+.swipe-done .swipe-item {
+  margin-inline: 6px;
+  scroll-snap-align: center;
+}
+.swipe-done .swipe-record {
+  position: static;
+  order: -1;
+}
+.swipe-step {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.swipe-step:hover:not(:disabled) {
+  color: var(--foreground);
+}
+.swipe-step:disabled {
+  opacity: 0.3;
+}
+.swipe-map {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.swipe-map-gap {
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.swipe-map-on {
+  height: 8px;
+  background: #a78bfa;
+  box-shadow: 0 0 12px rgb(167 139 250 / 0.7);
+}
+.swipe-map-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #6b6b78;
+}
+.swipe-map-anchor {
+  background: #8b5cf6;
 }

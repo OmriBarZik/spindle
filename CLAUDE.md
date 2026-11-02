@@ -41,6 +41,9 @@ only the UI says "Daily Five".
 
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
+- **Placing is swipe-then-tap.** The record always sits on a gap (it starts in the middle,
+  `defaultSlot`), so the place button is ready at once and the whole line, record and button fit
+  on one phone screen. Keep it that way: the player asked for no scrolling up and down.
 - **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
 - A new day starts at the **player's local midnight** (`dayKey()` in `src/lib/dates.ts`).
 
@@ -121,8 +124,8 @@ is a "default" served without a prefix.
 | `src/components/Deck.tsx` | Turntable UI: opaque record over the hidden iframe, play/pause, loading ring, status line |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen |
-| `src/components/TimelineParts.tsx` | Parts both games share: `SlotLine` (the line with its gap buttons), `PlaceButton`, `SongCard`, `AnchorCard`, `ResultCard`, `Stats`, `Announce` (screen-reader live region) |
-| `src/lib/design.ts`, `src/components/PlayArea.tsx`, `src/components/DesignPicker.tsx` | Placement layouts being tried out (`classic`, `compact`, `dock`, `chips`, `cards`; `cards` is `src/components/CardStrip.tsx`, a sideways strip of big cards that today's song card is dragged into), picked with `?design=` or the picker on the game screens and kept in `localStorage` (`spindle:design`, outside the save). `PlayArea` places the record, line and "Place it" button for each; `Deck`, `SlotLine`, `SongCard` and `PlaceButton` read `useDesign()`. Switching reloads the page so the hidden player is never remounted mid-game. |
+| `src/components/SwipeLine.tsx` | The line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. Styles are the `.swipe-*` classes in `globals.css`. |
+| `src/components/TimelineParts.tsx` | Parts both games share: `PlaceButton` (says where the song goes, "Between 1992 and 1997", from `t.placeAt`; its accessible name adds "Place it: "), `ResultCard`, `Stats`, `Announce` (screen-reader live region) |
 | `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
 | `src/test/` | Test setup and helpers (fake YouTube player, `renderIn(lang, ui)`, axe check) |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
