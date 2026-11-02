@@ -132,7 +132,7 @@ is a "default" served without a prefix.
 | `src/lib/sortState.ts` | Daily Five: pure state transitions, stats, and what the screen shows (`sortView`, `sortLineItems`) |
 | `src/lib/marathonState.ts` | Marathon: pure state transitions, hearts, stats and what the screen shows (`marathonView`) |
 | `src/lib/timeline.ts` | `LineItem`, `isSlotCorrect`, `correctSlot`, `recordSlot`, `slotLabel` |
-| `src/lib/week.ts` | `recentDays()`: the home page's "This week" (a day counts once any song was placed) |
+| `src/lib/week.ts` | `weekDays()`: the home page's "This week", Sunday to Saturday in reading direction (a day counts once any song was placed) |
 | `src/hooks/useHiddenPlayer.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
 | `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
 | `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |

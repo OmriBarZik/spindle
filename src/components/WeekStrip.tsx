@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { dayKey } from "@/lib/dates";
 import { loadSave } from "@/lib/storage";
-import { dayDate, recentDays } from "@/lib/week";
+import { dayDate, weekDays } from "@/lib/week";
 
 /**
  * The home page's "This week": one bar per day, lit when the player played that day.
@@ -15,7 +15,7 @@ export function WeekStrip() {
   const { lang, t } = useI18n();
   const [data] = useState(loadSave);
   const [today] = useState(dayKey);
-  const days = recentDays(data, today);
+  const days = weekDays(data, today);
   const weekday = new Intl.DateTimeFormat(lang, { weekday: "narrow" });
   const longDay = new Intl.DateTimeFormat(lang, { weekday: "long" });
   const count = days.filter((d) => d.played).length;
@@ -29,7 +29,7 @@ export function WeekStrip() {
         <span className="text-muted">{t.home.weekCount(count)}</span>
       </div>
       <ol className="grid grid-cols-7 gap-1.5 text-center font-mono text-xs text-muted">
-        {days.map(({ day, played }) => (
+        {days.map(({ day, played, future }) => (
           <li
             key={day}
             className={clsx("flex flex-col items-center gap-1", day === today && "text-foreground")}
@@ -40,6 +40,7 @@ export function WeekStrip() {
                 "week-bar",
                 played && "week-bar-on",
                 day === today && "week-bar-today",
+                future && "week-bar-future",
               )}
             />
             <span aria-hidden>{weekday.format(dayDate(day))}</span>

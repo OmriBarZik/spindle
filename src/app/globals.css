@@ -111,17 +111,6 @@ body {
 .sleeve-desc {
   color: var(--sleeve-ink);
 }
-.sleeve-badge {
-  position: absolute;
-  top: 0.75rem;
-  inset-inline-start: 0.75rem;
-  border-radius: 9999px;
-  background: #fff;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: #000;
-}
 @media (prefers-reduced-motion: reduce) {
   .sleeve {
     transition: none;
@@ -132,7 +121,7 @@ body {
   }
 }
 
-/* "This week" on the home page (WeekStrip.tsx). The fixed height keeps the loading
+/* "This week" on the home page (WeekStrip.tsx): Sunday to Saturday, in reading direction. The fixed height keeps the loading
    placeholder (WeekStripLoading.tsx) the same size. */
 .week-card {
   display: flex;
@@ -151,6 +140,9 @@ body {
 }
 .week-bar-on {
   background: #8b5cf6;
+}
+.week-bar-future {
+  opacity: 0.4;
 }
 .week-bar-today:not(.week-bar-on) {
   box-shadow: inset 0 0 0 1px var(--muted);

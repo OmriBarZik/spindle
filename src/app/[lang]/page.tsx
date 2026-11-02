@@ -32,7 +32,6 @@ export default async function Home() {
             tag={t.home.marathonTag}
             name={t.marathon.name}
             desc={t.home.marathonDesc}
-            badge={t.home.newBadge}
           />
         </nav>
 

@@ -54,7 +54,6 @@ export type Messages = {
     sortDesc: string;
     marathonTag: string;
     marathonDesc: string;
-    newBadge: string;
     weekHeading: string;
     weekCount: (n: number) => string;
     weekDay: (day: string, played: boolean) => string;
@@ -162,7 +161,6 @@ const en: Messages = {
     sortDesc: "Place five songs on one line. Same songs for everyone.",
     marathonTag: "3 hearts",
     marathonDesc: "As many songs as you can. Three wrong and you're out.",
-    newBadge: "New",
     weekHeading: "This week",
     weekCount: (n) => `${n} of 7 days played`,
     weekDay: (day, played) => `${day}: ${played ? "played" : "not played"}`,
@@ -300,7 +298,6 @@ const he: Messages = {
     sortDesc: "משבצים חמישה שירים על ציר אחד. אותם שירים לכולם.",
     marathonTag: "3 לבבות",
     marathonDesc: "כמה שיותר שירים. שלוש טעויות ואתם בחוץ.",
-    newBadge: "חדש",
     weekHeading: "השבוע",
     weekCount: (n) => `שיחקתם ${n} מתוך 7 ימים`,
     weekDay: (day, played) => `${day}: ${played ? "שיחקתם" : "לא שיחקתם"}`,
