@@ -33,5 +33,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Pages only: skip Next internals and files with an extension (favicon, images, …).
-  matcher: ["/((?!_next/|.*\\.[\\w]+$).*)"],
+  matcher: ["/((?!_next/|icon$|.*\\.[\\w]+$).*)"],
 };
