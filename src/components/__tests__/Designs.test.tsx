@@ -60,6 +60,43 @@ describe("placement layouts", () => {
     await expectAccessible(container);
   });
 
+  it("cards: dragging today's song onto a gap chooses it", async () => {
+    pickDesign("cards");
+    const { container } = renderIn("en", <SortGame />);
+    const year = anchorYearFor(DAY);
+    const handle = container.querySelector<HTMLElement>(".mystery-card")!;
+    const gap = container.querySelector<HTMLElement>('[data-slot="1"]')!.getBoundingClientRect();
+    const from = handle.getBoundingClientRect();
+    const at = { clientX: gap.left + gap.width / 2, clientY: gap.top + gap.height / 2 };
+    fireEvent.pointerDown(handle, {
+      pointerId: 7,
+      button: 0,
+      clientX: from.left,
+      clientY: from.top,
+    });
+    fireEvent.pointerMove(handle, { pointerId: 7, ...at });
+    fireEvent.pointerUp(handle, { pointerId: 7, ...at });
+    // Dropping only chooses the gap; nothing is placed until "Place it".
+    expect(savedData().sort.days[DAY]!.placements).toHaveLength(0);
+    const place = container.querySelector<HTMLButtonElement>(".btn-primary")!;
+    expect(place.textContent).toBe(`Place it: After ${year}`);
+    await userEvent.click(place);
+    expect(savedData().sort.days[DAY]!.placements[0]!.slot).toBe(1);
+    await expectAccessible(container);
+  });
+
+  it("cards: tapping a gap twice places without dragging", async () => {
+    pickDesign("cards");
+    const { container } = renderIn("en", <SortGame />);
+    const year = anchorYearFor(DAY);
+    await userEvent.click(screen.getByRole("button", { name: `+ Before ${year}` }));
+    await userEvent.click(
+      screen.getByRole("button", { name: `Place it: Before ${year}`, pressed: true }),
+    );
+    expect(savedData().sort.days[DAY]!.placements[0]!.slot).toBe(0);
+    await expectAccessible(container);
+  });
+
   it("the picker shows every layout and marks the current one", () => {
     pickDesign("chips");
     renderIn("he", <SortGame />);

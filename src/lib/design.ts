@@ -7,8 +7,9 @@ import { createContext, useContext } from "react";
  * - "compact": small sticky player on top, slim rows, tap a gap twice to place.
  * - "dock": the original list, with a player + "Place it" bar pinned to the bottom.
  * - "chips": the line as wrapped year chips, so a long timeline fits on one screen.
+ * - "cards": a sideways strip of big cards; today's song is a card dragged into a gap.
  */
-export const DESIGNS = ["classic", "compact", "dock", "chips"] as const;
+export const DESIGNS = ["classic", "compact", "dock", "chips", "cards"] as const;
 export type Design = (typeof DESIGNS)[number];
 
 const KEY = "spindle:design";

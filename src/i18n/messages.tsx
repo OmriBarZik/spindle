@@ -47,6 +47,14 @@ export type Messages = {
   slots: SlotLabels;
   /** The layout picker shown while the placement designs are tried out. */
   design: { label: string; names: Record<Design, string>; hint: string };
+  /** The horizontal "Cards" layout, where today's song is dragged into the line. */
+  cards: {
+    oldest: string;
+    newest: string;
+    mystery: string;
+    drag: string;
+    dragAgain: string;
+  };
   home: {
     tagline: string;
     sortDesc: string;
@@ -150,8 +158,21 @@ const en: Messages = {
   },
   design: {
     label: "Layout",
-    names: { classic: "Classic", compact: "Compact", dock: "Dock", chips: "Year chips" },
+    names: {
+      classic: "Classic",
+      compact: "Compact",
+      dock: "Dock",
+      chips: "Year chips",
+      cards: "Cards",
+    },
     hint: "Trying out layouts. Pick one to compare; your game is kept.",
+  },
+  cards: {
+    oldest: "Oldest",
+    newest: "Newest",
+    mystery: "Today's song",
+    drag: "Drag this card into your timeline, or tap a gap.",
+    dragAgain: "Tap Place it, or drag again to move it.",
   },
   home: {
     tagline:
@@ -293,8 +314,21 @@ const he: Messages = {
   },
   design: {
     label: "פריסה",
-    names: { classic: "קלאסית", compact: "קומפקטית", dock: "סרגל תחתון", chips: "שנים בשורה" },
+    names: {
+      classic: "קלאסית",
+      compact: "קומפקטית",
+      dock: "סרגל תחתון",
+      chips: "שנים בשורה",
+      cards: "קלפים",
+    },
     hint: "מנסים פריסות. בחרו אחת להשוואה; המשחק שלכם נשמר.",
+  },
+  cards: {
+    oldest: "הכי ישן",
+    newest: "הכי חדש",
+    mystery: "השיר של היום",
+    drag: "גררו את הקלף לציר הזמן, או הקישו על רווח.",
+    dragAgain: "הקישו על ״לשבץ״, או גררו שוב כדי להזיז.",
   },
   home: {
     tagline: "משחק מוזיקה יומי. האזינו לשירים — בלי שמות, בלי תמונות — ונחשו מתי הם יצאו.",

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
+import CardStrip from "@/components/CardStrip";
 import ExternalLink from "@/components/ExternalLink";
 import SongReveal from "@/components/SongReveal";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -148,6 +149,21 @@ export function SlotLine<T extends { year: number }>({
 }) {
   const { t } = useI18n();
   const design = useDesign();
+  if (design === "cards") {
+    return (
+      <CardStrip
+        cards={cards}
+        cardKey={cardKey}
+        renderCard={renderCard}
+        after={after}
+        canPlace={canPlace}
+        selected={selected}
+        onSelect={onSelect}
+        onPlace={onPlace}
+        placeDisabled={placeDisabled}
+      />
+    );
+  }
   const gap = (slot: number) =>
     canPlace && (
       <SlotButton
@@ -223,6 +239,15 @@ export function SongCard({
 }) {
   const design = useDesign();
   const variantClass = { plain: "", good: "card-good", bad: "card-bad" }[variant];
+  if (design === "cards") {
+    return (
+      <li className={`card flex h-44 w-32 shrink-0 snap-center flex-col gap-1 p-3 ${variantClass}`}>
+        <span className="text-2xl font-bold tabular-nums">{song.year}</span>
+        <BigCardNames song={song} />
+        {note && <span className="mt-auto text-xs">{note}</span>}
+      </li>
+    );
+  }
   if (design === "chips") {
     return (
       <li
@@ -251,6 +276,29 @@ export function SongCard({
       <SongReveal {...song} />
       {note && <span className="ms-auto shrink-0 text-xs">{note}</span>}
     </li>
+  );
+}
+
+/** Title, artist and a watch link, stacked for the tall cards of the "Cards" layout. */
+function BigCardNames({ song }: { song: { title: string; artist: string; youtubeId: string } }) {
+  const { lang, t } = useI18n();
+  const { title, artist } = songNames(song, lang);
+  const youtubeId = getSong(song.youtubeId)?.youtubeId ?? song.youtubeId;
+  return (
+    <>
+      <span className="line-clamp-3 text-sm leading-snug font-semibold">
+        <bdi>{title}</bdi>
+      </span>
+      <span className="line-clamp-2 text-xs text-muted">
+        <bdi>{artist}</bdi>
+      </span>
+      <ExternalLink
+        href={`https://www.youtube.com/watch?v=${youtubeId}`}
+        className="mt-auto text-xs text-muted underline decoration-dotted underline-offset-2 hover:text-white"
+      >
+        {t.common.watch}
+      </ExternalLink>
+    </>
   );
 }
 
@@ -290,6 +338,14 @@ function InlineReveal({ song }: { song: { title: string; artist: string; youtube
 export function AnchorCard({ year }: { year: number }) {
   const { t } = useI18n();
   const design = useDesign();
+  if (design === "cards") {
+    return (
+      <li className="card card-anchor flex h-44 w-32 shrink-0 snap-center flex-col justify-center gap-1 p-3">
+        <span className="text-2xl font-bold tabular-nums">{year}</span>
+        <span className="text-sm text-muted">{t.common.startingYear}</span>
+      </li>
+    );
+  }
   if (design === "chips") {
     return (
       <li className="card card-anchor flex flex-col justify-center px-2.5 py-1">
