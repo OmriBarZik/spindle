@@ -178,16 +178,47 @@ it("announces each result to screen readers", async () => {
   expect(status()).toContain("❌ Not quite.");
 });
 
-it("moves the record with the arrow keys on the line", async () => {
+it("moves the record with the arrow keys, with nothing focused", async () => {
   const { container } = renderIn("en", <SortGame />);
   const year = anchorYearFor(DAY);
-  const line = screen.getByRole("group", { name: /^Your timeline/ });
-  line.focus();
   await userEvent.keyboard("{ArrowLeft}");
   expect(placeButton().textContent).toBe(`Before ${year}`);
-  await userEvent.keyboard("{End}");
+  await userEvent.keyboard("{ArrowRight}");
   expect(placeButton().textContent).toBe(`After ${year}`);
+  await userEvent.keyboard("{Home}");
+  expect(recordGap(container)).toBe(0);
+  await userEvent.keyboard("{End}");
   expect(recordGap(container)).toBe(1);
+});
+
+it("swaps the arrow keys on right-to-left pages", async ({ onTestFinished }) => {
+  document.documentElement.dir = "rtl";
+  onTestFinished(() => {
+    document.documentElement.removeAttribute("dir");
+  });
+  const { container } = renderIn("he", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await userEvent.keyboard("{ArrowLeft}");
+  expect(recordGap(container)).toBe(1);
+  await userEvent.keyboard("{ArrowRight}");
+  expect(recordGap(container)).toBe(0);
+});
+
+it("leaves the browser's own arrow shortcuts alone", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await userEvent.keyboard("{Alt>}{ArrowRight}{/Alt}");
+  expect(recordGap(container)).toBe(0);
+});
+
+it("ignores the arrow keys while the answer is showing", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.click(placeButton());
+  const before = placeButton().textContent;
+  await userEvent.keyboard("{ArrowLeft}");
+  await userEvent.keyboard("{ArrowRight}");
+  expect(placeButton().textContent).toBe(before);
+  fireEvent.animationEnd(container.querySelector(".deck-swap")!);
 });
 
 it("shows where the song really went while the record glows", async () => {

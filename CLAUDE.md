@@ -138,6 +138,7 @@ is a "default" served without a prefix.
 | `src/hooks/useHiddenPlayer.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
 | `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
 | `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
+| `src/hooks/useSwipeKeys.ts` | Arrow keys, Home and End move the record from anywhere on the page |
 | `src/hooks/recordFlight.ts` | The record's flight from the home page into a game |
 | `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`) |
 | `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |

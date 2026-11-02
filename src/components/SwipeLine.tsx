@@ -1,10 +1,11 @@
 "use client";
 
-import { Fragment, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { SwipeBrowse } from "@/components/SwipeBrowse";
 import { SwipeCard } from "@/components/SwipeCard";
 import { SwipeGap } from "@/components/SwipeGap";
 import { SwipeOverview } from "@/components/SwipeOverview";
+import { useSwipeKeys } from "@/hooks/useSwipeKeys";
 import { useSwipeTrack } from "@/hooks/useSwipeTrack";
 import { useI18n } from "@/i18n/I18nProvider";
 import { clamp } from "@/lib/clamp";
@@ -75,34 +76,14 @@ export function SwipeLine({
     });
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (!choosing) {
-      return;
-    }
-    const rtl = directionSign(e.currentTarget) === -1;
-    const forward = rtl ? "ArrowLeft" : "ArrowRight";
-    const back = rtl ? "ArrowRight" : "ArrowLeft";
-    if (e.key === forward) {
-      step(1);
-    } else if (e.key === back) {
-      step(-1);
-    } else if (e.key === "Home") {
-      onSlot(0);
-    } else if (e.key === "End") {
-      onSlot(count);
-    } else {
-      return;
-    }
-    e.preventDefault();
-  }
+  useSwipeKeys({ choosing, count, onStep: step, onSlot });
 
   const flank = (i: number) => choosing && (i === slot - 1 || i === slot);
 
   return (
     <div className="flex w-full flex-col gap-3">
       <div className={placing ? "swipe" : "swipe swipe-done"}>
-        {/* Scrollable, so it must be reachable by keyboard; arrows move the record. */}
-        {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- arrow keys mirror the Earlier/Later buttons */}
+        {/* Scrollable, so it must be reachable by keyboard. */}
         <div
           ref={trackRef}
           role="group"
@@ -110,7 +91,6 @@ export function SwipeLine({
           // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- axe's scrollable-region-focusable needs it
           tabIndex={0}
           onScroll={onScroll}
-          onKeyDown={onKeyDown}
           className="swipe-track"
         >
           <ol className="swipe-list">
