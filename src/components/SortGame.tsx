@@ -49,7 +49,7 @@ export function SortGame() {
   const { done, line, turn, total, current, last, lastCorrect, hits, lastAt } = sortView(state);
   const feedback = last && !done ? <SortFeedback song={last} correct={lastCorrect} /> : null;
   const score = sortScoreText(t, hits, total);
-  const items = sortLineItems(line, t.sort.movedHere);
+  const items = sortLineItems(line);
   // While the record glows, the line holds still with the song just placed beside it,
   // so the player sees where it landed.
   const placing = !done || Boolean(swap);

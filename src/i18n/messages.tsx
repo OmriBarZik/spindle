@@ -71,7 +71,6 @@ export type Messages = {
     correct: string;
     wrong: string;
     reveal: (title: string, artist: string, year: number) => ReactNode;
-    movedHere: string;
     perfect: string;
     score: (hits: number, total: number) => string;
     stats: { played: string; perfect: string; streak: string; bestStreak: string };
@@ -220,7 +219,6 @@ const en: Messages = {
         “<bdi>{title}</bdi>” by <bdi>{artist}</bdi> is from <b>{year}</b>.
       </>
     ),
-    movedHere: "moved here",
     perfect: "Perfect! 🎉",
     score: (hits, total) => `${hits} / ${total} placed right`,
     stats: { played: "Played", perfect: "Perfect", streak: "Streak", bestStreak: "Best streak" },
@@ -383,7 +381,6 @@ const he: Messages = {
         ״<bdi>{title}</bdi>״ של <bdi>{artist}</bdi> יצא ב־<b>{year}</b>.
       </>
     ),
-    movedHere: "הועבר לכאן",
     perfect: "מושלם! 🎉",
     score: (hits, total) => `${hits} / ${total} במקום הנכון`,
     stats: { played: "משחקים", perfect: "מושלמים", streak: "רצף", bestStreak: "רצף שיא" },

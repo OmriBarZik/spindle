@@ -18,7 +18,7 @@ export default async function Home() {
           <p className="max-w-sm text-sm leading-relaxed text-muted">{t.home.tagline}</p>
         </section>
 
-        <nav aria-label={t.home.modesLabel} className="grid grid-cols-2 gap-3">
+        <nav aria-label={t.home.modesLabel} className="sleeves">
           <ModeSleeve
             href={localePath(lang, "/sort")}
             tone="violet"

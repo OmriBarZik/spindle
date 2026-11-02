@@ -89,7 +89,8 @@ it("plays a whole day, revealing each song and keeping score", async () => {
 
   expect(container.textContent).toContain("3 / 5 placed right");
   expect(container.textContent).toContain("🟩🟥🟩🟩🟥");
-  expect(container.textContent).toContain("moved here");
+  // Wrong songs are shown red at their real spot, with no extra label.
+  expect(container.querySelectorAll(".card-bad")).toHaveLength(2);
   expect(container.querySelector("[data-gap]")).toBeNull();
   expect(savedData().sort.stats.played).toBe(1);
 

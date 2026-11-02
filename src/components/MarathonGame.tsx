@@ -51,7 +51,7 @@ export function MarathonGame() {
   );
   const feedback = last && !done ? <MarathonFeedback song={last} correct={lastCorrect} /> : null;
   const { title, score } = marathonEndText(t, hearts, hits);
-  const items = sortLineItems(line, t.sort.movedHere);
+  const items = sortLineItems(line);
   // While the record glows, the line holds still with the song just placed beside it.
   const placing = !done || Boolean(swap);
   const at = recordSlot(Boolean(swap), lastAt, slot, line.length);
