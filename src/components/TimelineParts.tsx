@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useSyncExternalStore } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { LiveSlot } from "@/lib/liveSlot";
 import { slotLabel } from "@/lib/timeline";
 
 /**
@@ -24,23 +25,27 @@ export function Announce({ children }: { children: ReactNode }) {
 export function PlaceButton({
   cards,
   slot,
+  live,
   disabled = false,
   onPlace,
 }: {
   cards: readonly { year: number }[];
   slot: number;
+  /** Follows the strip mid-swipe, ahead of the game's own state. */
+  live: LiveSlot;
   disabled?: boolean;
   onPlace: (slot: number) => void;
 }) {
   const { t } = useI18n();
-  const where = slotLabel(cards, slot, t.placeAt);
+  const at = useSyncExternalStore(live.subscribe, live.get, live.get) ?? slot;
+  const where = slotLabel(cards, at, t.placeAt);
   return (
     <button
       type="button"
       className="btn-primary"
       disabled={disabled}
       aria-label={t.common.placeIt(where)}
-      onClick={() => onPlace(slot)}
+      onClick={() => onPlace(at)}
     >
       {where}
     </button>

@@ -9,9 +9,11 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useSyncExternalStore,
 } from "react";
 import ExternalLink from "@/components/ExternalLink";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { LiveSlot } from "@/lib/liveSlot";
 import { canAnimate } from "@/lib/motion";
 import { getSong, songNames } from "@/lib/songs";
 import { slotLabel } from "@/lib/timeline";
@@ -47,6 +49,7 @@ export default function SwipeLine({
   focus = 0,
   record,
   reveal = false,
+  live,
 }: {
   items: readonly LineItem[];
   /** The gap under the record, or null when not placing. */
@@ -56,6 +59,8 @@ export default function SwipeLine({
   record?: ReactNode;
   /** The answer is showing beside the record: no glow, and the strip can't choose. */
   reveal?: boolean;
+  /** The gap under the record as the strip moves (see `liveSlot.ts`). */
+  live: LiveSlot;
 }) {
   const { t } = useI18n();
   const placing = slot !== null;
@@ -92,6 +97,7 @@ export default function SwipeLine({
     const behavior = (smooth: boolean) => (smooth && canAnimate() ? "smooth" : "instant");
     if (slot === null) {
       shownRef.current = null;
+      live.set(null);
       const item = track.querySelector(`[data-item="${focus}"]`);
       if (!item) return;
       const r = item.getBoundingClientRect();
@@ -105,12 +111,13 @@ export default function SwipeLine({
     if (slot !== shownRef.current || lineChanged) {
       const first = shownRef.current === null || lineChanged;
       shownRef.current = slot;
+      live.set(slot);
       steeringRef.current = true;
       // Gap `slot` is centered at scrollLeft = slot × PITCH (negative in RTL).
       track.scrollTo({ left: dirRef.current * slot * PITCH, behavior: behavior(!first) });
       settle();
     }
-  }, [slot, count, focus, settle]);
+  }, [slot, count, focus, settle, live]);
 
   useEffect(
     () => () => {
@@ -140,6 +147,8 @@ export default function SwipeLine({
     if (best !== shownRef.current) {
       shownRef.current = best;
       light(track, best);
+      // The place button and the overview bar follow at once.
+      live.set(best);
     }
     window.clearTimeout(reportTimerRef.current);
     reportTimerRef.current = window.setTimeout(() => {
@@ -148,9 +157,10 @@ export default function SwipeLine({
   }
 
   function step(delta: number) {
-    if (slot === null) return;
-    const next = Math.max(0, Math.min(count, slot + delta));
-    if (next !== slot) onSlot(next);
+    const from = live.get() ?? slot;
+    if (from === null) return;
+    const next = Math.max(0, Math.min(count, from + delta));
+    if (next !== from) onSlot(next);
   }
 
   function onKeyDown(e: KeyboardEvent) {
@@ -164,15 +174,6 @@ export default function SwipeLine({
     else if (e.key === "End") onSlot(count);
     else return;
     e.preventDefault();
-  }
-
-  /** Tapping the overview bar jumps to that part of the line. */
-  function onMapDown(e: PointerEvent<HTMLDivElement>) {
-    const r = e.currentTarget.getBoundingClientRect();
-    const rtl = getComputedStyle(e.currentTarget).direction === "rtl";
-    let f = (e.clientX - r.left) / r.width;
-    if (rtl) f = 1 - f;
-    onSlot(Math.round(Math.max(0, Math.min(1, f)) * count));
   }
 
   const flank = (i: number) => choosing && (i === slot - 1 || i === slot);
@@ -218,44 +219,80 @@ export default function SwipeLine({
       </div>
 
       {placing && (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => step(-1)}
-            disabled={!choosing || slot === 0}
-            aria-label={t.common.earlier}
-            className="swipe-step"
-          >
-            <span aria-hidden className="rtl:-scale-x-100">
-              ‹
-            </span>
-          </button>
-          {/* A shortcut for pointers; the buttons and arrow keys do the same. */}
-          <div aria-hidden className="swipe-map" onPointerDown={choosing ? onMapDown : undefined}>
-            {items.map((item, i) => (
-              <Fragment key={item.key}>
-                <span className={i === slot ? "swipe-map-gap swipe-map-on" : "swipe-map-gap"} />
-                <span className={item.song ? "swipe-map-dot" : "swipe-map-dot swipe-map-anchor"} />
-              </Fragment>
-            ))}
-            <span className={slot === count ? "swipe-map-gap swipe-map-on" : "swipe-map-gap"} />
-          </div>
-          <button
-            type="button"
-            onClick={() => step(1)}
-            disabled={!choosing || slot === count}
-            aria-label={t.common.later}
-            className="swipe-step"
-          >
-            <span aria-hidden className="rtl:-scale-x-100">
-              ›
-            </span>
-          </button>
-          <p aria-live="polite" className="sr-only">
-            {slotLabel(items, slot, t.placeAt)}
-          </p>
-        </div>
+        <Overview items={items} choosing={choosing} live={live} onStep={step} onSlot={onSlot} />
       )}
+    </div>
+  );
+}
+
+/**
+ * Earlier / Later, the overview bar of the whole line, and the screen-reader label.
+ * Reads the live gap, so it keeps up with a finger on the strip without the game
+ * re-rendering.
+ */
+function Overview({
+  items,
+  choosing,
+  live,
+  onStep,
+  onSlot,
+}: {
+  items: readonly LineItem[];
+  choosing: boolean;
+  live: LiveSlot;
+  onStep: (delta: number) => void;
+  onSlot: (slot: number) => void;
+}) {
+  const { t } = useI18n();
+  const slot = useSyncExternalStore(live.subscribe, live.get, live.get) ?? 0;
+  const count = items.length;
+
+  /** Tapping the overview bar jumps to that part of the line. */
+  function onMapDown(e: PointerEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const rtl = getComputedStyle(e.currentTarget).direction === "rtl";
+    let f = (e.clientX - r.left) / r.width;
+    if (rtl) f = 1 - f;
+    onSlot(Math.round(Math.max(0, Math.min(1, f)) * count));
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onStep(-1)}
+        disabled={!choosing || slot === 0}
+        aria-label={t.common.earlier}
+        className="swipe-step"
+      >
+        <span aria-hidden className="rtl:-scale-x-100">
+          ‹
+        </span>
+      </button>
+      {/* A shortcut for pointers; the buttons and arrow keys do the same. */}
+      <div aria-hidden className="swipe-map" onPointerDown={choosing ? onMapDown : undefined}>
+        {items.map((item, i) => (
+          <Fragment key={item.key}>
+            <span className={i === slot ? "swipe-map-gap swipe-map-on" : "swipe-map-gap"} />
+            <span className={item.song ? "swipe-map-dot" : "swipe-map-dot swipe-map-anchor"} />
+          </Fragment>
+        ))}
+        <span className={slot === count ? "swipe-map-gap swipe-map-on" : "swipe-map-gap"} />
+      </div>
+      <button
+        type="button"
+        onClick={() => onStep(1)}
+        disabled={!choosing || slot === count}
+        aria-label={t.common.later}
+        className="swipe-step"
+      >
+        <span aria-hidden className="rtl:-scale-x-100">
+          ›
+        </span>
+      </button>
+      <p aria-live="polite" className="sr-only">
+        {slotLabel(items, slot, t.placeAt)}
+      </p>
     </div>
   );
 }

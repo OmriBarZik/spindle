@@ -8,6 +8,7 @@ import { Announce, PlaceButton, ResultCard, Stats } from "@/components/TimelineP
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
+import { createLiveSlot } from "@/lib/liveSlot";
 import { useDropRecordFlight } from "@/lib/recordFlight";
 import { sortEmoji, sortShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
@@ -25,6 +26,8 @@ export default function SortGame() {
   const [data, update] = useSave((d) => ensureSortDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // The gap under the record mid-swipe, shared by the line and the place button.
+  const [live] = useState(createLiveSlot);
   // The record's result animation; the next song can't be played until it ends.
   const [swap, setSwap] = useState<DeckSwap | null>(null);
   // A finished day has no Deck to land on, so let the home record fade away.
@@ -105,6 +108,7 @@ export default function SortGame() {
       onSlot={setSlot}
       focus={Math.max(0, lastAt)}
       record={record}
+      live={live}
       reveal={Boolean(swap)}
     />
   );
@@ -164,7 +168,7 @@ export default function SortGame() {
       )}
 
       {!done ? (
-        <PlaceButton cards={line} slot={at} disabled={Boolean(swap)} onPlace={place} />
+        <PlaceButton live={live} cards={line} slot={at} disabled={Boolean(swap)} onPlace={place} />
       ) : (
         <ResultCard>
           <div className="text-3xl font-bold">{score}</div>

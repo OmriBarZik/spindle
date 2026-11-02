@@ -8,6 +8,7 @@ import { Announce, PlaceButton, ResultCard, Stats } from "@/components/TimelineP
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
+import { createLiveSlot } from "@/lib/liveSlot";
 import { timelineShareText } from "@/lib/share";
 import { getSong, songNames } from "@/lib/songs";
 import { ensureTimelineDay, placeTimelineCard, skipTimelineSong } from "@/lib/storage";
@@ -21,6 +22,8 @@ export default function TimelineGame() {
   const [data, update] = useSave((d) => ensureTimelineDay(d, day));
   const { hostRef, player } = useHiddenPlayer();
   const [slot, setSlot] = useState<number | null>(null);
+  // The gap under the record mid-swipe, shared by the line and the place button.
+  const [live] = useState(createLiveSlot);
   // Today's record glows green or red after the guess. There's no next song until tomorrow.
   const [swap, setSwap] = useState<DeckSwap | null>(null);
 
@@ -93,6 +96,7 @@ export default function TimelineGame() {
       onSlot={setSlot}
       focus={Math.max(0, answerAt)}
       record={record}
+      live={live}
       reveal={!pending}
     />
   );
@@ -142,7 +146,7 @@ export default function TimelineGame() {
       </Announce>
 
       {pending ? (
-        <PlaceButton cards={t.cards} slot={at} onPlace={place} />
+        <PlaceButton live={live} cards={t.cards} slot={at} onPlace={place} />
       ) : (
         <ResultCard>
           <div className="text-2xl font-bold">{resultTitle}</div>
