@@ -8,6 +8,7 @@ type PlayerOptions = ConstructorParameters<YouTubeApi["Player"]>[1];
  */
 export const fakeYouTube = {
   stops: 0,
+  pauses: 0,
   failVideo: (): void => {
     throw new Error("No player has been created yet");
   },
@@ -15,6 +16,7 @@ export const fakeYouTube = {
 
 export function installFakeYouTube() {
   fakeYouTube.stops = 0;
+  fakeYouTube.pauses = 0;
   window.YT = {
     Player: class {
       constructor(_el: HTMLElement, opts: PlayerOptions) {
@@ -23,7 +25,9 @@ export function installFakeYouTube() {
       }
       loadVideoById = () => undefined;
       playVideo = () => undefined;
-      pauseVideo = () => undefined;
+      pauseVideo = () => {
+        fakeYouTube.pauses += 1;
+      };
       stopVideo = () => {
         fakeYouTube.stops += 1;
       };

@@ -5,7 +5,7 @@ import { clamp } from "@/lib/clamp";
 import { directionSign } from "@/lib/directionSign";
 import type { LiveSlot } from "@/lib/liveSlot";
 import { canAnimate } from "@/lib/motion";
-import { useSwipePitch } from "./useSwipePitch";
+import { centreGap, useSwipePitch } from "./useSwipePitch";
 
 /**
  * Light gap `slot` and the cards either side of it, ahead of React. React renders
@@ -60,13 +60,13 @@ export function useSwipeTrack({
   }, []);
 
   // The strip changed size (cards grow on a desktop): keep the record on its gap.
-  const { pitchRef, measure } = useSwipePitch(trackRef, (pitch) => {
+  const { pitchRef, measure } = useSwipePitch(trackRef, () => {
     const track = trackRef.current;
     if (!track || shownRef.current === null) {
       return;
     }
     steeringRef.current = true;
-    track.scrollTo({ left: dirRef.current * shownRef.current * pitch, behavior: "instant" });
+    centreGap(track, shownRef.current, "instant");
     settle();
   });
 
@@ -103,14 +103,10 @@ export function useSwipeTrack({
       shownRef.current = slot;
       live.set(slot);
       steeringRef.current = true;
-      // Gap `slot` is centered at scrollLeft = slot × pitch (negative in RTL).
-      track.scrollTo({
-        left: dirRef.current * slot * pitchRef.current,
-        behavior: behavior(!first),
-      });
+      centreGap(track, slot, behavior(!first));
       settle();
     }
-  }, [slot, count, focus, settle, live, measure, pitchRef]);
+  }, [slot, count, focus, settle, live, measure]);
 
   useEffect(
     () => () => {
@@ -158,5 +154,11 @@ export function useSwipeTrack({
     }, 100);
   }
 
-  return { trackRef, pitchRef, onScroll };
+  /** The player grabbed the strip (a mouse drag): its scrolling is theirs, even mid-glide. */
+  function takeOver() {
+    window.clearTimeout(steerTimerRef.current);
+    steeringRef.current = false;
+  }
+
+  return { trackRef, pitchRef, onScroll, takeOver };
 }

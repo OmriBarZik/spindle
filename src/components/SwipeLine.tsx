@@ -65,7 +65,7 @@ export function SwipeLine({
   const placing = slot !== null;
   const choosing = placing && !reveal;
   const count = items.length;
-  const { trackRef, pitchRef, onScroll } = useSwipeTrack({
+  const { trackRef, pitchRef, onScroll, takeOver } = useSwipeTrack({
     slot,
     count,
     focus,
@@ -103,7 +103,7 @@ export function SwipeLine({
     count,
     onStep: step,
   });
-  const drag = useSwipeDrag({ pitchRef, choosing, count, onSlot });
+  const drag = useSwipeDrag({ pitchRef, takeOver, choosing, count, onSlot });
 
   const flank = (i: number) => choosing && (i === slot - 1 || i === slot);
 

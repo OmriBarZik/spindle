@@ -40,6 +40,44 @@ const setCpuThrottling: BrowserCommand<[rate: number]> = async ({ page }, rate) 
   await cpuSession.send("Emulation.setCPUThrottlingRate", { rate });
 };
 
+/** A point in the test page's own coordinates (clientX / clientY). */
+type Point = readonly [x: number, y: number];
+
+/** Where the test page's iframe sits on the screen, and how much it's scaled. */
+async function framePoint(context: Parameters<BrowserCommand>[0], [x, y]: Point) {
+  const frame = await context.frame();
+  const box = await (await frame.frameElement()).boundingBox();
+  const width = await frame.evaluate(() => window.innerWidth);
+  if (!box) {
+    throw new Error("The test page isn't on screen");
+  }
+  const scale = box.width / width;
+  return { x: box.x + x * scale, y: box.y + y * scale };
+}
+
+/** Runs on the test server: drags with the real mouse, in `steps` moves. */
+const mouseDrag: BrowserCommand<[from: Point, to: Point, steps?: number]> = async (
+  context,
+  from,
+  to,
+  steps = 10,
+) => {
+  const { mouse } = context.page;
+  const start = await framePoint(context, from);
+  const end = await framePoint(context, to);
+  await mouse.move(start.x, start.y);
+  await mouse.down();
+  await mouse.move(end.x, end.y, { steps });
+  await mouse.up();
+};
+
+/** Runs on the test server: turns the real mouse wheel over a point. */
+const mouseWheel: BrowserCommand<[at: Point, deltaY: number]> = async (context, at, deltaY) => {
+  const { x, y } = await framePoint(context, at);
+  await context.page.mouse.move(x, y);
+  await context.page.mouse.wheel(0, deltaY);
+};
+
 export default defineConfig({
   resolve: { alias },
   test: {
@@ -70,7 +108,10 @@ export default defineConfig({
           include: ["src/components/**/*.test.tsx"],
           exclude: ["**/*.perf.test.tsx"],
           sequence: { groupOrder: 0 },
-          browser: chromium("browser", ["dark", "light"]),
+          browser: {
+            ...chromium("browser", ["dark", "light"]),
+            commands: { mouseDrag, mouseWheel },
+          },
         },
       },
       {

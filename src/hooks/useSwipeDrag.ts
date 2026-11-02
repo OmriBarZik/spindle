@@ -1,6 +1,7 @@
 "use client";
 
 import { type MouseEvent, type PointerEvent, type RefObject, useRef } from "react";
+import { centreGap } from "@/hooks/useSwipePitch";
 import { clamp } from "@/lib/clamp";
 import { directionSign } from "@/lib/directionSign";
 import { canAnimate } from "@/lib/motion";
@@ -27,12 +28,15 @@ function gapAt(track: HTMLElement, offset: number, pitch: number, count: number)
  */
 export function useSwipeDrag({
   pitchRef,
+  takeOver,
   choosing,
   count,
   onSlot,
 }: {
   /** The strip's gap-to-gap distance (`useSwipePitch`). */
   pitchRef: RefObject<number>;
+  /** Called when a drag starts, so the strip treats its scrolling as the player's. */
+  takeOver: () => void;
   choosing: boolean;
   count: number;
   onSlot: (slot: number) => void;
@@ -68,6 +72,7 @@ export function useSwipeDrag({
       drag.moved = true;
       track.setPointerCapture(e.pointerId);
       track.classList.add("swipe-dragging");
+      takeOver();
     }
     track.scrollLeft = drag.left - dx;
   }
@@ -92,9 +97,11 @@ export function useSwipeDrag({
     track.classList.remove("swipe-dragging");
     if (choosing) {
       // Settle on the nearest gap, as snapping would after a swipe.
-      const pitch = pitchRef.current;
-      const left = directionSign(track) * gapAt(track, 0, pitch, count) * pitch;
-      track.scrollTo({ left, behavior: canAnimate() ? "smooth" : "instant" });
+      centreGap(
+        track,
+        gapAt(track, 0, pitchRef.current, count),
+        canAnimate() ? "smooth" : "instant",
+      );
     }
   }
 
