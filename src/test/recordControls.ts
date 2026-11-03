@@ -1,4 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react";
+import { expect } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Locale } from "@/i18n/config";
 import { MESSAGES } from "@/i18n/messages";
@@ -35,10 +36,33 @@ export function pointOn(el: Element, fx: number, fy: number): [x: number, y: num
   return [r.left + r.width * fx, r.top + r.height * fy];
 }
 
-/** Places `n` songs with Enter, wherever the record is, letting each record animation end. */
+/**
+ * Plays the current song with the record's play button, once the player has loaded
+ * (unless it's playing already). A song can't be placed before it has been played.
+ */
+export async function playSong(lang: Locale = "en") {
+  const { play: name, pause } = MESSAGES[lang].common;
+  if (screen.queryByRole("button", { name: pause })) {
+    return;
+  }
+  await expect
+    .poll(() => screen.queryByRole("button", { name })?.hasAttribute("disabled"))
+    .toBe(false);
+  const button = screen.getByRole("button", { name });
+  await userEvent.click(button);
+  // Let go of the button, so Enter and Space reach the page's shortcuts again.
+  button.blur();
+}
+
+/**
+ * Plays and places `n` songs with Enter, wherever the record is, letting each record
+ * animation end.
+ */
 export async function placeWithEnter(container: HTMLElement, n: number) {
   for (let i = 0; i < n; i++) {
     // Each placement waits for the one before.
+    // oxlint-disable-next-line no-await-in-loop
+    await playSong();
     // oxlint-disable-next-line no-await-in-loop
     await userEvent.keyboard("{Enter}");
     fireEvent.animationEnd(container.querySelector(".deck-swap")!);

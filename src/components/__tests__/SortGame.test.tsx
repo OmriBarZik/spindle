@@ -6,13 +6,14 @@ import { userEvent } from "vitest/browser";
 import { SortGame } from "@/components/SortGame";
 import { MESSAGES } from "@/i18n/messages";
 import { anchorYearFor, sortSongsFor } from "@/lib/daily";
+import { handOffPlayback } from "@/lib/playHandoff";
 import { getSong } from "@/lib/songs";
 import { correctSlot, slotLabel } from "@/lib/timeline";
 import { expectAccessible } from "@/test/expectAccessible";
 import { trackedEvents } from "@/test/fakeAnalytics";
 import { fakeClipboard } from "@/test/fakeClipboard";
 import { fakeYouTube } from "@/test/fakeYouTube";
-import { moveRecordTo, recordGap } from "@/test/recordControls";
+import { moveRecordTo, playSong, recordGap } from "@/test/recordControls";
 import { renderIn } from "@/test/renderIn";
 import { savedData } from "@/test/savedData";
 import { setupGameTests } from "@/test/setupGameTests";
@@ -43,6 +44,7 @@ async function place(i: number, right: boolean, container: HTMLElement) {
   const good = correctSlot(line, year);
   const bad = good === 0 ? line.length : 0;
   const slot = right ? good : bad;
+  await playSong();
   await moveRecordTo(container, slot);
   // The button says where the song goes; its name adds the action.
   const where = slotLabel(line, slot, MESSAGES.en.placeAt);
@@ -65,6 +67,12 @@ it("starts from the day's starting year with two gaps", async () => {
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Daily Five");
   expect(container.textContent).toContain(`Your line starts at ${year}`);
   expect(container.querySelectorAll("[data-gap]")).toHaveLength(2);
+  // No placing a song before hearing it: the button asks for a play first.
+  const unheard = screen.getByRole("button", { name: "Play the song to place it" });
+  expect(unheard).toHaveProperty("disabled", true);
+  await userEvent.keyboard("{Enter}");
+  expect(savedData().sort.days[DAY]?.placements).toHaveLength(0);
+  await playSong();
   // The record starts on a gap, so the button is ready to answer.
   expect(placeButton().textContent).toBe(`After ${year}`);
   expect(placeButton()).toHaveProperty("disabled", false);
@@ -118,9 +126,13 @@ it("sends analytics events through the day, without song details", async () => {
     ["game_open", { mode, status: "new" }],
     ["song_play", { mode, turn: 1 }],
     ["song_place", { mode, turn: 1, correct: true }],
+    ["song_play", { mode, turn: 2 }],
     ["song_place", { mode, turn: 2, correct: false }],
+    ["song_play", { mode, turn: 3 }],
     ["song_place", { mode, turn: 3, correct: true }],
+    ["song_play", { mode, turn: 4 }],
     ["song_place", { mode, turn: 4, correct: true }],
+    ["song_play", { mode, turn: 5 }],
     ["song_place", { mode, turn: 5, correct: true }],
     ["game_complete", { mode, score: 4, total: 5, perfect: false }],
     ["share", { content_type: mode, method: "copied" }],
@@ -143,6 +155,7 @@ it("tags the share text when the puzzle used one kind of song", async () => {
   for (let i = 0; i < 5; i++) {
     const line = currentLine();
     const slot = correctSlot(line, songs[i]!.year);
+    await playSong("he");
     await moveRecordTo(container, slot, "he");
     await userEvent.click(screen.getByRole("button", { name: /^לשבץ/ }));
     fireEvent.animationEnd(container.querySelector(".deck-swap")!);
@@ -182,6 +195,7 @@ it("announces each result to screen readers", async () => {
 it("moves the record with the arrow keys, with nothing focused", async () => {
   const { container } = renderIn("en", <SortGame />);
   const year = anchorYearFor(DAY);
+  await playSong();
   await userEvent.keyboard("{ArrowLeft}");
   expect(placeButton().textContent).toBe(`Before ${year}`);
   await userEvent.keyboard("{ArrowRight}");
@@ -214,11 +228,12 @@ it("leaves the browser's own arrow shortcuts alone", async () => {
 
 it("ignores the arrow keys while the answer is showing", async () => {
   const { container } = renderIn("en", <SortGame />);
+  await playSong();
   await userEvent.click(placeButton());
-  const before = placeButton().textContent;
+  const before = recordGap(container);
   await userEvent.keyboard("{ArrowLeft}");
   await userEvent.keyboard("{ArrowRight}");
-  expect(placeButton().textContent).toBe(before);
+  expect(recordGap(container)).toBe(before);
   fireEvent.animationEnd(container.querySelector(".deck-swap")!);
 });
 
@@ -226,6 +241,7 @@ it("shows where the song really went while the record glows", async () => {
   const { container } = renderIn("en", <SortGame />);
   const year = sortSongsFor(DAY)[0]!.year;
   const slot = correctSlot(currentLine(), year);
+  await playSong();
   await moveRecordTo(container, slot === 0 ? 1 : 0);
   await userEvent.click(placeButton());
   // The answer sits beside the record, and the choosing glow is gone.
@@ -234,6 +250,30 @@ it("shows where the song really went while the record glows", async () => {
   expect(container.querySelector(".card-bad")).not.toBeNull();
   fireEvent.animationEnd(container.querySelector(".deck-swap")!);
   expect(container.querySelector(".swipe-gap-on")).not.toBeNull();
+});
+
+it("keeps the song playing when the player switches language", async () => {
+  const en = renderIn("en", <SortGame />);
+  await playSong();
+  // What the language switch does as it's clicked; then the page remounts in Hebrew.
+  handOffPlayback();
+  en.unmount();
+  renderIn("he", <SortGame />);
+  await screen.findByRole("button", { name: "השהיה" });
+  expect(screen.getByRole("button", { name: /^לשבץ: / })).toHaveProperty("disabled", false);
+});
+
+it("still lets a paused song be placed after a language switch", async () => {
+  const en = renderIn("en", <SortGame />);
+  await playSong();
+  await userEvent.click(screen.getByRole("button", { name: "Pause" }));
+  handOffPlayback();
+  en.unmount();
+  renderIn("he", <SortGame />);
+  await expect
+    .poll(() => screen.queryByRole("button", { name: "נגינה" })?.hasAttribute("disabled"))
+    .toBe(false);
+  expect(screen.getByRole("button", { name: /^לשבץ: / })).toHaveProperty("disabled", false);
 });
 
 it("keeps the hidden YouTube player out of reach", () => {

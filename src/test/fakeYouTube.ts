@@ -3,8 +3,9 @@ type PlayerOptions = ConstructorParameters<YouTubeApi["Player"]>[1];
 
 /**
  * Stands in for YouTube's IFrame API, the one thing tests can't reach, so the real
- * `useHiddenPlayer` runs on top of it. Tests read what the game asked of it, and use
- * `failVideo` to simulate a video that won't play.
+ * `useHiddenPlayer` runs on top of it. Like the real one, it says a video is playing
+ * as soon as it's asked to play, and paused when asked to pause. Tests read what the
+ * game asked of it, and use `failVideo` to simulate a video that won't play.
  */
 export const fakeYouTube = {
   stops: 0,
@@ -19,14 +20,17 @@ export function installFakeYouTube() {
   fakeYouTube.pauses = 0;
   window.YT = {
     Player: class {
+      private readonly events: PlayerOptions["events"];
       constructor(_el: HTMLElement, opts: PlayerOptions) {
+        this.events = opts.events;
         fakeYouTube.failVideo = () => opts.events?.onError?.({ data: 150 });
         opts.events?.onReady?.();
       }
-      loadVideoById = () => undefined;
-      playVideo = () => undefined;
+      loadVideoById = () => this.events?.onStateChange?.({ data: 1 });
+      playVideo = () => this.events?.onStateChange?.({ data: 1 });
       pauseVideo = () => {
         fakeYouTube.pauses += 1;
+        this.events?.onStateChange?.({ data: 2 });
       };
       stopVideo = () => {
         fakeYouTube.stops += 1;

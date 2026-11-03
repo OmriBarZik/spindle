@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import type { ReactNode, RefObject } from "react";
+import { type ReactNode, type RefObject, useEffect } from "react";
 import { DeckRecord } from "@/components/DeckRecord";
 import { DeckStatus } from "@/components/DeckStatus";
 import { DeckTransport } from "@/components/DeckTransport";
@@ -9,6 +9,7 @@ import type { DeckSwap } from "@/hooks/useGameScreen";
 import type { HiddenPlayer } from "@/hooks/useHiddenPlayer";
 import { useKeyShortcut } from "@/hooks/useKeyShortcut";
 import { useI18n } from "@/i18n/I18nProvider";
+import { takeHandoff } from "@/lib/playHandoff";
 
 type Props = {
   hostRef: RefObject<HTMLDivElement | null>;
@@ -66,6 +67,18 @@ export function Deck({
     }
     player.toggle(videoId, start);
   }
+  // Carry on with a song that was playing when the player switched language.
+  const { ready, play } = player;
+  useEffect(() => {
+    if (!ready || !videoId) {
+      return;
+    }
+    const handoff = takeHandoff(videoId);
+    if (handoff?.playing) {
+      play(videoId, handoff.time);
+    }
+  }, [ready, videoId, play]);
+
   // Space plays and pauses from anywhere on the page, like a media player.
   useKeyShortcut(" ", !disabled, toggle);
 

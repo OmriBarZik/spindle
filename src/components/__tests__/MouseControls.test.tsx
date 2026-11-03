@@ -8,6 +8,7 @@ import {
   gapUnderRecord,
   lineTrack,
   placeWithEnter,
+  playSong,
   pointOn,
   recordGap,
   tapAt,
@@ -50,6 +51,7 @@ it("leaves taps to the browser, which scrolls the strip itself", async () => {
 it("drags the line with the mouse, and settles on the nearest gap", async () => {
   const { container } = renderIn("en", <SortGame />);
   const track = lineTrack(container);
+  await playSong();
   await userEvent.keyboard("{Home}");
   // Let the strip glide there first: a drag takes over from wherever it is.
   await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });

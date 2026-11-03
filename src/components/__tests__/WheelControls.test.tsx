@@ -2,7 +2,14 @@ import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { SortGame } from "@/components/SortGame";
 import { mouseWheel } from "@/test/realMouse";
-import { lineTrack, placeWithEnter, pointOn, recordGap, wheelOn } from "@/test/recordControls";
+import {
+  lineTrack,
+  placeWithEnter,
+  playSong,
+  pointOn,
+  recordGap,
+  wheelOn,
+} from "@/test/recordControls";
 import { renderIn } from "@/test/renderIn";
 import { setupGameTests } from "@/test/setupGameTests";
 
@@ -57,6 +64,7 @@ it.for([
 
 it("ignores the wheel while the answer is showing", async () => {
   const { container } = renderIn("en", <SortGame />);
+  await playSong();
   await userEvent.keyboard("{Home}");
   await userEvent.keyboard("{Enter}");
   const before = recordGap(container);

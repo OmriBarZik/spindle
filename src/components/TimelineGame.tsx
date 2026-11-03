@@ -10,6 +10,7 @@ import { SwipeLine } from "@/components/SwipeLine";
 import { TimelineHeader } from "@/components/TimelineHeader";
 import { TimelineResult } from "@/components/TimelineResult";
 import { useGameScreen } from "@/hooks/useGameScreen";
+import { hasHeard } from "@/hooks/useHiddenPlayer";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import { getSong, songNames } from "@/lib/songs";
@@ -115,7 +116,13 @@ export function TimelineGame() {
 
       {pending ? (
         <>
-          <PlaceButton live={live} cards={cards} slot={at} onPlace={place} />
+          <PlaceButton
+            live={live}
+            cards={cards}
+            slot={at}
+            heard={hasHeard(player, song)}
+            onPlace={place}
+          />
           <KeyHints />
         </>
       ) : (

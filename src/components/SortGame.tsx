@@ -13,6 +13,7 @@ import { SortResult } from "@/components/SortResult";
 import { SwipeLine } from "@/components/SwipeLine";
 import { useDropRecordFlight } from "@/hooks/recordFlight";
 import { useGameScreen } from "@/hooks/useGameScreen";
+import { hasHeard } from "@/hooks/useHiddenPlayer";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Messages } from "@/i18n/messages";
 import { track } from "@/lib/analytics";
@@ -122,6 +123,7 @@ export function SortGame() {
             cards={line}
             slot={at}
             disabled={Boolean(swap)}
+            heard={hasHeard(player, current)}
             onPlace={place}
           />
           <KeyHints />
