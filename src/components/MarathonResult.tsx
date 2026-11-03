@@ -5,7 +5,8 @@ import { ShareButton } from "@/components/ShareButton";
 import { Stats } from "@/components/Stats";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Messages } from "@/i18n/messages";
-import type { MarathonDay, MarathonFreeRun, MarathonStats } from "@/lib/saveData";
+import type { MarathonRun } from "@/lib/marathonFree";
+import type { MarathonStats } from "@/lib/saveData";
 import { marathonShareText } from "@/lib/share";
 
 function statItems(
@@ -32,48 +33,57 @@ function statItems(
   ];
 }
 
+const secondary =
+  "w-full rounded-full border border-line px-250 py-150 font-bold transition hover:bg-hover";
+
 /**
- * The finished run: final score, stats, share and "Play again". `daily` is the day's score
- * when this was a free-play run, else null.
+ * The finished run: final score, stats, share and "Play again". After a friend's run opened
+ * before the day's, the second button goes to the day's run instead.
  */
 export function MarathonResult({
   day,
-  state,
+  run: { state, daily, dailyDone },
   stats,
   title,
   score,
   hits,
-  daily,
   onPlayAgain,
+  onPlayDaily,
 }: {
   day: string;
-  state: MarathonDay | MarathonFreeRun;
+  run: MarathonRun;
   stats: MarathonStats;
   title: string;
   score: string;
   hits: number;
-  daily: number | null;
   onPlayAgain: () => void;
+  onPlayDaily: () => void;
 }) {
   const { t } = useI18n();
   const free = daily !== null;
+  const beat = "seed" in state ? state.beat : undefined;
   return (
     <ResultCard>
       <div className="text-2xl font-bold">{title}</div>
       <div className="text-lg">{score}</div>
+      {beat === undefined ? null : (
+        <p className="font-bold">{t.marathon.challengeResult(hits, beat)}</p>
+      )}
       <Stats items={statItems(t, stats, hits, daily)} />
       <ShareButton
         mode="marathon"
         text={marathonShareText(t, day, state, window.location.origin)}
         label={free ? t.marathon.shareFree : undefined}
       />
-      <button
-        type="button"
-        onClick={onPlayAgain}
-        className="w-full rounded-full border border-line px-250 py-150 font-bold transition hover:bg-hover"
-      >
-        {t.marathon.playAgain}
-      </button>
+      {dailyDone ? (
+        <button type="button" onClick={onPlayAgain} className={secondary}>
+          {t.marathon.playAgain}
+        </button>
+      ) : (
+        <button type="button" onClick={onPlayDaily} className={secondary}>
+          {t.marathon.playDaily}
+        </button>
+      )}
       <p className="text-sm text-muted">{free ? t.marathon.freeNote : t.marathon.tomorrow}</p>
     </ResultCard>
   );

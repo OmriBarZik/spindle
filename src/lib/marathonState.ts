@@ -64,7 +64,7 @@ export function marathonHits(d: MarathonDay): number {
 /** The songs a run plays, in order: the day's for the daily run, its own for free play. */
 function runSongs(day: string, d: MarathonDay | MarathonFreeRun): Song[] {
   return "seed" in d
-    ? marathonFreeSongsFor(d.day, d.seed, d.languages)
+    ? marathonFreeSongsFor(d.seed, d.languages)
     : marathonSongsFor(day, d.languages);
 }
 

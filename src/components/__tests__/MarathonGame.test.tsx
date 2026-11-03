@@ -129,7 +129,7 @@ it("sends analytics events, without song details", async () => {
 it("plays again after the day's run, as free play that doesn't count", async () => {
   const copied = fakeClipboard();
   const { container } = renderIn("en", <MarathonGame />);
-  for (const right of [true, false, false, false]) {
+  for (const right of [false, false, false]) {
     await place(right, container);
   }
   const stats = savedData().marathon.stats;
@@ -139,22 +139,23 @@ it("plays again after the day's run, as free play that doesn't count", async () 
   expect(screen.getByText("Song 1")).toBeTruthy();
   expect(savedData().marathon.free?.day).toBe(DAY);
 
-  for (const right of [true, true, false, false, false]) {
+  for (const right of [true, false, false, false]) {
     await place(right, container);
   }
-  expect(container.textContent).toContain("2 songs placed right");
+  expect(container.textContent).toContain("1 song placed right");
   expect(savedData().marathon.stats).toEqual(stats);
-  expect(savedData().marathon.days[DAY]!.placements).toHaveLength(4);
-  await userEvent.click(screen.getByRole("button", { name: "Share free play" }));
+  expect(savedData().marathon.days[DAY]!.placements).toHaveLength(3);
+  await userEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+  const seed = savedData().marathon.free!.seed;
   await vi.waitFor(() =>
     expect(copied).toEqual([
-      `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥🟥🟥\n${window.location.origin}/marathon`,
+      `Spindle Marathon · Free play · 1 🎵\n🟩🟥🟥🟥\nSame songs. Can you beat my 1? 🎯\n${window.location.origin}/marathon?run=${seed}&beat=1`,
     ]),
   );
   expect(trackedEvents()).toContainEqual(["play_again", { mode: "marathon" }]);
   expect(trackedEvents()).toContainEqual([
     "game_complete",
-    { mode: "marathon", score: 2, free_play: true },
+    { mode: "marathon", score: 1, free_play: true },
   ]);
   await expectAccessible(container);
 
@@ -162,6 +163,28 @@ it("plays again after the day's run, as free play that doesn't count", async () 
   await userEvent.click(screen.getByRole("button", { name: "Play again" }));
   expect(hearts()).toBe("3 of 3 hearts left");
   expect(container.textContent).toContain("Score: 0");
+});
+
+it("opens a friend's challenge link: their songs, their score to beat", async () => {
+  const seed = `${DAY}_friend`;
+  window.history.replaceState(null, "", `/en/marathon?run=${seed}&beat=1`);
+  const { container } = renderIn("en", <MarathonGame />);
+  expect(container.textContent).toContain("Challenge: a friend placed 1 of these songs right");
+  expect(savedData().marathon.free).toMatchObject({ seed, beat: 1, placements: [] });
+  // The link is used up, so a reload after "Play again" won't bring it back.
+  expect(window.location.search).toBe("");
+  expect(trackedEvents()).toContainEqual(["challenge_open", { mode: "marathon" }]);
+
+  for (const right of [true, true, false, false, false]) {
+    await place(right, container);
+  }
+  expect(container.textContent).toContain("You beat your friend's 1! 🏆");
+  await expectAccessible(container);
+  // The day's own run is still waiting.
+  expect(savedData().marathon.days[DAY]!.placements).toEqual([]);
+  await userEvent.click(screen.getByRole("button", { name: "Play today's marathon" }));
+  expect(container.textContent).toContain(`Your line starts at ${marathonAnchorYearFor(DAY)}`);
+  expect(hearts()).toBe("3 of 3 hearts left");
 });
 
 it("restores a run in progress", async () => {

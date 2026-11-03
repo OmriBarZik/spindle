@@ -12,23 +12,18 @@ import { ScreenMain } from "@/components/ScreenMain";
 import { SortFeedbackBox } from "@/components/SortFeedbackBox";
 import { SwipeLine } from "@/components/SwipeLine";
 import { useDropRecordFlight } from "@/hooks/recordFlight";
-import { useGameScreen } from "@/hooks/useGameScreen";
+import { useMarathonScreen } from "@/hooks/useMarathonScreen";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import {
+  leaveFreeMarathon,
   marathonRun,
   newFreeSeed,
   placeMarathon,
   skipMarathon,
   startFreeMarathon,
 } from "@/lib/marathonFree";
-import {
-  ensureMarathonDay,
-  marathonEndText,
-  marathonOpenEvent,
-  marathonOutcome,
-  marathonView,
-} from "@/lib/marathonState";
+import { marathonEndText, marathonOutcome, marathonView } from "@/lib/marathonState";
 import { hasHeard } from "@/lib/player";
 import { sortLineItems } from "@/lib/sortState";
 import { recordSlot } from "@/lib/timeline";
@@ -40,14 +35,11 @@ import { recordSlot } from "@/lib/timeline";
  */
 export function MarathonGame() {
   const { t } = useI18n();
-  const { day, data, update, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
-    ensureMarathonDay,
-    marathonOpenEvent,
-  );
+  const { day, data, update, player, slot, setSlot, live, swap, setSwap } = useMarathonScreen();
   // A finished day has no Deck to land on, so let the home record fade away.
   useDropRecordFlight();
 
-  // `ensureMarathonDay` always prepares today, so this is only a type guard.
+  // The screen always prepares today, so this is only a type guard.
   const run = marathonRun(data, day);
   if (!run) {
     return null;
@@ -82,10 +74,16 @@ export function MarathonGame() {
   };
 
   const playAgain = () => {
-    const seed = newFreeSeed();
+    const seed = newFreeSeed(day);
     update((d) => startFreeMarathon(d, day, seed));
     setSlot(null);
     track("play_again", { mode: "marathon" });
+    window.scrollTo({ top: 0 });
+  };
+
+  const playDaily = () => {
+    update(leaveFreeMarathon);
+    setSlot(null);
     window.scrollTo({ top: 0 });
   };
 
@@ -109,7 +107,7 @@ export function MarathonGame() {
 
   return (
     <ScreenMain game="marathon">
-      <MarathonHeader anchorYear={state.anchorYear} hearts={hearts} hits={hits} free={free} />
+      <MarathonHeader run={state} hearts={hearts} hits={hits} />
 
       <Announce>
         {done ? (
@@ -141,13 +139,13 @@ export function MarathonGame() {
       {done ? (
         <MarathonResult
           day={day}
-          state={state}
+          run={run}
           stats={data.marathon.stats}
           title={title}
           score={score}
           hits={hits}
-          daily={daily}
           onPlayAgain={playAgain}
+          onPlayDaily={playDaily}
         />
       ) : (
         <>

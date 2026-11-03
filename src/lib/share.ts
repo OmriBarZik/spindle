@@ -1,6 +1,7 @@
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 import { puzzleNumber } from "./dates";
+import { challengePath } from "./marathonFree";
 import { marathonHits } from "./marathonState";
 import type { MarathonDay, MarathonFreeRun, SortDay } from "./saveData";
 import { sortHits } from "./sortState";
@@ -53,23 +54,37 @@ export function sortEmoji(sortDay: SortDay): string {
 
 const SQUARES_PER_ROW = 10;
 
-/** Marathon share text (daily or free play): head with the score, one square per song (ten a row), link. */
+/** One square per song, ten a row. */
+function squareRows(marathonDay: MarathonDay): string[] {
+  const squares = marathonDay.placements.map((p) => (p.correct ? "🟩" : "🟥"));
+  return Array.from({ length: Math.ceil(squares.length / SQUARES_PER_ROW) }, (_, i) =>
+    squares.slice(i * SQUARES_PER_ROW, (i + 1) * SQUARES_PER_ROW).join(""),
+  );
+}
+
+/**
+ * Marathon share text: head with the score, one square per song (ten a row), link. Free play
+ * isn't the day's puzzle, so it has no number, says so, and dares friends to beat the score
+ * on the same songs: its link carries the run's seed.
+ */
 export function marathonShareText(
   t: Messages,
   day: string,
   marathonDay: MarathonDay | MarathonFreeRun,
   origin: string,
 ): string {
-  // Free play isn't the day's puzzle, so it has no number and says so.
-  const head =
-    "seed" in marathonDay
-      ? t.marathon.freeShareHead(marathonHits(marathonDay))
-      : t.marathon.shareHead(puzzleNumber(day), marathonHits(marathonDay));
-  const squares = marathonDay.placements.map((p) => (p.correct ? "🟩" : "🟥"));
-  const rows = Array.from({ length: Math.ceil(squares.length / SQUARES_PER_ROW) }, (_, i) =>
-    squares.slice(i * SQUARES_PER_ROW, (i + 1) * SQUARES_PER_ROW).join(""),
-  );
-  return lines(`${head}${onlyTag(t, marathonDay.languages)}`, ...rows, `${origin}/marathon`);
+  const hits = marathonHits(marathonDay);
+  const tag = onlyTag(t, marathonDay.languages);
+  if ("seed" in marathonDay) {
+    return lines(
+      `${t.marathon.freeShareHead(hits)}${tag}`,
+      ...squareRows(marathonDay),
+      t.marathon.shareDare(hits),
+      `${origin}${challengePath(marathonDay)}`,
+    );
+  }
+  const head = t.marathon.shareHead(puzzleNumber(day), hits);
+  return lines(`${head}${tag}`, ...squareRows(marathonDay), `${origin}/marathon`);
 }
 
 /** Daily Timeline share text: head, run length, one square per song, link to the game. */

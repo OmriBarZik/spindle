@@ -29,6 +29,8 @@ type Events = {
   run_end: { mode: "timeline"; songs: number };
   /** After the day's Marathon, the player started a free-play run ("Play again"). */
   play_again: { mode: "marathon" };
+  /** The Marathon opened from a friend's challenge link (a free-play run with their score). */
+  challenge_open: { mode: "marathon" };
   /** The current video wouldn't play, so the player asked for another. */
   song_skip: { mode: "marathon" | "timeline" };
   /** The share button. `method` is what happened (GA's recommended `share` event). */

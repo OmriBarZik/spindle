@@ -72,7 +72,7 @@ duration, and the linters enforce it.
 | Mode | Route | Internal name | Rules |
 | --- | --- | --- | --- |
 | **Daily Five** | `/{lang}/sort` | "sort" (`SortGame`, `data.sort`, `sortSongsFor`) | The line starts with one **starting year**. Five songs come **one at a time**, and each is placed into a gap. A wrong placement is marked red and moved to its real spot. Score is x/5. Everyone gets the same songs each day. |
-| **Marathon** | `/{lang}/marathon` | "marathon" (`MarathonGame`, `data.marathon`, `marathonSongsFor`) | Once a day. The line starts with one **starting year**, then songs come one at a time, as many as the player can place. Each wrong placement costs one of **3 hearts** (`MARATHON_HEARTS`) and the song is moved to its real spot; when the last heart goes, the day's score (songs placed right) is final. Everyone gets the same run of songs each day. After that, **Play again** starts a **free-play** run (`marathonFree.ts`, `data.marathon.free`) as often as the player likes: its own random songs (`marathonFreeSongsFor`, seeded by a stored random `seed`), not tomorrow's or yesterday's run. It never changes the stats and shares as "Free play" with no puzzle number. |
+| **Marathon** | `/{lang}/marathon` | "marathon" (`MarathonGame`, `data.marathon`, `marathonSongsFor`) | Once a day. The line starts with one **starting year**, then songs come one at a time, as many as the player can place. Each wrong placement costs one of **3 hearts** (`MARATHON_HEARTS`) and the song is moved to its real spot; when the last heart goes, the day's score (songs placed right) is final. Everyone gets the same run of songs each day. After that, **Play again** starts a **free-play** run (`marathonFree.ts`, `data.marathon.free`) as often as the player likes: its own random songs (`marathonFreeSongsFor`, seeded by a stored random `seed` that starts with the day, so the run skips that day's Daily Five), not tomorrow's or yesterday's run. It never changes the stats and shares as "Free play" with no puzzle number. The share is a **challenge**: its link (`/marathon?run=<seed>&beat=<score>[&songs=he]`, `challengePath`) gives a friend the same songs and the score to beat, even before their own daily run (then "Play today's marathon" takes them back to it). |
 | **Settings** | `/{lang}/settings` | `Settings` | Players choose which songs can appear: International (`en`) and/or Israeli (`he`) songs. Stored in `data.settings.songLanguages` (never empty). |
 
 The "sort" name is historical: the mode used to be "order all 5 at once". Keep the
@@ -182,7 +182,7 @@ is a "default" served without a prefix.
 | `src/lib/storage.ts` | Reading and writing the save (migrations-on-load), `emptySave`, `setSongLanguage` |
 | `src/lib/sortState.ts` | Daily Five: pure state transitions, stats, and what the screen shows (`sortView`, `sortLineItems`) |
 | `src/lib/marathonState.ts` | Marathon: pure state transitions, hearts, stats and what the screen shows (`marathonView`) |
-| `src/lib/marathonFree.ts` | Marathon free play after the daily run: `startFreeMarathon`, `marathonRun` (the run on screen), `placeMarathon`, `skipMarathon` |
+| `src/lib/marathonFree.ts` | Marathon free play after the daily run and challenge links: `startFreeMarathon`, `marathonRun` (the run on screen), `placeMarathon`, `skipMarathon`, `challengePath` / `parseChallenge` / `startChallenge` (opened by `useMarathonScreen`) |
 | `src/lib/timelineState.ts` | Daily Timeline (hidden page): pure state transitions and what the screen shows |
 | `src/lib/timeline.ts` | `TimelineCard`, `LineItem`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `defaultSlot`, `recordSlot`, `slotLabel` |
 | `src/lib/week.ts` | `weekDays()`: the home page's "This week", Sunday to Saturday in reading direction (a day counts once any song was placed) |
@@ -229,8 +229,9 @@ is a "default" served without a prefix.
   The next song is the first of `marathonSongsFor(day, languages)` not yet placed or skipped;
   the day is over after `MARATHON_HEARTS` wrong placements. `marathon.stats` =
   `{ played, best, totalHits }`, updated once when a day ends.
-  `marathon.free` (optional) = the latest free-play run: a `MarathonDay` plus `{ day, seed }`. It
-  shows only on its `day`, after that day's run is over, and never counts toward the stats.
+  `marathon.free` (optional) = the latest free-play run: a `MarathonDay` plus `{ day, seed, beat? }`
+  (`beat` = a friend's score, when opened from their link). It shows only on its `day`, after that
+  day's run is over (or at once for a challenge), and never counts toward the stats.
 - `timeline.cards` is a `TimelineCard[]` **that includes the starting-year card**
   (`anchor: true`). Always use `songCount(cards)` for scores, never `cards.length`.
   `timeline.today` = `{ date, songId, skipped, result: "pending" | "correct" | "wrong" }`.

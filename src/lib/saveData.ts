@@ -49,9 +49,12 @@ export type MarathonDay = {
  * own random shuffle (`seed`) and never touches the daily run or the stats.
  */
 export type MarathonFreeRun = MarathonDay & {
-  /** The day it was started: it only shows on that day, and skips that day's Daily Five. */
+  /** The day it was started: it only shows on that day. */
   day: string;
+  /** Picks the run's songs (`marathonFreeSongsFor`); shared links carry it. */
   seed: string;
+  /** Opened from a friend's link: the score to beat. */
+  beat?: number;
 };
 
 export type MarathonStats = {
