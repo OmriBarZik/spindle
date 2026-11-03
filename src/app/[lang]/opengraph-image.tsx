@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
-import { RecordSvg } from "@/components/RecordSvg";
+import { RecordSvg } from "@/components/deck/RecordSvg";
 import { localeParams } from "@/i18n/config";
-import { PALETTE } from "@/lib/palette";
+import { PALETTE } from "@/lib/display/palette";
 
 // Link preview image: the Spindle record, the same one that spins on the home page
 // and the game screens. Text-free apart from the Latin wordmark, so one design works

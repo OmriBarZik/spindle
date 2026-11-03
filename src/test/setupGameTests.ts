@@ -1,8 +1,8 @@
 import "@/app/globals.css";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
-import { installFakeAnalytics } from "@/test/fakeAnalytics";
-import { installFakeYouTube } from "@/test/fakeYouTube";
+import { installFakeAnalytics } from "@/test/fakes/fakeAnalytics";
+import { installFakeYouTube } from "@/test/fakes/fakeYouTube";
 
 /** Fix "today" and start every test with an empty save and a fresh YouTube and GA. */
 export function setupGameTests(now = "2026-11-01T10:00:00") {

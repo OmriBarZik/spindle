@@ -1,4 +1,4 @@
-import type { SaveData } from "@/lib/saveData";
+import type { SaveData } from "@/lib/save/saveData";
 
 /** The save as the game wrote it. */
 export function savedData(): SaveData {
