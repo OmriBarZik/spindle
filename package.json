@@ -49,5 +49,11 @@
   "engines": {
     "node": "26.x"
   },
+  "browserslist": [
+    "chrome 124",
+    "edge 124",
+    "firefox 125",
+    "safari 17.4"
+  ],
   "packageManager": "pnpm@12.16.1"
 }

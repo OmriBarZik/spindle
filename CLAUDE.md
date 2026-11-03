@@ -7,6 +7,10 @@ Spindle is a daily music game that combines Hitster and Wordle. Players hear son
 It is open source (MIT) and deployed on Vercel from `main` with no environment variables.
 Production runs **Node 26**: `engines.node` in `package.json` (`26.x`) sets it for Vercel and
 CI (`node-version-file`), and `@types/node` matches it. Change all of them together.
+Supported browsers are `browserslist` in `package.json`, made the way Next.js makes its default
+(`node_modules/next/dist/shared/lib/modern-browserslist-target.js`): the oldest Chrome, Edge,
+Firefox and Safari in `npx browserslist@latest "baseline widely available"` (last run 2026-11-03).
+SWC and Lightning CSS compile for these, so re-run it now and then rather than lowering it.
 
 ## Commands
 
