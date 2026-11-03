@@ -65,7 +65,7 @@ duration, and the linters enforce it.
   `--duration-*`; `spindle/spacing-grid` checks that `--spacing-N` is `N / 200` rem and on the 4px
   grid. In TS/TSX, oxlint's `spindle/no-raw-style` rejects hex/rgb colours, Tailwind's own colours
   (`text-white`), arbitrary values (`text-[13px]`) and off-scale spacing (`gap-3`). The only
-  exception is `src/lib/palette.ts` (the link preview image and favicon can't read CSS).
+  exception is `src/lib/display/palette.ts` (the link preview image and favicon can't read CSS).
 
 ## Game modes
 
@@ -92,15 +92,15 @@ Shared rules:
   (`useSwipeDrag`), and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
   the keys under the place button, only for fine pointers. Every control has tests:
   `KeyboardControls`, `MouseControls`, `WheelControls` and `DesktopLayout` (at 1280px) in
-  `src/components/__tests__/`, plus the arrow keys in `SortGame.test.tsx`. Add one with any new control.
+  `src/components/swipe/__tests__/`, plus the arrow keys in `SortGame.test.tsx`. Add one with any new control.
 - **Placing is swipe-then-tap.** The record always sits on a gap (it starts in the middle,
   `defaultSlot`), so the place button is ready at once and the whole line, record and button fit
   on one phone screen. Keep it that way: the player asked for no scrolling up and down.
-- **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
+- **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/line/timeline.ts`).
   So neighbouring songs from the same year are one **stack** on the line (`SwipeStack`): one spot
   on the rail, the cards behind peeking out, a "1/2" button to flip, and no gap inside it.
   The strip counts gaps between stacks; `useStackedLine` converts them to card slots.
-- A new day starts at the **player's local midnight** (`dayKey()` in `src/lib/dates.ts`).
+- A new day starts at the **player's local midnight** (`dayKey()` in `src/lib/catalog/dates.ts`).
 
 ## Languages (i18n)
 
@@ -123,7 +123,7 @@ is a "default" served without a prefix.
   `src/i18n/server.ts`; client components use `useI18n()` from `src/i18n/I18nProvider.tsx`.
   **Never hard-code UI text in components**; add it to both languages.
 - `slotLabel(cards, slot, t.slots)` takes the language's slot labels.
-- Song names: use `songNames(song, lang)` (`src/lib/songs.ts`). It returns `titleHe`/`artistHe`
+- Song names: use `songNames(song, lang)` (`src/lib/catalog/songs.ts`). It returns `titleHe`/`artistHe`
   on Hebrew pages, looked up by `youtubeId` because saved timeline cards only store English names.
 - Saves are shared between languages, so switching language keeps progress.
 - **RTL layout:** use logical utilities (`ms-*`, `ps-*`, `text-start`/`text-end`, `start-*`)
@@ -137,10 +137,10 @@ is a "default" served without a prefix.
 ## Architecture
 
 - **No backend.** All state lives in `localStorage` under the key `spindle:v1`
-  (`src/lib/storage.ts`, with the shape in `src/lib/saveData.ts`). There are no accounts and no API routes.
-- **Analytics.** Google Analytics 4 (`GA_MEASUREMENT_ID` in `src/components/GoogleAnalytics.tsx`,
+  (`src/lib/save/storage.ts`, with the shape in `src/lib/save/saveData.ts`). There are no accounts and no API routes.
+- **Analytics.** Google Analytics 4 (`GA_MEASUREMENT_ID` in `src/components/site/GoogleAnalytics.tsx`,
   rendered by the root layout). Its init snippet is `beforeInteractive`, so `window.gtag` exists
-  before the game screens mount. Custom events go through `track()` in `src/lib/analytics.ts`,
+  before the game screens mount. Custom events go through `track()` in `src/lib/services/analytics.ts`,
   whose `Events` type lists every event and its parameters (component tests check them with
   `trackedEvents()`). **Never send song details** (title, artist, year, video ID) to analytics.
 - **Client-only game screens.** `src/app/[lang]/{sort,marathon}/page.tsx` are server components
@@ -149,8 +149,8 @@ is a "default" served without a prefix.
   These use `next/dynamic` with `ssr: false`, because the initial state reads
   `localStorage` and the local date. `ssr: false` is only allowed inside a client
   component, which is why `LazyScreens.tsx` exists.
-- **Deterministic daily picks.** `src/lib/daily.ts` runs `seededShuffle(SONGS, seed)`
-  (`src/lib/random.ts`, FNV-1a + mulberry32) with these seed strings:
+- **Deterministic daily picks.** `src/lib/catalog/daily.ts` runs `seededShuffle(SONGS, seed)`
+  (`src/lib/catalog/random.ts`, FNV-1a + mulberry32) with these seed strings:
   `sort:${day}`, `anchor:${day}`, `marathon:${day}`, `marathon-anchor:${day}`.
   `timeline:${day}` and `timeline-anchor:${day}` (the hidden Daily Timeline).
   `shuffled()` in `daily.ts` splits that shuffle by song language and interleaves the
@@ -169,56 +169,68 @@ is a "default" served without a prefix.
   `sortState.ts`, and `ensureMarathonDay`, `placeMarathonSong` and `skipMarathonSong` in
   `marathonState.ts`.
   A no-op returns the **same object** (the tests check identity). Components call them
-  through `useSave()` (`src/hooks/useSave.ts`), which persists only when the object changes.
+  through `useSave()` (`src/hooks/game/useSave.ts`), which persists only when the object changes.
+
+### Folders
+
+At most **7 files per folder** (`spindle/max-files-per-folder`; see `.claude/rules/code-style.md`),
+grouped by feature, with each folder's tests in its own `__tests__/`:
+
+| Folder | What |
+| --- | --- |
+| `src/components/` | `LazyScreens.tsx`, plus `deck/` (the turntable), `swipe/` (the line; `swipe/card/` its cards and stacks), `game/` (pieces every game screen uses: `ScreenMain`, `PlaceButton`, `KeyHints`, `Announce`, `GameLoading`), `result/` (`ResultCard`, `ShareButton`, `Stats`), one folder per screen (`sort/`, `marathon/`, `timeline/`, `settings/`), `home/` (sleeves, "This week", footer) and `site/` (header, language switch, analytics, `ExternalLink`, and the pages test) |
+| `src/hooks/` | `game/` (screen state, save, player, key shortcuts, record flight) and `swipe/` (the strip's controls) |
+| `src/lib/` | `catalog/` (songs, daily picks, seeded random, dates), `games/` (each mode's state and the share texts), `line/` (cards, slots, stacks, the live gap), `save/` (save format, storage, the week), `display/` (motion, smooth scroll, palette) and `services/` (the YouTube player, analytics) |
+| `src/test/` | Test setup at the top, `fakes/` (YouTube, analytics, clipboard) and `input/` (real mouse, record controls, CPU throttling) |
 
 ### File map
 
 | Path | What |
 | --- | --- |
 | `src/data/songs.json` | Song catalog: `{ id?, artist, title, year, youtubeId, start?, titleHe?, artistHe? }`. The song `id` (stored in saves) is the `youtubeId`, unless the entry has its own `id`: when a video is swapped, keep the old video ID as `id` so saves keep working. Prefer audio-only uploads (an "Official Audio" or "- Topic" upload) over music videos and live clips, which often open with a long non-music intro. One shared pool: Israeli songs (with Hebrew names) sit alongside the rest, so both languages get the same daily puzzle. |
-| `src/lib/songs.ts` | Loads the catalog; `getSong(id)` (finds a song by stable `id` or current `youtubeId`) |
-| `src/lib/daily.ts` | Daily song and starting-year selection |
-| `src/lib/saveData.ts` | The save format's types |
-| `src/lib/storage.ts` | Reading and writing the save (migrations-on-load), `emptySave`, `setSongLanguage` |
-| `src/lib/sortState.ts` | Daily Five: pure state transitions, stats, and what the screen shows (`sortView`, `sortLineItems`) |
-| `src/lib/marathonState.ts` | Marathon: pure state transitions, hearts, stats and what the screen shows (`marathonView`) |
-| `src/lib/marathonFree.ts` | Marathon free play after the daily run and challenge links: `startFreeMarathon`, `marathonRun` (the run on screen), `placeMarathon`, `skipMarathon`, `challengePath` / `parseChallenge` / `startChallenge` (opened by `useMarathonScreen`) |
-| `src/lib/timelineState.ts` | Daily Timeline (hidden page): pure state transitions and what the screen shows |
-| `src/lib/timeline.ts` | `TimelineCard`, `LineItem`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `defaultSlot`, `recordSlot`, `slotLabel` |
-| `src/lib/week.ts` | `weekDays()`: the home page's "This week", Sunday to Saturday in reading direction (a day counts once any song was placed) |
-| `src/lib/player.ts` | The one shared YouTube player: its hidden host on `<body>`, its state (a store) and the commands (`playVideo`, `pauseVideo`, …), `holdPlayer()` for the language switch, `hasHeard()` |
-| `src/hooks/usePlayer.ts` | `usePlayer()`: a game screen's handle on the shared player (state + commands) |
-| `src/lib/stacks.ts` | Same-year songs as one stack on the line, and converting the strip's gaps to card slots (`SwipeStack`, `useStackedLine`) |
-| `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
-| `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
-| `src/hooks/useSwipeKeys.ts` | Arrow keys, Home and End move the record from anywhere on the page |
-| `src/hooks/useKeyShortcut.ts` | A page-wide key (Space plays in `Deck`, Enter places in `PlaceButton`) |
-| `src/hooks/useSwipePitch.ts` | `PITCH` (the phone's gap-to-gap distance) and the strip's measured pitch, kept in a ref and re-measured on resize |
-| `src/hooks/useSwipeDrag.ts`, `useSwipeWheel.ts` | Mouse controls for the strip: drag, click to a gap, wheel |
-| `src/hooks/recordFlight.ts` | The record's flight from the home page into a game |
-| `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`); share texts carry no puzzle number |
-| `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
-| `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
-| `src/components/Footer.tsx` | The home page's site footer (the YouTube disclaimer and the GitHub link): full width under a hairline, pushed to the bottom of the screen (`mt-auto` in the body's flex column) |
-| `src/components/Deck.tsx` | Turntable UI, built from `DeckRecord` (the record, play/pause, loading ring), `DeckTransport` and `DeckStatus`. It only sends commands to the shared player |
-| `src/components/SortGame.tsx` | Daily Five screen |
-| `src/components/TimelineGame.tsx` | Daily Timeline screen (hidden page) |
-| `src/components/MarathonGame.tsx` | Marathon screen (with `MarathonHeader`, `Hearts`, `MarathonFeedback`, `MarathonResult`) |
+| `src/lib/catalog/songs.ts` | Loads the catalog; `getSong(id)` (finds a song by stable `id` or current `youtubeId`) |
+| `src/lib/catalog/daily.ts` | Daily song and starting-year selection |
+| `src/lib/save/saveData.ts` | The save format's types |
+| `src/lib/save/storage.ts` | Reading and writing the save (migrations-on-load), `emptySave`, `setSongLanguage` |
+| `src/lib/games/sortState.ts` | Daily Five: pure state transitions, stats, and what the screen shows (`sortView`, `sortLineItems`) |
+| `src/lib/games/marathonState.ts` | Marathon: pure state transitions, hearts, stats and what the screen shows (`marathonView`) |
+| `src/lib/games/marathonFree.ts` | Marathon free play after the daily run and challenge links: `startFreeMarathon`, `marathonRun` (the run on screen), `placeMarathon`, `skipMarathon`, `challengePath` / `parseChallenge` / `startChallenge` (opened by `useMarathonScreen`) |
+| `src/lib/games/timelineState.ts` | Daily Timeline (hidden page): pure state transitions and what the screen shows |
+| `src/lib/line/timeline.ts` | `TimelineCard`, `LineItem`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `defaultSlot`, `recordSlot`, `slotLabel` |
+| `src/lib/save/week.ts` | `weekDays()`: the home page's "This week", Sunday to Saturday in reading direction (a day counts once any song was placed) |
+| `src/lib/services/player.ts` | The one shared YouTube player: its hidden host on `<body>`, its state (a store) and the commands (`playVideo`, `pauseVideo`, …), `holdPlayer()` for the language switch, `hasHeard()` |
+| `src/hooks/game/usePlayer.ts` | `usePlayer()`: a game screen's handle on the shared player (state + commands) |
+| `src/lib/line/stacks.ts` | Same-year songs as one stack on the line, and converting the strip's gaps to card slots (`SwipeStack`, `useStackedLine`) |
+| `src/hooks/game/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
+| `src/hooks/swipe/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
+| `src/hooks/swipe/useSwipeKeys.ts` | Arrow keys, Home and End move the record from anywhere on the page |
+| `src/hooks/game/useKeyShortcut.ts` | A page-wide key (Space plays in `Deck`, Enter places in `PlaceButton`) |
+| `src/hooks/swipe/useSwipePitch.ts` | `PITCH` (the phone's gap-to-gap distance) and the strip's measured pitch, kept in a ref and re-measured on resize |
+| `src/hooks/swipe/useSwipeDrag.ts`, `useSwipeWheel.ts` | Mouse controls for the strip: drag, click to a gap, wheel |
+| `src/hooks/game/recordFlight.ts` | The record's flight from the home page into a game |
+| `src/lib/games/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`); share texts carry no puzzle number |
+| `src/lib/display/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
+| `src/lib/display/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
+| `src/components/home/Footer.tsx` | The home page's site footer (the YouTube disclaimer and the GitHub link): full width under a hairline, pushed to the bottom of the screen (`mt-auto` in the body's flex column) |
+| `src/components/deck/Deck.tsx` | Turntable UI, built from `DeckRecord` (the record, play/pause, loading ring), `DeckTransport` and `DeckStatus`. It only sends commands to the shared player |
+| `src/components/sort/SortGame.tsx` | Daily Five screen |
+| `src/components/timeline/TimelineGame.tsx` | Daily Timeline screen (hidden page) |
+| `src/components/marathon/MarathonGame.tsx` | Marathon screen (with `MarathonHeader`, `Hearts`, `MarathonFeedback`, `MarathonResult`) |
 | `src/app/[lang]/page.tsx` | Home page: each mode is a record sleeve (`ModeSleeve`, `.sleeve-*` in `styles/home.css`) whose record flies into the game (`ModeLink` launches the clicked sleeve's `[data-flight-record]`), then `WeekStrip` and "How to play" |
-| `src/components/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. With `browse` (a finished Marathon), `SwipeBrowse` adds Earlier / Later buttons that scroll the strip a card at a time (`DONE_PITCH`), so players can look through the run and open songs on YouTube. Styles are the `.swipe-*` classes in `styles/swipe.css`, sized by the `--swipe-*` tokens. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / pitch` (no layout reads: `useSwipePitch` measures `--swipe-gap-width` + `--swipe-card-width` only on mount and resize, and `PITCH` must match the phone sizes); a move from outside the strip (a key, a button, a click, the end of a drag, a resize) centres the gap by measuring it (`centreGap`), since `slot × pitch` is half a gap-minus-card off and snapping doesn't always correct it; crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
-| `src/components/PlaceButton.tsx` | Says where the song goes ("Between 1992 and 1997", from `t.placeAt`); its accessible name adds "Place it: " |
-| `src/components/Announce.tsx` | Screen-reader live region |
-| `src/components/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
+| `src/components/swipe/SwipeLine.tsx` | With `SwipeCard`, `SwipeGap`, `SwipeOverview` and `useSwipeTrack`, the line both games use: a sideways strip of cards on a time rail. While placing, `Deck` puts its record in the middle (`around` prop) and the player swipes the strip under it; the two cards beside the record light up and the rail between their years glows. Earlier / Later buttons, arrow keys and an overview bar move it too. `reveal` holds the answer beside the record while it glows; when not placing the record sits above the strip, centered on `focus`. With `browse` (a finished Marathon), `SwipeBrowse` adds Earlier / Later buttons that scroll the strip a card at a time (`DONE_PITCH`), so players can look through the run and open songs on YouTube. Styles are the `.swipe-*` classes in `styles/swipe.css`, sized by the `--swipe-*` tokens. **Swiping must stay cheap** (it lagged before): the glow lives inside each gap so the browser scrolls it; the gap under the record comes from `scrollLeft / pitch` (no layout reads: `useSwipePitch` measures `--swipe-gap-width` + `--swipe-card-width` only on mount and resize, and `PITCH` must match the phone sizes); a move from outside the strip (a key, a button, a click, the end of a drag, a resize) centres the gap by measuring it (`centreGap`), since `slot × pitch` is half a gap-minus-card off and snapping doesn't always correct it; crossing a gap only moves CSS classes (`light()`) and sets the live gap (`src/lib/line/liveSlot.ts`), which the place button and the overview bar read with `useSyncExternalStore`, so they keep up with the finger while the rest of the game re-renders only 100 ms after the strip stops. `SwipeLine.perf.test.tsx` fails if this regresses. Don't render React per scroll frame, and only transition `opacity`/`transform` there (no colour, shadow or font-weight transitions). |
+| `src/components/game/PlaceButton.tsx` | Says where the song goes ("Between 1992 and 1997", from `t.placeAt`); its accessible name adds "Place it: " |
+| `src/components/game/Announce.tsx` | Screen-reader live region |
+| `src/components/site/ExternalLink.tsx` | `target="_blank"` link that tells screen readers it opens a new tab |
 | `src/test/` | Test setup and fakes: `fakeYouTube`, `fakeAnalytics`, `fakeClipboard`, `setupGameTests`, `renderIn(lang, ui)`, `expectAccessible`, `recordControls` (moving and reading the record), `realMouse` (Playwright's real mouse, for drags and wheels) |
 | `lint/spindle-rules.mjs` | House lint rules oxlint has no built-in rule for |
 | `src/i18n/` | Locale config, `messages.tsx` (all UI text), `I18nProvider`/`useI18n`, `getI18n` |
 | `src/proxy.ts` | Redirects unprefixed URLs to the player's language |
-| `src/components/Settings.tsx` | Settings page (song-language switches) |
-| `src/components/LanguageSwitch.tsx` | English / עברית toggle in the header |
+| `src/components/settings/Settings.tsx` | Settings page (song-language switches) |
+| `src/components/site/LanguageSwitch.tsx` | English / עברית toggle in the header |
 | `src/app/[lang]/opengraph-image.tsx` | Link preview image (the record + "Spindle"), drawn with `next/og` as SVG and prerendered per language |
 | `src/app/styles/tokens.css` | The design tokens: palette, colour roles (light/dark), spacing, type, radii, shadows, motion, component sizes |
 | `src/app/globals.css` | Imports Tailwind and the tokens, plus shared classes (`.card`, `.btn-primary`, `.game-*`); `styles/home.css`, `record.css` (`.record`, `.loading-ring`, the swap animation) and `swipe.css` (`.swipe-*`) hold the rest |
-| `src/lib/palette.ts` | The few raw colours TypeScript needs (link preview image, favicon, theme colour); mirrors `tokens.css` |
+| `src/lib/display/palette.ts` | The few raw colours TypeScript needs (link preview image, favicon, theme colour); mirrors `tokens.css` |
 | `scripts/validate-songs.mts` | oEmbed check for missing or non-embeddable videos |
 
 ## Save format (`spindle:v1`)
@@ -245,7 +257,7 @@ is a "default" served without a prefix.
 
 - The player must **never show the title, channel, thumbnail, comments, or related
   videos** before the player has answered. There is **one global player**
-  (`src/lib/player.ts`): its iframe lives in `.player-host`, appended to `<body>` outside
+  (`src/lib/services/player.ts`): its iframe lives in `.player-host`, appended to `<body>` outside
   React's tree, transparent and behind the page content (`z-index: -1`, `opacity: 0`),
   `inert` and `aria-hidden`, with `controls: 0`. Screens never touch it; they read its state
   and send commands through `usePlayer()`. Don't make the iframe visible, and don't show song
@@ -321,12 +333,12 @@ is a "default" served without a prefix.
 
 - Project test rules live in `.claude/rules/testing.md` (import everything, never use `describe`, avoid mocks, parameterized tests use `it.for`); oxlint enforces them.
 
-- Put logic tests in `src/lib/__tests__/` (vitest, node environment, `@/` alias set in
+- Put logic tests in a `__tests__/` folder next to the code they test (`src/lib/games/__tests__/`, …; vitest, node environment, `@/` alias set in
   `vitest.config.mts`).
-- `src/lib/__tests__/golden.test.ts` snapshots a month of daily picks. If it fails, the
+- `src/lib/catalog/__tests__/golden.test.ts` snapshots a month of daily picks. If it fails, the
   daily puzzles changed for everyone: fix the code, don't update the snapshot (unless
   you added songs on purpose, then run `pnpm vitest -u`).
-- Component tests live in `src/components/__tests__/` and run in **Vitest Browser Mode**
+- Component tests live in a `__tests__/` folder inside each component folder (`src/components/sort/__tests__/`, …) and run in **Vitest Browser Mode**
   (headless Chromium through `@vitest/browser-playwright`; the `browser` project in
   `vitest.config.mts`). The site CSS is loaded (`globals.css` via `@tailwindcss/vite`) and the viewport is 390px wide, in both colour schemes. Click with `await userEvent.click(el)`
   from `vitest/browser` (real pointer events), so helpers that click are `async`. Locally,

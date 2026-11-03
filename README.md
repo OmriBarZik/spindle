@@ -53,11 +53,13 @@ formatted with oxfmt.
 | Path | What |
 | --- | --- |
 | `src/data/songs.json` | The song catalog |
-| `src/lib/daily.ts` | Deterministic daily song selection (seeded by date) |
-| `src/lib/storage.ts`, `sortState.ts`, `marathonState.ts` | Save format and all game state transitions |
-| `src/lib/timeline.ts` | Slot / placement rules |
-| `src/hooks/useHiddenPlayer.ts` | Hidden YouTube player hook |
-| `src/components/` | `Deck` (turntable), `SortGame` (Daily Five), `MarathonGame`, `SwipeLine` (the line) |
+| `src/lib/catalog/` | The catalog and deterministic daily song selection (seeded by date) |
+| `src/lib/games/`, `src/lib/save/` | Every game's state transitions, and the save format |
+| `src/lib/line/` | Slot / placement rules |
+| `src/lib/services/player.ts` | The one hidden YouTube player |
+| `src/components/` | One folder per screen (`sort/` for Daily Five, `marathon/`, `settings/`, `home/`) and per shared part (`deck/` for the turntable, `swipe/` for the line) |
+
+Folders hold at most 7 files each (enforced by lint): group new files into feature folders.
 
 ## Adding songs
 
