@@ -7,8 +7,7 @@
     display: grid;
     grid-template:
       "hero sleeves" auto
-      "side sleeves" 1fr
-      "foot foot" auto / minmax(0, 5fr) minmax(0, 7fr);
+      "side sleeves" 1fr / minmax(0, 5fr) minmax(0, 7fr);
     gap: var(--spacing-400) var(--spacing-600);
     padding-top: var(--spacing-400);
   }
@@ -25,10 +24,6 @@
     grid-area: sleeves;
     align-self: start;
     column-gap: var(--spacing-300);
-  }
-
-  .home-foot {
-    grid-area: foot;
   }
 }
 
