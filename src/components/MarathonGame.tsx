@@ -13,7 +13,6 @@ import { SortFeedbackBox } from "@/components/SortFeedbackBox";
 import { SwipeLine } from "@/components/SwipeLine";
 import { useDropRecordFlight } from "@/hooks/recordFlight";
 import { useGameScreen } from "@/hooks/useGameScreen";
-import { hasHeard } from "@/hooks/useHiddenPlayer";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import {
@@ -25,6 +24,7 @@ import {
   placeMarathonSong,
   skipMarathonSong,
 } from "@/lib/marathonState";
+import { hasHeard } from "@/lib/player";
 import { sortLineItems } from "@/lib/sortState";
 import { recordSlot } from "@/lib/timeline";
 
@@ -34,7 +34,7 @@ import { recordSlot } from "@/lib/timeline";
  */
 export function MarathonGame() {
   const { t } = useI18n();
-  const { day, data, update, hostRef, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
+  const { day, data, update, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
     ensureMarathonDay,
     marathonOpenEvent,
   );
@@ -108,7 +108,6 @@ export function MarathonGame() {
 
       {!done || swap ? (
         <Deck
-          hostRef={hostRef}
           player={player}
           videoId={current?.youtubeId ?? null}
           start={current?.start}

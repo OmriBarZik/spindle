@@ -35,6 +35,22 @@ body {
   --label: var(--color-timeline-label);
 }
 
+/* The shared YouTube player (lib/player.ts). It lives on <body>, outside the pages, so
+   a language switch doesn't stop the song. Never seen: transparent and behind the page
+   content. It keeps a record's size inside the window, since browsers may hold back
+   frames that are tiny or off screen. */
+.player-host {
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  z-index: -1;
+  width: var(--size-record-small);
+  height: var(--size-record-small);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .card {
   background: var(--color-surface);
   border: var(--border-thin) solid var(--color-line);

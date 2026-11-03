@@ -97,6 +97,9 @@ Shared rules:
   `defaultSlot`), so the place button is ready at once and the whole line, record and button fit
   on one phone screen. Keep it that way: the player asked for no scrolling up and down.
 - **Equal years are correct on either side** (`isSlotCorrect` in `src/lib/timeline.ts`).
+  So neighbouring songs from the same year are one **stack** on the line (`SwipeStack`): one spot
+  on the rail, the cards behind peeking out, a "1/2" button to flip, and no gap inside it.
+  The strip counts gaps between stacks; `useStackedLine` converts them to card slots.
 - A new day starts at the **player's local midnight** (`dayKey()` in `src/lib/dates.ts`).
 
 ## Languages (i18n)
@@ -182,7 +185,9 @@ is a "default" served without a prefix.
 | `src/lib/timelineState.ts` | Daily Timeline (hidden page): pure state transitions and what the screen shows |
 | `src/lib/timeline.ts` | `TimelineCard`, `LineItem`, `anchorCard`, `songCount`, `isSlotCorrect`, `correctSlot`, `defaultSlot`, `recordSlot`, `slotLabel` |
 | `src/lib/week.ts` | `weekDays()`: the home page's "This week", Sunday to Saturday in reading direction (a day counts once any song was placed) |
-| `src/hooks/useHiddenPlayer.ts` | `useHiddenPlayer()`: YouTube IFrame API wrapper |
+| `src/lib/player.ts` | The one shared YouTube player: its hidden host on `<body>`, its state (a store) and the commands (`playVideo`, `pauseVideo`, …), `holdPlayer()` for the language switch, `hasHeard()` |
+| `src/hooks/usePlayer.ts` | `usePlayer()`: a game screen's handle on the shared player (state + commands) |
+| `src/lib/stacks.ts` | Same-year songs as one stack on the line, and converting the strip's gaps to card slots (`SwipeStack`, `useStackedLine`) |
 | `src/hooks/useGameScreen.ts` | What both game screens start from: today's save, the player, the record and line state, and the `game_open` event |
 | `src/hooks/useSwipeTrack.ts` | Keeps the scrolling strip and the chosen gap in step (`PITCH`) |
 | `src/hooks/useSwipeKeys.ts` | Arrow keys, Home and End move the record from anywhere on the page |
@@ -193,7 +198,7 @@ is a "default" served without a prefix.
 | `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`) |
 | `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
 | `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
-| `src/components/Deck.tsx` | Turntable UI, built from `DeckRecord` (opaque record over the hidden iframe, play/pause, loading ring), `DeckTransport` and `DeckStatus` |
+| `src/components/Deck.tsx` | Turntable UI, built from `DeckRecord` (the record, play/pause, loading ring), `DeckTransport` and `DeckStatus`. It only sends commands to the shared player |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen (hidden page) |
 | `src/components/MarathonGame.tsx` | Marathon screen (with `MarathonHeader`, `Hearts`, `MarathonFeedback`, `MarathonResult`) |
@@ -234,13 +239,21 @@ is a "default" served without a prefix.
 ## YouTube player rules (product requirement)
 
 - The player must **never show the title, channel, thumbnail, comments, or related
-  videos** before the player has answered. The iframe is mounted into `hostRef` underneath
-  an opaque `.record` div, uses `controls: 0`, and is driven only by our buttons. Don't
-  make the iframe visible, and don't show song info before the answer.
+  videos** before the player has answered. There is **one global player**
+  (`src/lib/player.ts`): its iframe lives in `.player-host`, appended to `<body>` outside
+  React's tree, transparent and behind the page content (`z-index: -1`, `opacity: 0`),
+  `inert` and `aria-hidden`, with `controls: 0`. Screens never touch it; they read its state
+  and send commands through `usePlayer()`. Don't make the iframe visible, and don't show song
+  info before the answer.
+- **Why global:** switching language changes the root layout's `[lang]` segment, which
+  remounts the whole page (only `<html>` and `<body>` survive). The language switch calls
+  `holdPlayer()`, so the new page's screen takes over the same player and the song plays on,
+  however often the player switches. Leaving the games (no screen takes the player) destroys
+  it and stops the song.
+- **Play before placing:** the place button stays locked ("Play the song to place it")
+  until the current song has started playing (`hasHeard`, from the player's `startedId`), or
+  its video failed.
 - Spindle hosts no audio; songs only stream from YouTube.
-- `useHiddenPlayer()` returns `{ hostRef, player }` **separately**. Putting the ref inside
-  the player object trips the `react-hooks/refs` lint rule ("Cannot access refs during
-  render").
 - **Avoid layout shift.** The ring is always mounted and fades with opacity. The status
   line under the record has a fixed height (`h-5`). Keep it that way, since the user
   explicitly asked for no jumps.
@@ -248,7 +261,7 @@ is a "default" served without a prefix.
   In Daily Five it then swipes out in the reading direction (separate `-rtl` keyframes under
   `[dir="rtl"]`) and the next record slides in. Keep `var()` out of `@keyframes`: Safari
   can't run those off the main thread, so they lag on a throttled CPU. Play and "Place it" stay locked until
-  `onSwapEnd`. The player, record and button move together so the iframe stays covered.
+  `onSwapEnd`.
 - If a video fails (`status === "error"`), Marathon offers "Give me a different song"
   (`skipMarathonSong`); it costs no heart.
 
@@ -295,7 +308,7 @@ is a "default" served without a prefix.
      small text needs **4.5:1** in both themes (`--color-muted` and the rail's `--color-faint`), and
      icons and borders need 3:1.
 - Every control needs an accessible name; decorative emoji/SVGs get `aria-hidden`; results are
-  announced through `Announce`; the YouTube host is `inert`. Anything that moves respects
+  announced through `Announce`; the YouTube host (`.player-host`) is `inert`. Anything that moves respects
   `prefers-reduced-motion` (CSS media query, or `canAnimate()` in JavaScript). Focus rings must
   stay visible: where a mask or `overflow` would clip one (the swipe line), draw it on a parent.
 
@@ -313,7 +326,7 @@ is a "default" served without a prefix.
   `vitest.config.mts`). The site CSS is loaded (`globals.css` via `@tailwindcss/vite`) and the viewport is 390px wide, in both colour schemes. Click with `await userEvent.click(el)`
   from `vitest/browser` (real pointer events), so helpers that click are `async`. Locally,
   a fresh machine needs `pnpm exec playwright install chromium` once. `setupGameTests()` installs a fake YouTube API under the real
-  `useHiddenPlayer` (see `fakeYouTube`), render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).
+  shared player (see `fakeYouTube`; it reports playing and paused like YouTube, so tests press play with `playSong()` before placing), render with `renderIn("en", <SortGame />)`, and call `expectAccessible(container)` (axe).
   Fire `animationEnd` on `.deck-swap` to finish the record animation.
 - For UI checks, use the pre-installed Playwright/Chromium against `next start`. YouTube
   may be blocked in sandboxes, so stub the API with

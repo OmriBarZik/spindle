@@ -1,19 +1,17 @@
 "use client";
 
 import { clsx } from "clsx";
-import { type ReactNode, type RefObject, useEffect } from "react";
+import type { ReactNode } from "react";
 import { DeckRecord } from "@/components/DeckRecord";
 import { DeckStatus } from "@/components/DeckStatus";
 import { DeckTransport } from "@/components/DeckTransport";
 import type { DeckSwap } from "@/hooks/useGameScreen";
-import type { HiddenPlayer } from "@/hooks/useHiddenPlayer";
 import { useKeyShortcut } from "@/hooks/useKeyShortcut";
+import type { Player } from "@/hooks/usePlayer";
 import { useI18n } from "@/i18n/I18nProvider";
-import { takeHandoff } from "@/lib/playHandoff";
 
 type Props = {
-  hostRef: RefObject<HTMLDivElement | null>;
-  player: HiddenPlayer;
+  player: Player;
   /** The song this deck plays when the big button is pressed. */
   videoId: string | null;
   start?: number;
@@ -33,7 +31,6 @@ type Props = {
 
 /** The turntable: the record, its transport row and the status line. */
 export function Deck({
-  hostRef,
   player,
   videoId,
   start = 0,
@@ -67,24 +64,11 @@ export function Deck({
     }
     player.toggle(videoId, start);
   }
-  // Carry on with a song that was playing when the player switched language.
-  const { ready, play } = player;
-  useEffect(() => {
-    if (!ready || !videoId) {
-      return;
-    }
-    const handoff = takeHandoff(videoId);
-    if (handoff?.playing) {
-      play(videoId, handoff.time);
-    }
-  }, [ready, videoId, play]);
-
   // Space plays and pauses from anywhere on the page, like a media player.
   useKeyShortcut(" ", !disabled, toggle);
 
   const record = (
     <DeckRecord
-      hostRef={hostRef}
       active={playing || loading}
       busy={loading || !player.ready}
       spinning={playing}

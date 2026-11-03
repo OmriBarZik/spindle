@@ -5,7 +5,7 @@ import { type GameOpenEvent, track } from "@/lib/analytics";
 import { dayKey } from "@/lib/dates";
 import { createLiveSlot } from "@/lib/liveSlot";
 import type { SaveData } from "@/lib/saveData";
-import { useHiddenPlayer } from "./useHiddenPlayer";
+import { usePlayer } from "./usePlayer";
 import { useSave } from "./useSave";
 
 /**
@@ -16,7 +16,7 @@ import { useSave } from "./useSave";
 export type DeckSwap = { correct: boolean; kind: "next" | "last" | "flash" };
 
 /**
- * What both game screens start from: today's save, the hidden player, and the state of
+ * What both game screens start from: today's save, the shared player, and the state of
  * the record and the line. `prepare` sets up today in the save; `opened` says how the
  * game looked when the screen opened, which is reported once.
  */
@@ -26,7 +26,7 @@ export function useGameScreen(
 ) {
   const [day] = useState(dayKey);
   const [data, update] = useSave((d) => prepare(d, day));
-  const { hostRef, player } = useHiddenPlayer();
+  const player = usePlayer();
   const [slot, setSlot] = useState<number | null>(null);
   // The gap under the record mid-swipe, shared by the line and the place button.
   const [live] = useState(createLiveSlot);
@@ -36,5 +36,5 @@ export function useGameScreen(
   const [openEvent] = useState(() => opened(data, day));
   useEffect(() => track("game_open", openEvent), [openEvent]);
 
-  return { day, data, update, hostRef, player, slot, setSlot, live, swap, setSwap };
+  return { day, data, update, player, slot, setSlot, live, swap, setSwap };
 }
