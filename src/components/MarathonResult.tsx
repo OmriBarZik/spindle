@@ -41,7 +41,6 @@ const secondary =
  * before the day's, the second button goes to the day's run instead.
  */
 export function MarathonResult({
-  day,
   run: { state, daily, dailyDone },
   stats,
   title,
@@ -50,7 +49,6 @@ export function MarathonResult({
   onPlayAgain,
   onPlayDaily,
 }: {
-  day: string;
   run: MarathonRun;
   stats: MarathonStats;
   title: string;
@@ -61,18 +59,14 @@ export function MarathonResult({
 }) {
   const { t } = useI18n();
   const free = daily !== null;
-  const beat = "seed" in state ? state.beat : undefined;
   return (
     <ResultCard>
       <div className="text-2xl font-bold">{title}</div>
       <div className="text-lg">{score}</div>
-      {beat === undefined ? null : (
-        <p className="font-bold">{t.marathon.challengeResult(hits, beat)}</p>
-      )}
       <Stats items={statItems(t, stats, hits, daily)} />
       <ShareButton
         mode="marathon"
-        text={marathonShareText(t, day, state, window.location.origin)}
+        text={marathonShareText(t, state, window.location.origin)}
         label={free ? t.marathon.shareFree : undefined}
       />
       {dailyDone ? (

@@ -9,12 +9,10 @@ import { sortEmoji, sortShareText } from "@/lib/share";
 
 /** The finished day: score, stats and share. */
 export function SortResult({
-  day,
   state,
   stats,
   score,
 }: {
-  day: string;
   state: SortDay;
   stats: SortStats;
   score: string;
@@ -35,7 +33,7 @@ export function SortResult({
           [t.sort.stats.bestStreak, stats.maxStreak],
         ]}
       />
-      <ShareButton mode="daily_five" text={sortShareText(t, day, state, window.location.origin)} />
+      <ShareButton mode="daily_five" text={sortShareText(t, state, window.location.origin)} />
       <p className="text-sm text-muted">{t.sort.tomorrow}</p>
     </ResultCard>
   );

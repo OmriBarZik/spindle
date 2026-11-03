@@ -12,15 +12,15 @@ const day = (correct: boolean[], languages?: SortDay["languages"]): SortDay => (
 });
 
 it("formats a Daily Five result", () => {
-  expect(
-    sortShareText(MESSAGES.en, "2026-11-03", day([true, false, true, true, true]), ORIGIN),
-  ).toBe(`Spindle Daily Five #3 4/5\n🟩🟥🟩🟩🟩\n${ORIGIN}/sort`);
-  expect(
-    sortShareText(MESSAGES.en, "2026-11-01", day([true, true, true, true, true], ["en"]), ORIGIN),
-  ).toBe(`Spindle Daily Five #1 5/5 · International songs only\n🟩🟩🟩🟩🟩\n${ORIGIN}/sort`);
+  expect(sortShareText(MESSAGES.en, day([true, false, true, true, true]), ORIGIN)).toBe(
+    `Spindle Daily Five 4/5\n🟩🟥🟩🟩🟩\n${ORIGIN}/sort`,
+  );
+  expect(sortShareText(MESSAGES.en, day([true, true, true, true, true], ["en"]), ORIGIN)).toBe(
+    `Spindle Daily Five 5/5 · International songs only\n🟩🟩🟩🟩🟩\n${ORIGIN}/sort`,
+  );
   // Both kinds on (or an old save without languages) adds no tag.
-  expect(sortShareText(MESSAGES.en, "2026-11-01", day([], ["en", "he"]), ORIGIN)).toBe(
-    `Spindle Daily Five #1 0/5\n\n${ORIGIN}/sort`,
+  expect(sortShareText(MESSAGES.en, day([], ["en", "he"]), ORIGIN)).toBe(
+    `Spindle Daily Five 0/5\n\n${ORIGIN}/sort`,
   );
 });
 
@@ -36,31 +36,29 @@ it("formats a Marathon result, ten squares a row", () => {
   expect(
     marathonShareText(
       MESSAGES.en,
-      "2026-11-02",
       marathon([true, false, true, false, false], ["en", "he"]),
       ORIGIN,
     ),
-  ).toBe(`Spindle Marathon #2 · 2 🎵\n🟩🟥🟩🟥🟥\n${ORIGIN}/marathon`);
-  expect(marathonShareText(MESSAGES.en, "2026-11-01", marathon(twelve, ["he"]), ORIGIN)).toBe(
-    `Spindle Marathon #1 · 10 🎵 · Israeli songs only\n${"🟩".repeat(10)}\n🟥🟥\n${ORIGIN}/marathon`,
+  ).toBe(`Spindle Marathon · 2 🎵\n🟩🟥🟩🟥🟥\n${ORIGIN}/marathon`);
+  expect(marathonShareText(MESSAGES.en, marathon(twelve, ["he"]), ORIGIN)).toBe(
+    `Spindle Marathon · 10 🎵 · Israeli songs only\n${"🟩".repeat(10)}\n🟥🟥\n${ORIGIN}/marathon`,
   );
   expect(
-    marathonShareText(
-      MESSAGES.he,
-      "2026-11-01",
-      marathon([false, false, false], ["en", "he"]),
-      ORIGIN,
-    ),
-  ).toBe(`Spindle מרתון #1 · 0 🎵\n🟥🟥🟥\n${ORIGIN}/marathon`);
+    marathonShareText(MESSAGES.he, marathon([false, false, false], ["en", "he"]), ORIGIN),
+  ).toBe(`Spindle מרתון · 0 🎵\n🟥🟥🟥\n${ORIGIN}/marathon`);
 });
 
 it("formats a free-play Marathon as a challenge, without the day's number", () => {
-  const free = { ...marathon([true, true, false], ["en", "he"]), day: "2026-11-02", seed: "s1" };
-  expect(marathonShareText(MESSAGES.en, "2026-11-02", free, ORIGIN)).toBe(
-    `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥\nSame songs. Can you beat my 2? 🎯\n${ORIGIN}/marathon?run=s1&beat=2`,
+  const free = {
+    ...marathon([true, true, false], ["en", "he"]),
+    day: "2026-11-02",
+    seed: "s1s1s1s1s1",
+  };
+  expect(marathonShareText(MESSAGES.en, free, ORIGIN)).toBe(
+    `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥\nSame songs. Can you beat my 2? 🎯\n${ORIGIN}/marathon?run=s1s1s1s1s1`,
   );
   const israeli = { ...free, languages: ["he" as const] };
-  expect(marathonShareText(MESSAGES.he, "2026-11-02", israeli, ORIGIN)).toBe(
-    `Spindle מרתון · משחק חופשי · 2 🎵 · רק שירים ישראליים\n🟩🟩🟥\nאותם שירים. תצליחו לעבור את ה־2 שלי? 🎯\n${ORIGIN}/marathon?run=s1&beat=2&songs=he`,
+  expect(marathonShareText(MESSAGES.he, israeli, ORIGIN)).toBe(
+    `Spindle מרתון · משחק חופשי · 2 🎵 · רק שירים ישראליים\n🟩🟩🟥\nאותם שירים. תצליחו לעבור את ה־2 שלי? 🎯\n${ORIGIN}/marathon?run=s1s1s1s1s1&songs=he`,
   );
 });

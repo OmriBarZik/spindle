@@ -1,6 +1,5 @@
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
-import { puzzleNumber } from "./dates";
 import { challengePath } from "./marathonFree";
 import { marathonHits } from "./marathonState";
 import type { MarathonDay, MarathonFreeRun, SortDay } from "./saveData";
@@ -39,12 +38,8 @@ const lines = (...parts: string[]) => parts.join("\n");
 // so the proxy sends each friend to it in their own language.
 
 /** Daily Five share text: head, one square per song, link to the game. */
-export function sortShareText(t: Messages, day: string, sortDay: SortDay, origin: string): string {
-  const head = t.sort.shareHead(
-    puzzleNumber(day),
-    sortHits(sortDay.placements),
-    sortDay.songIds.length,
-  );
+export function sortShareText(t: Messages, sortDay: SortDay, origin: string): string {
+  const head = t.sort.shareHead(sortHits(sortDay.placements), sortDay.songIds.length);
   return lines(`${head}${onlyTag(t, sortDay.languages)}`, sortEmoji(sortDay), `${origin}/sort`);
 }
 
@@ -64,12 +59,11 @@ function squareRows(marathonDay: MarathonDay): string[] {
 
 /**
  * Marathon share text: head with the score, one square per song (ten a row), link. Free play
- * isn't the day's puzzle, so it has no number, says so, and dares friends to beat the score
- * on the same songs: its link carries the run's seed.
+ * isn't the day's puzzle, so it says so and dares friends to beat the score on the same songs:
+ * its link carries only the run's seed (and its song languages).
  */
 export function marathonShareText(
   t: Messages,
-  day: string,
   marathonDay: MarathonDay | MarathonFreeRun,
   origin: string,
 ): string {
@@ -83,18 +77,17 @@ export function marathonShareText(
       `${origin}${challengePath(marathonDay)}`,
     );
   }
-  const head = t.marathon.shareHead(puzzleNumber(day), hits);
+  const head = t.marathon.shareHead(hits);
   return lines(`${head}${tag}`, ...squareRows(marathonDay), `${origin}/marathon`);
 }
 
 /** Daily Timeline share text: head, run length, one square per song, link to the game. */
 export function timelineShareText(
   t: Messages,
-  day: string,
   { songs, wrong, langs }: { songs: number; wrong: boolean; langs: readonly Locale[] },
   origin: string,
 ): string {
-  const head = `${t.timeline.shareHead(puzzleNumber(day))}${onlyTag(t, langs)}`;
+  const head = `${t.timeline.shareHead}${onlyTag(t, langs)}`;
   const squares = "🟩".repeat(songs);
   const link = `${origin}/timeline`;
   return wrong

@@ -15,12 +15,28 @@ import type { MarathonDay, MarathonFreeRun, SaveData } from "./saveData";
  * Free play: once the day's Marathon is over, the player can start another run as often as
  * they like. It isn't tomorrow's or yesterday's run but a detached one with its own random
  * songs, it never counts toward the stats, and it's shared as free play, not as the daily.
- * The share link carries the run's seed, so a friend gets the same songs and a score to beat
+ * The share link carries only the run's seed, so a friend gets the same songs
  * (a challenge). A challenge can be played before the day's run.
  */
 
+const SEED_LENGTH = 10;
+const SEED = /^[a-z0-9]{10}$/;
+
+/**
+ * A seed as `newFreeSeed` makes it: ten lowercase letters and digits. Seeds come from links
+ * and from storage, so anything else is refused.
+ */
+function isValidSeed(seed: unknown): seed is string {
+  return typeof seed === "string" && SEED.test(seed);
+}
+
 function isValidFreeRun(r: Partial<MarathonFreeRun> | undefined): r is MarathonFreeRun {
-  return typeof r?.day === "string" && typeof r.seed === "string" && isValidMarathonDay(r);
+  return (
+    typeof r?.day === "string" &&
+    isValidSeed(r.seed) &&
+    (r.shared === undefined || typeof (r.shared as unknown) === "boolean") &&
+    isValidMarathonDay(r)
+  );
 }
 
 function dailyDone(data: SaveData, day: string): boolean {
@@ -34,7 +50,7 @@ function marathonFreeRun(data: SaveData, day: string): MarathonFreeRun | undefin
   if (!isValidFreeRun(free) || free.day !== day) {
     return undefined;
   }
-  return dailyDone(data, day) || free.beat !== undefined ? free : undefined;
+  return dailyDone(data, day) || free.shared === true ? free : undefined;
 }
 
 /** What the Marathon screen plays, and the day's run beside it. */
@@ -60,7 +76,7 @@ export function marathonRun(data: SaveData, day: string): MarathonRun | undefine
 function withRun(
   data: SaveData,
   day: string,
-  { seed, languages, beat }: { seed: string; languages: Locale[]; beat?: number },
+  { seed, languages, shared }: { seed: string; languages: Locale[]; shared?: boolean },
 ): SaveData {
   const free: MarathonFreeRun = {
     day,
@@ -69,7 +85,7 @@ function withRun(
     languages,
     placements: [],
     skipped: [],
-    ...(beat === undefined ? {} : { beat }),
+    ...(shared ? { shared } : {}),
   };
   return { ...data, marathon: { ...data.marathon, free } };
 }
@@ -82,8 +98,8 @@ export function startFreeMarathon(data: SaveData, day: string, seed: string): Sa
   return withRun(data, day, { seed, languages: [...data.settings.songLanguages] });
 }
 
-/** A friend's run from a shared link: the same songs, and their score to beat. */
-export type MarathonChallenge = { seed: string; languages: Locale[]; beat: number };
+/** A friend's run from a shared link: the same songs. */
+export type MarathonChallenge = { seed: string; languages: Locale[] };
 
 /** Start a friend's run, unless it's already the run on screen (a reload). */
 export function startChallenge(
@@ -95,7 +111,7 @@ export function startChallenge(
   if (!challenge || (free?.day === day && free.seed === challenge.seed)) {
     return data;
   }
-  return withRun(data, day, challenge);
+  return withRun(data, day, { ...challenge, shared: true });
 }
 
 /** Leave free play for the day's run (after a challenge opened before it). */
@@ -120,31 +136,34 @@ export function skipMarathon(data: SaveData, day: string): SaveData {
   return free ? withFree(data, skipInRun(day, free)) : skipMarathonSong(data, day);
 }
 
-/** A seed for a new free-play run, starting with the day (see `marathonFreeSongsFor`). */
-export function newFreeSeed(day: string): string {
-  return `${day}_${Math.random().toString(36).slice(2, 10)}`;
+/** A random seed for a new free-play run. It has nothing to do with the day. */
+export function newFreeSeed(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(SEED_LENGTH));
+  return Array.from(bytes, (b) => (b % 36).toString(36)).join("");
 }
 
-const SEED = /^[\w-]{1,40}$/;
-
-/** The link that opens a free-play run for a friend: its seed, its song languages, the score. */
+/** The link that opens a free-play run for a friend: its seed and song languages. */
 export function challengePath(run: MarathonFreeRun): string {
-  const params = new URLSearchParams({ run: run.seed, beat: String(marathonHits(run)) });
+  const params = new URLSearchParams({ run: run.seed });
   if (run.languages.length < LOCALES.length) {
     params.set("songs", run.languages.join(","));
   }
   return `/marathon?${params.toString()}`;
 }
 
-/** Reads a challenge link's query string; undefined when there's none or it's broken. */
+/**
+ * Reads a challenge link's query string; undefined when there's none or anything in it is off.
+ * The address is anyone's to write, so every part is checked against what Spindle itself
+ * makes: the seed's exact format and only known song languages. Nothing from it is shown on
+ * the page; the seed only picks songs.
+ */
 export function parseChallenge(search: string): MarathonChallenge | undefined {
   const params = new URLSearchParams(search);
-  const seed = params.get("run") ?? "";
-  const beat = Number(params.get("beat") ?? "-");
-  if (!SEED.test(seed) || !Number.isInteger(beat) || beat < 0) {
+  const seed = params.get("run");
+  const asked = params.get("songs")?.split(",") ?? [...LOCALES];
+  const languages = LOCALES.filter((l) => asked.includes(l));
+  if (!isValidSeed(seed) || languages.length !== asked.length) {
     return undefined;
   }
-  const asked = params.get("songs")?.split(",");
-  const languages = LOCALES.filter((l) => !asked || asked.includes(l));
-  return { seed, beat, languages: languages.length > 0 ? languages : [...LOCALES] };
+  return { seed, languages };
 }

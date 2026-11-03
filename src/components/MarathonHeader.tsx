@@ -10,14 +10,14 @@ function intro(t: Messages, run: MarathonDay | MarathonFreeRun) {
   if (!("seed" in run)) {
     return t.marathon.intro(run.anchorYear);
   }
-  return run.beat === undefined
-    ? t.marathon.freeIntro(run.anchorYear)
-    : t.marathon.challengeIntro(run.anchorYear, run.beat);
+  return run.shared
+    ? t.marathon.challengeIntro(run.anchorYear)
+    : t.marathon.freeIntro(run.anchorYear);
 }
 
 /**
  * The title, the run's starting year, the hearts left and the score so far. A free-play run
- * says it isn't the daily marathon, and a friend's run says the score to beat.
+ * says it isn't the daily marathon, and a friend's run says where it came from.
  */
 export function MarathonHeader({
   run,

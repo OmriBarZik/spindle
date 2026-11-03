@@ -81,7 +81,7 @@ export type Messages = {
     score: (hits: number, total: number) => string;
     stats: { played: string; perfect: string; streak: string; bestStreak: string };
     tomorrow: string;
-    shareHead: (n: number, hits: number, total: number) => string;
+    shareHead: (hits: number, total: number) => string;
   };
   settings: {
     name: string;
@@ -107,7 +107,7 @@ export type Messages = {
     final: (hits: number) => string;
     stats: { today: string; best: string; played: string; average: string; run: string };
     tomorrow: string;
-    shareHead: (n: number, hits: number) => string;
+    shareHead: (hits: number) => string;
     /** Free play: another run after the daily one, with its own songs and no stats. */
     playAgain: string;
     freeIntro: (year: number) => ReactNode;
@@ -117,8 +117,7 @@ export type Messages = {
     /** The dare under a free-play share; its link opens the same songs. */
     shareDare: (hits: number) => string;
     /** A run opened from a friend's link. */
-    challengeIntro: (year: number, beat: number) => ReactNode;
-    challengeResult: (hits: number, beat: number) => string;
+    challengeIntro: (year: number) => ReactNode;
     playDaily: string;
   };
   timeline: {
@@ -135,7 +134,7 @@ export type Messages = {
     correctMsg: (songs: number) => string;
     wrongMsg: (title: string, year: number, songs: number) => ReactNode;
     stats: { songs: string; best: string; runs: string; day: string };
-    shareHead: (n: number) => string;
+    shareHead: string;
     shareEnded: (songs: number) => string;
     shareAlive: (songs: number) => string;
   };
@@ -244,7 +243,7 @@ const en: Messages = {
     score: (hits, total) => `${hits} / ${total} placed right`,
     stats: { played: "Played", perfect: "Perfect", streak: "Streak", bestStreak: "Best streak" },
     tomorrow: "New songs tomorrow.",
-    shareHead: (n, hits, total) => `Spindle Daily Five #${n} ${hits}/${total}`,
+    shareHead: (hits, total) => `Spindle Daily Five ${hits}/${total}`,
   },
   settings: {
     name: "Settings",
@@ -278,7 +277,7 @@ const en: Messages = {
     final: (hits) => `${enSongs(hits)} placed right`,
     stats: { today: "Today", best: "Best", played: "Played", average: "Average", run: "This run" },
     tomorrow: "A new marathon tomorrow.",
-    shareHead: (n, hits) => `Spindle Marathon #${n} · ${hits} 🎵`,
+    shareHead: (hits) => `Spindle Marathon · ${hits} 🎵`,
     playAgain: "Play again",
     freeIntro: (year) => (
       <>
@@ -291,21 +290,13 @@ const en: Messages = {
     shareFree: "Challenge a friend",
     freeShareHead: (hits) => `Spindle Marathon · Free play · ${hits} 🎵`,
     shareDare: (hits) => `Same songs. Can you beat my ${hits}? 🎯`,
-    challengeIntro: (year, beat) => (
+    challengeIntro: (year) => (
       <>
-        <b className="text-ink">Challenge:</b> a friend placed <b className="text-ink">{beat}</b> of
-        these songs right. Can you beat it? Free play, so it doesn&apos;t count toward your stats.
-        Your line starts at <b className="text-ink">{year}</b>.
+        <b className="text-ink">Challenge:</b> a friend sent you the songs they played. How many can
+        you place right? Free play, so it doesn&apos;t count toward your stats. Your line starts at{" "}
+        <b className="text-ink">{year}</b>.
       </>
     ),
-    challengeResult: (hits, beat) => {
-      if (hits > beat) {
-        return `You beat your friend's ${beat}! 🏆`;
-      }
-      return hits === beat
-        ? `A tie with your friend's ${beat}.`
-        : `Your friend's ${beat} still stands.`;
-    },
     playDaily: "Play today's marathon",
   },
   timeline: {
@@ -329,7 +320,7 @@ const en: Messages = {
       </>
     ),
     stats: { songs: "Songs", best: "Best", runs: "Runs", day: "Day" },
-    shareHead: (n) => `Spindle Timeline #${n}`,
+    shareHead: "Spindle Timeline",
     shareEnded: (songs) => `❌ Timeline ended at ${enSongs(songs)}`,
     shareAlive: (songs) => `🔥 ${enSongs(songs)} and counting`,
   },
@@ -437,7 +428,7 @@ const he: Messages = {
     score: (hits, total) => `${hits} / ${total} במקום הנכון`,
     stats: { played: "משחקים", perfect: "מושלמים", streak: "רצף", bestStreak: "רצף שיא" },
     tomorrow: "שירים חדשים מחר.",
-    shareHead: (n, hits, total) => `Spindle החמישייה היומית #${n} ${hits}/${total}`,
+    shareHead: (hits, total) => `Spindle החמישייה היומית ${hits}/${total}`,
   },
   settings: {
     name: "הגדרות",
@@ -471,7 +462,7 @@ const he: Messages = {
     final: (hits) => `${heSongs(hits)} במקום הנכון`,
     stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע", run: "הסבב הזה" },
     tomorrow: "מרתון חדש מחר.",
-    shareHead: (n, hits) => `Spindle מרתון #${n} · ${hits} 🎵`,
+    shareHead: (hits) => `Spindle מרתון · ${hits} 🎵`,
     playAgain: "שחקו שוב",
     freeIntro: (year) => (
       <>
@@ -483,19 +474,13 @@ const he: Messages = {
     shareFree: "אתגרו חברים",
     freeShareHead: (hits) => `Spindle מרתון · משחק חופשי · ${hits} 🎵`,
     shareDare: (hits) => `אותם שירים. תצליחו לעבור את ה־${hits} שלי? 🎯`,
-    challengeIntro: (year, beat) => (
+    challengeIntro: (year) => (
       <>
-        <b className="text-ink">אתגר:</b> חבר או חברה שיבצו נכון <b className="text-ink">{beat}</b>{" "}
-        מהשירים האלה. תצליחו לעבור אותם? זה משחק חופשי, והוא לא נספר בסטטיסטיקה. הציר שלכם מתחיל ב־
+        <b className="text-ink">אתגר:</b> חבר או חברה שלחו לכם את השירים ששיחקו. כמה מהם תשבצו נכון?
+        זה משחק חופשי, והוא לא נספר בסטטיסטיקה. הציר שלכם מתחיל ב־
         <b className="text-ink">{year}</b>.
       </>
     ),
-    challengeResult: (hits, beat) => {
-      if (hits > beat) {
-        return `עברתם את ה־${beat} של החברים! 🏆`;
-      }
-      return hits === beat ? `תיקו עם ה־${beat} של החברים.` : `ה־${beat} של החברים עדיין מחזיק.`;
-    },
     playDaily: "למרתון של היום",
   },
   timeline: {
@@ -518,7 +503,7 @@ const he: Messages = {
       </>
     ),
     stats: { songs: "שירים", best: "שיא", runs: "סבבים", day: "יום" },
-    shareHead: (n) => `Spindle ציר הזמן #${n}`,
+    shareHead: "Spindle ציר הזמן",
     shareEnded: (songs) => `❌ ציר הזמן נגמר אחרי ${heSongs(songs)}`,
     shareAlive: (songs) => `🔥 ${heSongs(songs)} וממשיכים`,
   },

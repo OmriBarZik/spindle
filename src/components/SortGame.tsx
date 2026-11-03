@@ -114,7 +114,7 @@ export function SortGame() {
       )}
 
       {done ? (
-        <SortResult day={day} state={state} stats={data.sort.stats} score={score} />
+        <SortResult state={state} stats={data.sort.stats} score={score} />
       ) : (
         <>
           <PlaceButton

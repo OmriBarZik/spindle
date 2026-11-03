@@ -53,8 +53,8 @@ export type MarathonFreeRun = MarathonDay & {
   day: string;
   /** Picks the run's songs (`marathonFreeSongsFor`); shared links carry it. */
   seed: string;
-  /** Opened from a friend's link: the score to beat. */
-  beat?: number;
+  /** Opened from a friend's link (so it can be played before the day's run). */
+  shared?: boolean;
 };
 
 export type MarathonStats = {

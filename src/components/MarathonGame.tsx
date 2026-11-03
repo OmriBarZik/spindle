@@ -74,7 +74,7 @@ export function MarathonGame() {
   };
 
   const playAgain = () => {
-    const seed = newFreeSeed(day);
+    const seed = newFreeSeed();
     update((d) => startFreeMarathon(d, day, seed));
     setSlot(null);
     track("play_again", { mode: "marathon" });
@@ -138,7 +138,6 @@ export function MarathonGame() {
 
       {done ? (
         <MarathonResult
-          day={day}
           run={run}
           stats={data.marathon.stats}
           title={title}
