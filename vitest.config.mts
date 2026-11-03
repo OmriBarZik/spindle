@@ -1,4 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { fileURLToPath } from "node:url";
 import type { CDPSession } from "playwright";
@@ -12,7 +13,13 @@ const browserProject = {
   resolve: { alias },
   // next/link reads a few of Next's build flags; a browser has no `process`.
   define: { "process.env": {} },
-  plugins: [tailwindcss()],
+  // The compiled components import this; listing it saves Vite a reload on the first run.
+  optimizeDeps: { include: ["react/compiler-runtime"] },
+  plugins: [
+    tailwindcss(),
+    // The React Compiler, as in the Next build, so tests (and the swipe timing) run the same code.
+    react({ compiler: true }),
+  ],
 };
 
 type ColorScheme = "light" | "dark";

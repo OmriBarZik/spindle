@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  reactCompiler: true,
+  experimental: { turbopackRustReactCompiler: true },
   headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
