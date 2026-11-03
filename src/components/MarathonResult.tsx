@@ -59,14 +59,10 @@ export function MarathonResult({
 }) {
   const { t } = useI18n();
   const free = daily !== null;
-  const beat = "seed" in state ? state.beat : undefined;
   return (
     <ResultCard>
       <div className="text-2xl font-bold">{title}</div>
       <div className="text-lg">{score}</div>
-      {beat === undefined ? null : (
-        <p className="font-bold">{t.marathon.challengeResult(hits, beat)}</p>
-      )}
       <Stats items={statItems(t, stats, hits, daily)} />
       <ShareButton
         mode="marathon"

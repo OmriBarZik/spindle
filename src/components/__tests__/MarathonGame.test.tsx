@@ -149,7 +149,7 @@ it("plays again after the day's run, as free play that doesn't count", async () 
   const seed = savedData().marathon.free!.seed;
   await vi.waitFor(() =>
     expect(copied).toEqual([
-      `Spindle Marathon · Free play · 1 🎵\n🟩🟥🟥🟥\nSame songs. Can you beat my 1? 🎯\n${window.location.origin}/marathon?run=${seed}&beat=1`,
+      `Spindle Marathon · Free play · 1 🎵\n🟩🟥🟥🟥\nSame songs. Can you beat my 1? 🎯\n${window.location.origin}/marathon?run=${seed}`,
     ]),
   );
   expect(trackedEvents()).toContainEqual(["play_again", { mode: "marathon" }]);
@@ -165,12 +165,12 @@ it("plays again after the day's run, as free play that doesn't count", async () 
   expect(container.textContent).toContain("Score: 0");
 });
 
-it("opens a friend's challenge link: their songs, their score to beat", async () => {
+it("opens a friend's challenge link: the same songs, from the seed alone", async () => {
   const seed = "friend1234";
-  window.history.replaceState(null, "", `/en/marathon?run=${seed}&beat=1`);
+  window.history.replaceState(null, "", `/en/marathon?run=${seed}`);
   const { container } = renderIn("en", <MarathonGame />);
-  expect(container.textContent).toContain("Challenge: a friend placed 1 of these songs right");
-  expect(savedData().marathon.free).toMatchObject({ seed, beat: 1, placements: [] });
+  expect(container.textContent).toContain("Challenge: a friend sent you the songs they played");
+  expect(savedData().marathon.free).toMatchObject({ seed, shared: true, placements: [] });
   // The link is used up, so a reload after "Play again" won't bring it back.
   expect(window.location.search).toBe("");
   expect(trackedEvents()).toContainEqual(["challenge_open", { mode: "marathon" }]);
@@ -178,7 +178,7 @@ it("opens a friend's challenge link: their songs, their score to beat", async ()
   for (const right of [true, true, false, false, false]) {
     await place(right, container);
   }
-  expect(container.textContent).toContain("You beat your friend's 1! 🏆");
+  expect(container.textContent).toContain("2 songs placed right");
   await expectAccessible(container);
   // The day's own run is still waiting.
   expect(savedData().marathon.days[DAY]!.placements).toEqual([]);

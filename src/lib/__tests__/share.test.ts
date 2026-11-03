@@ -55,10 +55,10 @@ it("formats a free-play Marathon as a challenge, without the day's number", () =
     seed: "s1s1s1s1s1",
   };
   expect(marathonShareText(MESSAGES.en, free, ORIGIN)).toBe(
-    `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥\nSame songs. Can you beat my 2? 🎯\n${ORIGIN}/marathon?run=s1s1s1s1s1&beat=2`,
+    `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥\nSame songs. Can you beat my 2? 🎯\n${ORIGIN}/marathon?run=s1s1s1s1s1`,
   );
   const israeli = { ...free, languages: ["he" as const] };
   expect(marathonShareText(MESSAGES.he, israeli, ORIGIN)).toBe(
-    `Spindle מרתון · משחק חופשי · 2 🎵 · רק שירים ישראליים\n🟩🟩🟥\nאותם שירים. תצליחו לעבור את ה־2 שלי? 🎯\n${ORIGIN}/marathon?run=s1s1s1s1s1&beat=2&songs=he`,
+    `Spindle מרתון · משחק חופשי · 2 🎵 · רק שירים ישראליים\n🟩🟩🟥\nאותם שירים. תצליחו לעבור את ה־2 שלי? 🎯\n${ORIGIN}/marathon?run=s1s1s1s1s1&songs=he`,
   );
 });

@@ -117,8 +117,7 @@ export type Messages = {
     /** The dare under a free-play share; its link opens the same songs. */
     shareDare: (hits: number) => string;
     /** A run opened from a friend's link. */
-    challengeIntro: (year: number, beat: number) => ReactNode;
-    challengeResult: (hits: number, beat: number) => string;
+    challengeIntro: (year: number) => ReactNode;
     playDaily: string;
   };
   timeline: {
@@ -291,21 +290,13 @@ const en: Messages = {
     shareFree: "Challenge a friend",
     freeShareHead: (hits) => `Spindle Marathon · Free play · ${hits} 🎵`,
     shareDare: (hits) => `Same songs. Can you beat my ${hits}? 🎯`,
-    challengeIntro: (year, beat) => (
+    challengeIntro: (year) => (
       <>
-        <b className="text-ink">Challenge:</b> a friend placed <b className="text-ink">{beat}</b> of
-        these songs right. Can you beat it? Free play, so it doesn&apos;t count toward your stats.
-        Your line starts at <b className="text-ink">{year}</b>.
+        <b className="text-ink">Challenge:</b> a friend sent you the songs they played. How many can
+        you place right? Free play, so it doesn&apos;t count toward your stats. Your line starts at{" "}
+        <b className="text-ink">{year}</b>.
       </>
     ),
-    challengeResult: (hits, beat) => {
-      if (hits > beat) {
-        return `You beat your friend's ${beat}! 🏆`;
-      }
-      return hits === beat
-        ? `A tie with your friend's ${beat}.`
-        : `Your friend's ${beat} still stands.`;
-    },
     playDaily: "Play today's marathon",
   },
   timeline: {
@@ -483,19 +474,13 @@ const he: Messages = {
     shareFree: "אתגרו חברים",
     freeShareHead: (hits) => `Spindle מרתון · משחק חופשי · ${hits} 🎵`,
     shareDare: (hits) => `אותם שירים. תצליחו לעבור את ה־${hits} שלי? 🎯`,
-    challengeIntro: (year, beat) => (
+    challengeIntro: (year) => (
       <>
-        <b className="text-ink">אתגר:</b> חבר או חברה שיבצו נכון <b className="text-ink">{beat}</b>{" "}
-        מהשירים האלה. תצליחו לעבור אותם? זה משחק חופשי, והוא לא נספר בסטטיסטיקה. הציר שלכם מתחיל ב־
+        <b className="text-ink">אתגר:</b> חבר או חברה שלחו לכם את השירים ששיחקו. כמה מהם תשבצו נכון?
+        זה משחק חופשי, והוא לא נספר בסטטיסטיקה. הציר שלכם מתחיל ב־
         <b className="text-ink">{year}</b>.
       </>
     ),
-    challengeResult: (hits, beat) => {
-      if (hits > beat) {
-        return `עברתם את ה־${beat} של החברים! 🏆`;
-      }
-      return hits === beat ? `תיקו עם ה־${beat} של החברים.` : `ה־${beat} של החברים עדיין מחזיק.`;
-    },
     playDaily: "למרתון של היום",
   },
   timeline: {

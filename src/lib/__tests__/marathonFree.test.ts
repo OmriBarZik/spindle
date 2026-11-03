@@ -105,47 +105,40 @@ it("challenge: the link carries the seed, the score and single song languages", 
   let d = startFreeMarathon(dailyDone(), DAY, SEED);
   d = placeNext(d, DAY, true);
   const run = d.marathon.free!;
-  expect(challengePath(run)).toBe(`/marathon?run=${SEED}&beat=1`);
+  expect(challengePath(run)).toBe(`/marathon?run=${SEED}`);
   expect(parseChallenge(challengePath(run).split("?")[1]!)).toEqual({
     seed: SEED,
-    beat: 1,
     languages: ["en", "he"],
   });
   const israeli = { ...run, languages: ["he" as const] };
-  expect(challengePath(israeli)).toBe(`/marathon?run=${SEED}&beat=1&songs=he`);
-  expect(parseChallenge(`?run=${SEED}&beat=4&songs=he`)).toEqual({
+  expect(challengePath(israeli)).toBe(`/marathon?run=${SEED}&songs=he`);
+  expect(parseChallenge(`?run=${SEED}&songs=he`)).toEqual({
     seed: SEED,
-    beat: 4,
     languages: ["he"],
   });
 });
 
 it.for([
   { name: "no link", search: "" },
-  { name: "no score", search: `?run=${SEED}` },
-  { name: "a negative score", search: `?run=${SEED}&beat=-1` },
-  { name: "a fraction", search: `?run=${SEED}&beat=1.5` },
-  { name: "an empty score", search: `?run=${SEED}&beat=` },
-  { name: "a hex score", search: `?run=${SEED}&beat=0x10` },
-  { name: "a score above the catalog", search: `?run=${SEED}&beat=9999` },
-  { name: "a short seed", search: "?run=abc&beat=2" },
-  { name: "a seed with capitals", search: "?run=ABC123XYZ0&beat=2" },
-  { name: "markup in the seed", search: `?run=${SEED}%3Cscript%3E&beat=2` },
-  { name: "a long seed", search: `?run=${SEED}${"a".repeat(20)}&beat=2` },
-  { name: "markup in the score", search: `?run=${SEED}&beat=%3Cimg%20src%3Dx%3E` },
-  { name: "an unknown song language", search: `?run=${SEED}&beat=2&songs=he,xx` },
-  { name: "no song languages", search: `?run=${SEED}&beat=2&songs=` },
+  { name: "an empty seed", search: "?run=" },
+  { name: "a short seed", search: "?run=abc" },
+  { name: "a seed with capitals", search: "?run=ABC123XYZ0" },
+  { name: "markup in the seed", search: `?run=${SEED}%3Cscript%3E` },
+  { name: "only markup", search: "?run=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E" },
+  { name: "a long seed", search: `?run=${SEED}${"a".repeat(20)}` },
+  { name: "an unknown song language", search: `?run=${SEED}&songs=he,xx` },
+  { name: "no song languages", search: `?run=${SEED}&songs=` },
 ])("challenge: ignores $name", ({ search }) => {
   expect(parseChallenge(search)).toBeUndefined();
 });
 
 it("challenge: plays a friend's run before the day's, then goes back to the day's run", () => {
-  const challenge = { seed: SEED, beat: 3, languages: ["he" as const] };
+  const challenge = { seed: SEED, languages: ["he" as const] };
   const fresh = ensureMarathonDay(emptySave(), DAY);
   let d = startChallenge(fresh, DAY, challenge);
   const run = marathonRun(d, DAY)!;
   expect(run).toMatchObject({ daily: 0, dailyDone: false });
-  expect(run.state).toMatchObject({ seed: SEED, beat: 3, languages: ["he"] });
+  expect(run.state).toMatchObject({ seed: SEED, shared: true, languages: ["he"] });
   expect(marathonCurrent(DAY, run.state)?.id).toBe(marathonFreeSongsFor(SEED, ["he"])[0]!.id);
   // Opening the same link again (a reload) keeps the run going.
   d = placeNext(d, DAY, true);
@@ -168,8 +161,8 @@ it("challenge: a hand-edited save with a broken free run is ignored", () => {
   const free = done.marathon.free!;
   for (const broken of [
     { ...free, seed: "<script>" },
-    { ...free, beat: -3 },
-    { ...free, beat: "<b>1</b>" },
+    { ...free, seed: 7 },
+    { ...free, shared: "<b>yes</b>" },
   ]) {
     const d = { ...done, marathon: { ...done.marathon, free: broken as MarathonFreeRun } };
     expect(marathonRun(d, DAY)!.state).toBe(d.marathon.days[DAY]);

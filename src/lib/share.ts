@@ -60,7 +60,7 @@ function squareRows(marathonDay: MarathonDay): string[] {
 /**
  * Marathon share text: head with the score, one square per song (ten a row), link. Free play
  * isn't the day's puzzle, so it says so and dares friends to beat the score on the same songs:
- * its link carries the run's seed.
+ * its link carries only the run's seed (and its song languages).
  */
 export function marathonShareText(
   t: Messages,
