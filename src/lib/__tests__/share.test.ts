@@ -53,3 +53,13 @@ it("formats a Marathon result, ten squares a row", () => {
     ),
   ).toBe(`Spindle מרתון #1 · 0 🎵\n🟥🟥🟥\n${ORIGIN}/marathon`);
 });
+
+it("formats a free-play Marathon without the day's number, so it isn't taken for the daily", () => {
+  const free = { ...marathon([true, true, false], ["en", "he"]), day: "2026-11-02", seed: "abc" };
+  expect(marathonShareText(MESSAGES.en, "2026-11-02", free, ORIGIN)).toBe(
+    `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥\n${ORIGIN}/marathon`,
+  );
+  expect(marathonShareText(MESSAGES.he, "2026-11-02", free, ORIGIN)).toBe(
+    `Spindle מרתון · משחק חופשי · 2 🎵\n🟩🟩🟥\n${ORIGIN}/marathon`,
+  );
+});

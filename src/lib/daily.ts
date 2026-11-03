@@ -106,6 +106,35 @@ export function marathonAnchorYearFor(day: string, langs?: readonly Locale[]): n
   return pick?.year ?? FALLBACK_YEAR;
 }
 
+/**
+ * A free-play Marathon's songs: the catalog in the run's own random order (`seed` is made
+ * when the player presses "Play again"), without the day's Daily Five songs.
+ */
+export function marathonFreeSongsFor(day: string, seed: string, langs?: readonly Locale[]): Song[] {
+  const key = `${day}|${seed}|${(langs ?? LOCALES).join(",")}`;
+  if (freeCache?.key !== key) {
+    const five = new Set(sortSongsFor(day, langs).map((s) => s.id));
+    freeCache = {
+      key,
+      songs: shuffled(`marathon-free:${seed}`, langs).filter((s) => !five.has(s.id)),
+    };
+  }
+  return freeCache.songs;
+}
+
+let freeCache: { key: string; songs: Song[] } | null = null;
+
+/** A free-play Marathon's starting year, different from its first song's year. */
+export function marathonFreeAnchorYearFor(
+  day: string,
+  seed: string,
+  langs?: readonly Locale[],
+): number {
+  const first = marathonFreeSongsFor(day, seed, langs)[0];
+  const pick = shuffled(`marathon-free-anchor:${seed}`, langs).find((s) => s.year !== first?.year);
+  return pick?.year ?? FALLBACK_YEAR;
+}
+
 /** Starting year for a new Daily Timeline, different from the first song's year. */
 export function timelineAnchorYearFor(
   day: string,

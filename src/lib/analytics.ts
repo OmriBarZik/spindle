@@ -19,13 +19,16 @@ type Events = {
   song_place: { mode: GameMode; turn: number; correct: boolean };
   /**
    * The day's game is over: Daily Five has placed all five songs; a Marathon has lost its
-   * last heart. `score` is how many songs were placed right.
+   * last heart (`free_play` when it was an extra run after the daily one). `score` is how many
+   * songs were placed right.
    */
   game_complete:
     | { mode: "daily_five"; score: number; total: number; perfect: boolean }
-    | { mode: "marathon"; score: number };
+    | { mode: "marathon"; score: number; free_play: boolean };
   /** Daily Timeline (hidden page): a wrong guess ended the run. `songs` is how many it had placed. */
   run_end: { mode: "timeline"; songs: number };
+  /** After the day's Marathon, the player started a free-play run ("Play again"). */
+  play_again: { mode: "marathon" };
   /** The current video wouldn't play, so the player asked for another. */
   song_skip: { mode: "marathon" | "timeline" };
   /** The share button. `method` is what happened (GA's recommended `share` event). */

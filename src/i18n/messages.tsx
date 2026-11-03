@@ -105,9 +105,15 @@ export type Messages = {
     over: string;
     ranOut: string;
     final: (hits: number) => string;
-    stats: { today: string; best: string; played: string; average: string };
+    stats: { today: string; best: string; played: string; average: string; run: string };
     tomorrow: string;
     shareHead: (n: number, hits: number) => string;
+    /** Free play: another run after the daily one, with its own songs and no stats. */
+    playAgain: string;
+    freeIntro: (year: number) => ReactNode;
+    freeNote: string;
+    shareFree: string;
+    freeShareHead: (hits: number) => string;
   };
   timeline: {
     name: string;
@@ -264,9 +270,20 @@ const en: Messages = {
     over: "Out of hearts!",
     ranOut: "You placed every song we have!",
     final: (hits) => `${enSongs(hits)} placed right`,
-    stats: { today: "Today", best: "Best", played: "Played", average: "Average" },
+    stats: { today: "Today", best: "Best", played: "Played", average: "Average", run: "This run" },
     tomorrow: "A new marathon tomorrow.",
     shareHead: (n, hits) => `Spindle Marathon #${n} · ${hits} 🎵`,
+    playAgain: "Play again",
+    freeIntro: (year) => (
+      <>
+        <b className="text-ink">Free play</b>, just for fun: it isn&apos;t the daily marathon and
+        doesn&apos;t count toward your stats. Your line starts at <b className="text-ink">{year}</b>
+        .
+      </>
+    ),
+    freeNote: "Free play doesn't count toward your stats. A new daily marathon tomorrow.",
+    shareFree: "Share free play",
+    freeShareHead: (hits) => `Spindle Marathon · Free play · ${hits} 🎵`,
   },
   timeline: {
     name: "Daily Timeline",
@@ -429,9 +446,19 @@ const he: Messages = {
     over: "נגמרו הלבבות!",
     ranOut: "שיבצתם את כל השירים שיש לנו!",
     final: (hits) => `${heSongs(hits)} במקום הנכון`,
-    stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע" },
+    stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע", run: "הסבב הזה" },
     tomorrow: "מרתון חדש מחר.",
     shareHead: (n, hits) => `Spindle מרתון #${n} · ${hits} 🎵`,
+    playAgain: "שחקו שוב",
+    freeIntro: (year) => (
+      <>
+        <b className="text-ink">משחק חופשי</b>, סתם בשביל הכיף: זה לא המרתון היומי והוא לא נספר
+        בסטטיסטיקה. הציר שלכם מתחיל ב־<b className="text-ink">{year}</b>.
+      </>
+    ),
+    freeNote: "משחק חופשי לא נספר בסטטיסטיקה. מרתון יומי חדש מחר.",
+    shareFree: "שיתוף המשחק החופשי",
+    freeShareHead: (hits) => `Spindle מרתון · משחק חופשי · ${hits} 🎵`,
   },
   timeline: {
     name: "ציר הזמן היומי",

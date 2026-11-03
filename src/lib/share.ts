@@ -2,7 +2,7 @@ import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 import { puzzleNumber } from "./dates";
 import { marathonHits } from "./marathonState";
-import type { MarathonDay, SortDay } from "./saveData";
+import type { MarathonDay, MarathonFreeRun, SortDay } from "./saveData";
 import { sortHits } from "./sortState";
 
 /** Shares through the phone's share sheet, or copies to the clipboard elsewhere. */
@@ -53,14 +53,18 @@ export function sortEmoji(sortDay: SortDay): string {
 
 const SQUARES_PER_ROW = 10;
 
-/** Marathon share text: head with the score, one square per song (ten a row), link. */
+/** Marathon share text (daily or free play): head with the score, one square per song (ten a row), link. */
 export function marathonShareText(
   t: Messages,
   day: string,
-  marathonDay: MarathonDay,
+  marathonDay: MarathonDay | MarathonFreeRun,
   origin: string,
 ): string {
-  const head = t.marathon.shareHead(puzzleNumber(day), marathonHits(marathonDay));
+  // Free play isn't the day's puzzle, so it has no number and says so.
+  const head =
+    "seed" in marathonDay
+      ? t.marathon.freeShareHead(marathonHits(marathonDay))
+      : t.marathon.shareHead(puzzleNumber(day), marathonHits(marathonDay));
   const squares = marathonDay.placements.map((p) => (p.correct ? "🟩" : "🟥"));
   const rows = Array.from({ length: Math.ceil(squares.length / SQUARES_PER_ROW) }, (_, i) =>
     squares.slice(i * SQUARES_PER_ROW, (i + 1) * SQUARES_PER_ROW).join(""),

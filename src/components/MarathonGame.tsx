@@ -16,13 +16,18 @@ import { useGameScreen } from "@/hooks/useGameScreen";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import {
+  marathonRun,
+  newFreeSeed,
+  placeMarathon,
+  skipMarathon,
+  startFreeMarathon,
+} from "@/lib/marathonFree";
+import {
   ensureMarathonDay,
   marathonEndText,
   marathonOpenEvent,
   marathonOutcome,
   marathonView,
-  placeMarathonSong,
-  skipMarathonSong,
 } from "@/lib/marathonState";
 import { hasHeard } from "@/lib/player";
 import { sortLineItems } from "@/lib/sortState";
@@ -30,7 +35,8 @@ import { recordSlot } from "@/lib/timeline";
 
 /**
  * Marathon: place songs on one growing line for as long as you can. Each wrong
- * placement costs a heart; when the last one goes, the day's score is final.
+ * placement costs a heart; when the last one goes, the day's score is final. After that,
+ * "Play again" starts free-play runs with their own songs, which don't count.
  */
 export function MarathonGame() {
   const { t } = useI18n();
@@ -42,10 +48,12 @@ export function MarathonGame() {
   useDropRecordFlight();
 
   // `ensureMarathonDay` always prepares today, so this is only a type guard.
-  const state = data.marathon.days[day];
-  if (!state) {
+  const run = marathonRun(data, day);
+  if (!run) {
     return null;
   }
+  const { state, daily } = run;
+  const free = daily !== null;
 
   const { done, line, turn, current, last, lastCorrect, hits, hearts, lastAt } = marathonView(
     day,
@@ -63,18 +71,26 @@ export function MarathonGame() {
       return;
     }
     player.stop();
-    const { correct, ends, score: final } = marathonOutcome(data, day, where);
+    const { correct, ends, score: final } = marathonOutcome(day, state, where);
     setSwap({ correct, kind: ends ? "last" : "next" });
     track("song_place", { mode: "marathon", turn: turn + 1, correct });
     if (ends) {
-      track("game_complete", { mode: "marathon", score: final });
+      track("game_complete", { mode: "marathon", score: final, free_play: free });
     }
-    update((d) => placeMarathonSong(d, day, where));
+    update((d) => placeMarathon(d, day, where));
     setSlot(null);
   };
 
+  const playAgain = () => {
+    const seed = newFreeSeed();
+    update((d) => startFreeMarathon(d, day, seed));
+    setSlot(null);
+    track("play_again", { mode: "marathon" });
+    window.scrollTo({ top: 0 });
+  };
+
   const skip = () => {
-    update((d) => skipMarathonSong(d, day));
+    update((d) => skipMarathon(d, day));
     track("song_skip", { mode: "marathon" });
   };
 
@@ -93,7 +109,7 @@ export function MarathonGame() {
 
   return (
     <ScreenMain game="marathon">
-      <MarathonHeader anchorYear={state.anchorYear} hearts={hearts} hits={hits} />
+      <MarathonHeader anchorYear={state.anchorYear} hearts={hearts} hits={hits} free={free} />
 
       <Announce>
         {done ? (
@@ -130,6 +146,8 @@ export function MarathonGame() {
           title={title}
           score={score}
           hits={hits}
+          daily={daily}
+          onPlayAgain={playAgain}
         />
       ) : (
         <>
