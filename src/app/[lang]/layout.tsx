@@ -3,11 +3,11 @@ import type { Metadata, Viewport } from "next";
 import { Heebo, Roboto, Roboto_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { lang as langParam } from "next/root-params";
-import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { GoogleAnalytics } from "@/components/site/GoogleAnalytics";
 import { dirOf, hasLocale, localeParams, localePath, LOCALES } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { MESSAGES } from "@/i18n/messages";
-import { PALETTE } from "@/lib/palette";
+import { PALETTE } from "@/lib/display/palette";
 
 const roboto = Roboto({
   variable: "--font-roboto",

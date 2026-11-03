@@ -1,5 +1,8 @@
 /** House rules that oxlint has no built-in rule for (see `.claude/rules/code-style.md`). */
 
+import { readdirSync } from "node:fs";
+import { dirname } from "node:path";
+
 const isJsx = (node) => node.type === "JSXElement" || node.type === "JSXFragment";
 
 const noJsxAnd = {
@@ -70,6 +73,31 @@ const specificFileName = {
           context.report({
             node,
             message: `"${base}" says nothing about the file: name it after what it holds.`,
+          });
+        }
+      },
+    };
+  },
+};
+
+const MAX_FILES_PER_FOLDER = 7;
+
+const maxFilesPerFolder = {
+  meta: {
+    type: "suggestion",
+    docs: { description: "Group files in folders: at most 7 per folder" },
+  },
+  create(context) {
+    return {
+      Program(node) {
+        // Files only (not subfolders or dotfiles such as .DS_Store).
+        const count = readdirSync(dirname(context.filename), { withFileTypes: true }).filter(
+          (entry) => entry.isFile() && !entry.name.startsWith("."),
+        ).length;
+        if (count > MAX_FILES_PER_FOLDER) {
+          context.report({
+            node,
+            message: `This folder holds ${count} files (at most ${MAX_FILES_PER_FOLDER}): group them in subfolders by feature.`,
           });
         }
       },
@@ -170,6 +198,7 @@ const noRawStyle = {
 export default {
   meta: { name: "spindle" },
   rules: {
+    "max-files-per-folder": maxFilesPerFolder,
     "no-barrel": noBarrel,
     "no-describe": noDescribe,
     "no-jsx-and": noJsxAnd,

@@ -1,0 +1,138 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { Deck } from "@/components/deck/Deck";
+import { Announce } from "@/components/game/Announce";
+import { KeyHints } from "@/components/game/KeyHints";
+import { PlaceButton } from "@/components/game/PlaceButton";
+import { ScreenMain } from "@/components/game/ScreenMain";
+import { SwipeLine } from "@/components/swipe/SwipeLine";
+import { TimelineHeader } from "@/components/timeline/TimelineHeader";
+import { TimelineResult } from "@/components/timeline/TimelineResult";
+import { useGameScreen } from "@/hooks/game/useGameScreen";
+import { useI18n } from "@/i18n/I18nProvider";
+import { getSong, songNames } from "@/lib/catalog/songs";
+import {
+  ensureTimelineDay,
+  placeTimelineCard,
+  skipTimelineSong,
+  timelineAnswerAt,
+  timelineLineItems,
+  timelineOpenEvent,
+  timelineView,
+} from "@/lib/games/timelineState";
+import { defaultSlot, isSlotCorrect } from "@/lib/line/timeline";
+import { track } from "@/lib/services/analytics";
+import { hasHeard } from "@/lib/services/player";
+
+export function TimelineGame() {
+  const { lang, t } = useI18n();
+  const { day, data, update, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
+    ensureTimelineDay,
+    timelineOpenEvent,
+  );
+
+  const { timeline } = data;
+  const { cards, today } = timeline;
+  const song = getSong(today?.songId);
+  if (!today || !song) {
+    return <main className="p-400 text-center text-muted">{t.timeline.noSong}</main>;
+  }
+
+  const { pending, wrong, songs, dayNumber, firstDayYear } = timelineView(timeline, today);
+
+  const items = timelineLineItems(cards, today, song, t.timeline.belongsHere);
+  // Today's card once answered: the line centers on it.
+  const answerAt = timelineAnswerAt(items, pending);
+  // While the record glows, the line holds still with today's card beside it.
+  const placing = pending || Boolean(swap);
+  const at = answerAt >= 0 ? answerAt + 1 : (slot ?? defaultSlot(cards.length));
+
+  const place = (where: number) => {
+    if (!pending) {
+      return;
+    }
+    player.stop();
+    const correct = isSlotCorrect(cards, where, song.year);
+    setSwap({ correct, kind: "flash" });
+    track("song_place", { mode: "timeline", turn: songs + 1, correct });
+    if (!correct) {
+      track("run_end", { mode: "timeline", songs });
+    }
+    update((d) => placeTimelineCard(d, day, where));
+  };
+
+  const skip = () => {
+    update((d) => skipTimelineSong(d, day));
+    track("song_skip", { mode: "timeline" });
+  };
+
+  const resultTitle = wrong ? t.timeline.notQuite : t.timeline.nailed;
+  const resultText = wrong
+    ? t.timeline.wrongMsg(songNames(song, lang).title, song.year, songs)
+    : t.timeline.correctMsg(songs);
+
+  const swipeLine = (record: ReactNode) => (
+    <SwipeLine
+      items={items}
+      slot={placing ? at : null}
+      onSlot={setSlot}
+      focus={Math.max(0, answerAt)}
+      record={record}
+      live={live}
+      reveal={!pending}
+    />
+  );
+
+  return (
+    <ScreenMain game="timeline">
+      <TimelineHeader
+        pending={pending}
+        firstDayYear={firstDayYear}
+        dayNumber={dayNumber}
+        best={timeline.best}
+      />
+
+      <Deck
+        player={player}
+        videoId={song.youtubeId}
+        start={song.start}
+        label={pending ? t.timeline.today : String(song.year)}
+        onSkip={pending ? skip : undefined}
+        onPlay={() => track("song_play", { mode: "timeline", turn: songs + 1 })}
+        swap={swap}
+        onSwapEnd={() => setSwap(null)}
+        around={swipeLine}
+      />
+
+      <Announce>
+        {pending ? null : (
+          <>
+            {resultTitle} {resultText}
+          </>
+        )}
+      </Announce>
+
+      {pending ? (
+        <>
+          <PlaceButton
+            live={live}
+            cards={cards}
+            slot={at}
+            heard={hasHeard(player, song)}
+            onPlace={place}
+          />
+          <KeyHints />
+        </>
+      ) : (
+        <TimelineResult
+          title={resultTitle}
+          text={resultText}
+          wrong={wrong}
+          dayNumber={dayNumber}
+          data={data}
+        />
+      )}
+    </ScreenMain>
+  );
+}

@@ -21,7 +21,7 @@ the fake recorded.
 ## Real input
 
 Click and type with `userEvent` from `vitest/browser`. For what it can't do (dragging with the
-mouse, turning the wheel), use `mouseDrag` and `mouseWheel` from `src/test/realMouse.ts`, which drive
+mouse, turning the wheel), use `mouseDrag` and `mouseWheel` from `src/test/input/realMouse.ts`, which drive
 Playwright's real mouse, so the browser makes the pointer events. Synthetic `PointerEvent`s are fine
 for a tap or click that doesn't move (`tapAt` in `recordControls.ts`).
 
@@ -53,7 +53,7 @@ it.for(items)("does something with $name", (item) => {
 
 `pnpm test` runs four Vitest projects (`vitest.config.mts`):
 
-- `unit`: logic, in Node (`src/lib/**/*.test.ts`).
+- `unit`: logic, in Node (`src/lib/**/*.test.ts` and `src/i18n/**/*.test.ts`).
 - `lint-rules`: runs oxlint on samples to prove the rules in `lint/spindle-rules.mjs` still work.
 - `browser`: components, in Chromium (`src/components/**/*.test.tsx`).
 - `performance`: swiping on a slowed-down CPU (`*.perf.test.tsx`). It runs last and alone.

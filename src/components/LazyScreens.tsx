@@ -1,12 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { GameLoading } from "@/components/GameLoading";
-import { WeekStripLoading } from "@/components/WeekStripLoading";
+import { GameLoading } from "@/components/game/GameLoading";
+import { WeekStripLoading } from "@/components/home/WeekStripLoading";
 
-const loadSort = () => import("@/components/SortGame").then((m) => m.SortGame);
-const loadTimeline = () => import("@/components/TimelineGame").then((m) => m.TimelineGame);
-const loadMarathon = () => import("@/components/MarathonGame").then((m) => m.MarathonGame);
+const loadSort = () => import("@/components/sort/SortGame").then((m) => m.SortGame);
+const loadTimeline = () => import("@/components/timeline/TimelineGame").then((m) => m.TimelineGame);
+const loadMarathon = () => import("@/components/marathon/MarathonGame").then((m) => m.MarathonGame);
 
 /**
  * Fetch the game screens' code ahead of time (from the home page), so that
@@ -38,7 +38,7 @@ export const MarathonGameClient = dynamic(loadMarathon, {
 });
 
 export const SettingsClient = dynamic(
-  () => import("@/components/Settings").then((m) => m.Settings),
+  () => import("@/components/settings/Settings").then((m) => m.Settings),
   {
     ssr: false,
     loading: GameLoading,
@@ -46,7 +46,7 @@ export const SettingsClient = dynamic(
 );
 
 export const WeekStripClient = dynamic(
-  () => import("@/components/WeekStrip").then((m) => m.WeekStrip),
+  () => import("@/components/home/WeekStrip").then((m) => m.WeekStrip),
   {
     ssr: false,
     loading: WeekStripLoading,

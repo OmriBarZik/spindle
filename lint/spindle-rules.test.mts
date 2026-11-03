@@ -1,11 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, expect, it } from "vitest";
 
 const OXLINT = resolve("node_modules/.bin/oxlint");
 const RULES = [
+  "max-files-per-folder",
   "no-barrel",
   "no-describe",
   "no-jsx-and",
@@ -18,7 +19,7 @@ const dir = mkdtempSync(join(tmpdir(), "spindle-rules-"));
 afterAll(() => rmSync(dir, { recursive: true }));
 
 /** Runs the real oxlint with only the house rules on, and returns the ones that fired. */
-function lint(file: string, code: string): string[] {
+function lint(file: string, code: string, folder = dir): string[] {
   const config = join(dir, "oxlintrc.json");
   writeFileSync(
     config,
@@ -28,7 +29,7 @@ function lint(file: string, code: string): string[] {
       rules: Object.fromEntries(RULES.map((rule) => [`spindle/${rule}`, "error"])),
     }),
   );
-  const path = join(dir, file);
+  const path = join(folder, file);
   writeFileSync(path, code);
   const { stdout } = spawnSync(OXLINT, ["-c", config, "--format=json", path], { encoding: "utf8" });
   const { diagnostics } = JSON.parse(stdout) as { diagnostics: { code: string }[] };
@@ -101,4 +102,16 @@ it("allows the code the rules ask for", () => {
     export const b = 1;
   `;
   expect(lint("specificName.tsx", code)).toEqual([]);
+});
+
+it.for([
+  { name: "7 files", files: 7, fired: [] },
+  { name: "8 files", files: 8, fired: ["spindle(max-files-per-folder)"] },
+])("max-files-per-folder: a folder with $name", ({ files, fired }) => {
+  const folder = mkdtempSync(join(dir, "folder-"));
+  mkdirSync(join(folder, "nested"));
+  for (let i = 1; i < files; i++) {
+    writeFileSync(join(folder, `other${i}.ts`), "export const a = 1;");
+  }
+  expect(lint("sample.ts", "export const a = 1;", folder)).toEqual(fired);
 });

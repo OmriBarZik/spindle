@@ -40,6 +40,31 @@ if (done) {
 - No `../` imports: use `@/`. `./` is fine within a folder (`import/no-relative-parent-imports`).
 - Unused files, exports and dependencies fail `pnpm knip`.
 
+## Folders
+
+**At most 7 files per folder** (`spindle/max-files-per-folder`, on everything under `src/` and
+`scripts/`). Subfolders don't count, so when a folder fills up, group its files into subfolders by
+feature, not by kind:
+
+```text
+// NEVER
+src/components/SortGame.tsx, SortHeader.tsx, MarathonGame.tsx, Hearts.tsx, SwipeLine.tsx, …
+
+// ALWAYS
+src/components/sort/SortGame.tsx, sort/SortHeader.tsx
+src/components/marathon/MarathonGame.tsx, marathon/Hearts.tsx
+src/components/swipe/SwipeLine.tsx, swipe/card/SwipeCard.tsx
+```
+
+- A screen and the components only it uses share one folder (`sort/`, `marathon/`, `timeline/`,
+  `settings/`); pieces several screens use get their own (`deck/`, `swipe/`, `game/`, `result/`).
+- Tests sit in a `__tests__/` folder inside the folder they test (`sort/__tests__/SortGame.test.tsx`),
+  which counts on its own too.
+- The same goes for `src/lib`, `src/hooks` and `src/test`: `lib/games/`, `hooks/swipe/`,
+  `test/fakes/`, …
+- Don't dodge the limit with vague folders (`misc/`, `other/`, `common/`): name a folder after the
+  feature it holds.
+
 ## Layers
 
 `app` → `components` → `hooks` → `lib` and `i18n`. `lib` and `i18n` never import `app`, `components`

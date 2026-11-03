@@ -160,8 +160,15 @@
   },
   "overrides": [
     {
+      // Keep the project easy to find your way around: at most 7 files per folder, grouped
+      // into subfolders by feature (see .claude/rules/code-style.md). The repo root holds the
+      // tool configs, so the rule starts at src/ and scripts/.
+      "files": ["src/**", "scripts/**"],
+      "rules": { "spindle/max-files-per-folder": "error" }
+    },
+    {
       // The one TypeScript file allowed colour literals: images drawn by next/og can't read CSS.
-      "files": ["src/lib/palette.ts"],
+      "files": ["src/lib/display/palette.ts"],
       "rules": { "spindle/no-raw-style": "off" }
     },
     {

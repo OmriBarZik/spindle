@@ -35,7 +35,7 @@ body {
   --label: var(--color-timeline-label);
 }
 
-/* The shared YouTube player (lib/player.ts). It lives on <body>, outside the pages, so
+/* The shared YouTube player (lib/services/player.ts). It lives on <body>, outside the pages, so
    a language switch doesn't stop the song. Never seen: transparent and behind the page
    content. It keeps a record's size inside the window, since browsers may hold back
    frames that are tiny or off screen. */

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { SlotLabels } from "@/lib/timeline";
+import type { SlotLabels } from "@/lib/line/timeline";
 import type { Locale } from "./config";
 
 /**
