@@ -2,18 +2,19 @@
 
 import { Fragment, type ReactNode } from "react";
 import { SwipeBrowse } from "@/components/SwipeBrowse";
-import { SwipeCard } from "@/components/SwipeCard";
 import { SwipeGap } from "@/components/SwipeGap";
 import { SwipeOverview } from "@/components/SwipeOverview";
+import { SwipeStack } from "@/components/SwipeStack";
+import { useStackedLine } from "@/hooks/useStackedLine";
 import { useSwipeDrag } from "@/hooks/useSwipeDrag";
 import { useSwipeKeys } from "@/hooks/useSwipeKeys";
 import { useSwipeTrack } from "@/hooks/useSwipeTrack";
 import { useSwipeWheel } from "@/hooks/useSwipeWheel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { clamp } from "@/lib/clamp";
 import { directionSign } from "@/lib/directionSign";
 import type { LiveSlot } from "@/lib/liveSlot";
 import { canAnimate } from "@/lib/motion";
+import { stackFront } from "@/lib/stacks";
 import type { LineItem } from "@/lib/timeline";
 
 /**
@@ -25,6 +26,9 @@ import type { LineItem } from "@/lib/timeline";
  *
  * When not placing, the record (if any) sits above the strip, which is centered
  * on `focus`.
+ *
+ * Songs from the same year share one stack (`stacks.ts`), so the strip counts in
+ * gaps between stacks; `slot`, `focus`, `onSlot` and `live` stay in card slots.
  */
 /**
  * A card plus its margins on a finished line on a phone (`.swipe-item` width +
@@ -64,26 +68,22 @@ export function SwipeLine({
   const { t } = useI18n();
   const placing = slot !== null;
   const choosing = placing && !reveal;
-  const count = items.length;
-  const { trackRef, pitchRef, onScroll, takeOver } = useSwipeTrack({
+  const { stacks, sizes, gap, focusStack, gapLive, onGap, step, faces } = useStackedLine({
+    items,
     slot,
-    count,
     focus,
-    choosing,
     live,
     onSlot,
   });
-
-  function step(delta: number) {
-    const from = live.get() ?? slot;
-    if (from === null) {
-      return;
-    }
-    const next = clamp(from + delta, 0, count);
-    if (next !== from) {
-      onSlot(next);
-    }
-  }
+  const count = stacks.length;
+  const { trackRef, pitchRef, onScroll, takeOver } = useSwipeTrack({
+    slot: gap,
+    count,
+    focus: focusStack,
+    choosing,
+    live: gapLive,
+    onSlot: onGap,
+  });
 
   /** Scroll the finished strip by `delta` cards, in reading direction. */
   function browseBy(delta: number) {
@@ -94,18 +94,18 @@ export function SwipeLine({
     });
   }
 
-  useSwipeKeys({ choosing, count, onStep: step, onSlot });
+  useSwipeKeys({ choosing, count, onStep: step, onSlot: onGap });
   useSwipeWheel({
     trackRef,
     choosing,
     browse: !placing,
-    slot: () => live.get() ?? slot,
+    slot: () => gapLive.get() ?? gap,
     count,
     onStep: step,
   });
-  const drag = useSwipeDrag({ pitchRef, takeOver, choosing, count, onSlot });
+  const drag = useSwipeDrag({ pitchRef, takeOver, choosing, count, onSlot: onGap });
 
-  const flank = (i: number) => choosing && (i === slot - 1 || i === slot);
+  const flank = (i: number) => choosing && gap !== null && (i === gap - 1 || i === gap);
 
   return (
     <div className="flex w-full flex-col gap-150">
@@ -122,14 +122,19 @@ export function SwipeLine({
           className="swipe-track"
         >
           <ol className="swipe-list">
-            {items.map((item, i) => (
-              <Fragment key={item.key}>
-                {placing ? <SwipeGap slot={i} count={count} on={choosing && slot === i} /> : null}
-                <SwipeCard item={item} index={i} lit={flank(i)} />
+            {stacks.map((stack, i) => (
+              <Fragment key={stack.map((item) => item.key).join(" ")}>
+                {placing ? <SwipeGap slot={i} count={count} on={choosing && gap === i} /> : null}
+                <SwipeStack
+                  items={stack}
+                  index={i}
+                  lit={flank(i)}
+                  front={stackFront(sizes, i, focus)}
+                />
               </Fragment>
             ))}
             {placing ? (
-              <SwipeGap slot={count} count={count} on={choosing && slot === count} />
+              <SwipeGap slot={count} count={count} on={choosing && gap === count} />
             ) : null}
           </ol>
         </div>
@@ -151,11 +156,11 @@ export function SwipeLine({
       {placing ? (
         <div className="mx-auto w-full max-w-page">
           <SwipeOverview
-            items={items}
+            items={faces}
             choosing={choosing}
-            live={live}
+            live={gapLive}
             onStep={step}
-            onSlot={onSlot}
+            onSlot={onGap}
           />
         </div>
       ) : null}

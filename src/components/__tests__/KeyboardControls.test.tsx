@@ -11,7 +11,7 @@ import { MESSAGES } from "@/i18n/messages";
 import type { SaveData } from "@/lib/saveData";
 import { trackedEvents } from "@/test/fakeAnalytics";
 import { fakeYouTube } from "@/test/fakeYouTube";
-import { lineTrack, placeWithEnter, recordGap } from "@/test/recordControls";
+import { lineTrack, placeWithEnter, playSong, recordGap } from "@/test/recordControls";
 import { renderIn } from "@/test/renderIn";
 import { savedData } from "@/test/savedData";
 import { setupGameTests } from "@/test/setupGameTests";
@@ -39,9 +39,9 @@ it("plays and pauses with Space, with nothing focused", async () => {
   await userEvent.keyboard(" ");
   expect(playButton("Pause")).not.toBeNull();
   expect(trackedEvents().map(([name]) => name)).toContain("song_play");
-  // The fake player never says it paused, so check what the game asked of it.
   await userEvent.keyboard(" ");
   expect(fakeYouTube.pauses).toBe(1);
+  expect(playButton("Play")).not.toBeNull();
 });
 
 it("plays with Space while the line has the focus", async () => {
@@ -55,6 +55,10 @@ it("plays with Space while the line has the focus", async () => {
 it("places with Enter, and not again while the answer shows", async () => {
   const { container } = renderIn("en", <SortGame />);
   await playerReady();
+  // Not before the song has been played.
+  await userEvent.keyboard("{Enter}");
+  expect(sortPlaced()).toBe(0);
+  await userEvent.keyboard(" ");
   const place = screen.getByRole("button", { name: /^Place it: / });
   expect(place.getAttribute("aria-keyshortcuts")).toBe("Enter");
   await userEvent.keyboard("{Enter}");
@@ -65,12 +69,14 @@ it("places with Enter, and not again while the answer shows", async () => {
   await userEvent.keyboard(" ");
   expect(playButton("Pause")).toBeNull();
   fireEvent.animationEnd(container.querySelector(".deck-swap")!);
+  await userEvent.keyboard(" ");
   await userEvent.keyboard("{Enter}");
   expect(sortPlaced()).toBe(2);
 });
 
 it("places at the gap the arrow keys chose", async () => {
   renderIn("en", <SortGame />);
+  await playSong();
   await userEvent.keyboard("{Home}");
   await userEvent.keyboard("{Enter}");
   expect(savedData().sort.days[DAY]?.placements[0]?.slot).toBe(0);
@@ -95,11 +101,12 @@ it.for([{ name: "Control" }, { name: "Shift" }, { name: "Alt" }, { name: "Meta" 
   "leaves $name with Enter or Space to the browser",
   async ({ name: key }) => {
     renderIn("en", <SortGame />);
-    await playerReady();
+    // Playing, so a plain Enter would place and a plain Space would pause.
+    await playSong();
     await userEvent.keyboard(`{${key}>}{Enter}{/${key}}`);
     await userEvent.keyboard(`{${key}>} {/${key}}`);
     expect(sortPlaced()).toBe(0);
-    expect(playButton("Pause")).toBeNull();
+    expect(fakeYouTube.pauses).toBe(0);
   },
 );
 

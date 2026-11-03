@@ -9,7 +9,7 @@ import { expectAccessible } from "@/test/expectAccessible";
 import { trackedEvents } from "@/test/fakeAnalytics";
 import { fakeClipboard } from "@/test/fakeClipboard";
 import { fakeYouTube } from "@/test/fakeYouTube";
-import { moveRecordTo } from "@/test/recordControls";
+import { moveRecordTo, playSong } from "@/test/recordControls";
 import { renderIn } from "@/test/renderIn";
 import { savedData } from "@/test/savedData";
 import { setupGameTests } from "@/test/setupGameTests";
@@ -23,6 +23,7 @@ function today() {
 
 async function placeAt(slot: number, container: HTMLElement) {
   const { cards } = today();
+  await playSong();
   await moveRecordTo(container, slot);
   await userEvent.click(
     screen.getByRole("button", {
@@ -42,7 +43,7 @@ async function shareAndRead() {
   return copied[0];
 }
 
-it("starts a new timeline at a free starting year", () => {
+it("starts a new timeline at a free starting year", async () => {
   const { container } = renderIn("en", <TimelineGame />);
   const { cards } = today();
   expect(cards).toHaveLength(1);
@@ -53,6 +54,8 @@ it("starts a new timeline at a free starting year", () => {
   expect(screen.getByText("Today")).toBeTruthy();
   // One gap on each side of the starting year; the record starts after it.
   expect(container.querySelectorAll("[data-gap]")).toHaveLength(2);
+  expect(screen.getByRole("button", { name: "Play the song to place it" })).toBeTruthy();
+  await playSong();
   expect(screen.getByRole("button", { name: `Place it: After ${cards[0]!.year}` })).toBeTruthy();
 });
 
@@ -92,6 +95,7 @@ it("sends analytics events for a run that ends", async () => {
   const mode = "timeline";
   expect(trackedEvents()).toEqual([
     ["game_open", { mode, status: "new" }],
+    ["song_play", { mode, turn: 1 }],
     ["song_place", { mode, turn: 1, correct: false }],
     ["run_end", { mode, songs: 0 }],
   ]);

@@ -11,7 +11,7 @@ import { expectAccessible } from "@/test/expectAccessible";
 import { trackedEvents } from "@/test/fakeAnalytics";
 import { fakeClipboard } from "@/test/fakeClipboard";
 import { fakeYouTube } from "@/test/fakeYouTube";
-import { moveRecordTo } from "@/test/recordControls";
+import { moveRecordTo, playSong } from "@/test/recordControls";
 import { renderIn } from "@/test/renderIn";
 import { savedData } from "@/test/savedData";
 import { setupGameTests } from "@/test/setupGameTests";
@@ -31,6 +31,7 @@ async function place(right: boolean, container: HTMLElement) {
   const line = marathonLine(state);
   const good = correctSlot(line, song.year);
   const bad = [0, line.length].find((s) => !isSlotCorrect(line, s, song.year))!;
+  await playSong();
   await moveRecordTo(container, right ? good : bad);
   await userEvent.click(placeButton());
   fireEvent.animationEnd(container.querySelector(".deck-swap")!);
@@ -40,13 +41,17 @@ function hearts() {
   return screen.getByRole("img", { name: /hearts left$/ }).getAttribute("aria-label");
 }
 
-it("starts from the day's starting year with three hearts", () => {
+it("starts from the day's starting year with three hearts", async () => {
   const { container } = renderIn("en", <MarathonGame />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Marathon");
   expect(container.textContent).toContain(`Your line starts at ${marathonAnchorYearFor(DAY)}`);
   expect(hearts()).toBe("3 of 3 hearts left");
   expect(container.textContent).toContain("Score: 0");
   expect(screen.getByText("Song 1")).toBeTruthy();
+  // The song can be placed once it has been played.
+  const unheard = screen.getByRole("button", { name: "Play the song to place it" });
+  expect(unheard).toHaveProperty("disabled", true);
+  await playSong();
   expect(placeButton()).toHaveProperty("disabled", false);
 });
 
@@ -107,8 +112,11 @@ it("sends analytics events, without song details", async () => {
     ["game_open", { mode, status: "new" }],
     ["song_play", { mode, turn: 1 }],
     ["song_place", { mode, turn: 1, correct: true }],
+    ["song_play", { mode, turn: 2 }],
     ["song_place", { mode, turn: 2, correct: false }],
+    ["song_play", { mode, turn: 3 }],
     ["song_place", { mode, turn: 3, correct: false }],
+    ["song_play", { mode, turn: 4 }],
     ["song_place", { mode, turn: 4, correct: false }],
     ["game_complete", { mode, score: 1 }],
   ]);

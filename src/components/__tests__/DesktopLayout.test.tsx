@@ -8,6 +8,7 @@ import {
   gapUnderRecord,
   lineTrack,
   placeWithEnter,
+  playSong,
   pointOn,
   recordGap,
   tapAt,
@@ -35,6 +36,7 @@ it("widens the line on a desktop and keeps the buttons in a column", async ({ on
   const { container } = renderIn("en", <SortGame />);
   // A gap plus a card at the desktop sizes (`--swipe-*` under `lg` in tokens.css).
   expect(gapPitch(container)).toBe(328);
+  await playSong();
   const place = screen.getByRole("button", { name: /^Place it: / });
   expect(lineTrack(container).clientWidth).toBeGreaterThan(1.5 * place.clientWidth);
   await expectAccessible(container);

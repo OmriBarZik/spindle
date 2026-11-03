@@ -13,6 +13,7 @@ import { SortFeedbackBox } from "@/components/SortFeedbackBox";
 import { SwipeLine } from "@/components/SwipeLine";
 import { useDropRecordFlight } from "@/hooks/recordFlight";
 import { useGameScreen } from "@/hooks/useGameScreen";
+import { hasHeard } from "@/hooks/useHiddenPlayer";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 import {
@@ -138,6 +139,7 @@ export function MarathonGame() {
             cards={line}
             slot={at}
             disabled={Boolean(swap)}
+            heard={hasHeard(player, current)}
             onPlace={place}
           />
           <KeyHints />

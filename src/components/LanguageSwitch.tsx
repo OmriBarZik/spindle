@@ -5,6 +5,7 @@ import Link from "next/link";
 import { languageName, LOCALE_COOKIE, localePath, LOCALES } from "@/i18n/config";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
+import { handOffPlayback } from "@/lib/playHandoff";
 
 /** English / עברית toggle. Remembers the choice so unprefixed links open in it. */
 export function LanguageSwitch({ path }: { path: string }) {
@@ -24,6 +25,8 @@ export function LanguageSwitch({ path }: { path: string }) {
           onClick={() => {
             if (l !== lang) {
               track("language_switch", { from: lang, to: l });
+              // The game remounts in the other language: keep its song going.
+              handOffPlayback();
             }
             document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
           }}
