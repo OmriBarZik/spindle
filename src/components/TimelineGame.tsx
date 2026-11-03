@@ -10,9 +10,9 @@ import { SwipeLine } from "@/components/SwipeLine";
 import { TimelineHeader } from "@/components/TimelineHeader";
 import { TimelineResult } from "@/components/TimelineResult";
 import { useGameScreen } from "@/hooks/useGameScreen";
-import { hasHeard } from "@/hooks/useHiddenPlayer";
 import { useI18n } from "@/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
+import { hasHeard } from "@/lib/player";
 import { getSong, songNames } from "@/lib/songs";
 import { defaultSlot, isSlotCorrect } from "@/lib/timeline";
 import {
@@ -27,7 +27,7 @@ import {
 
 export function TimelineGame() {
   const { lang, t } = useI18n();
-  const { day, data, update, hostRef, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
+  const { day, data, update, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
     ensureTimelineDay,
     timelineOpenEvent,
   );
@@ -94,7 +94,6 @@ export function TimelineGame() {
       />
 
       <Deck
-        hostRef={hostRef}
         player={player}
         videoId={song.youtubeId}
         start={song.start}
