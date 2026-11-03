@@ -6,7 +6,7 @@ import { userEvent } from "vitest/browser";
 import { SortGame } from "@/components/SortGame";
 import { MESSAGES } from "@/i18n/messages";
 import { anchorYearFor, sortSongsFor } from "@/lib/daily";
-import { handOffPlayback } from "@/lib/playHandoff";
+import { holdPlayer } from "@/lib/player";
 import { getSong } from "@/lib/songs";
 import { correctSlot, slotLabel } from "@/lib/timeline";
 import { expectAccessible } from "@/test/expectAccessible";
@@ -252,34 +252,52 @@ it("shows where the song really went while the record glows", async () => {
   expect(container.querySelector(".swipe-gap-on")).not.toBeNull();
 });
 
-it("keeps the song playing when the player switches language", async () => {
-  const en = renderIn("en", <SortGame />);
+it("keeps the song playing through language switches, back and forth", async () => {
+  let page = renderIn("en", <SortGame />);
   await playSong();
-  // What the language switch does as it's clicked; then the page remounts in Hebrew.
-  handOffPlayback();
-  en.unmount();
-  renderIn("he", <SortGame />);
-  await screen.findByRole("button", { name: "השהיה" });
-  expect(screen.getByRole("button", { name: /^לשבץ: / })).toHaveProperty("disabled", false);
+  for (const lang of ["he", "en", "he", "en"] as const) {
+    // What the language switch does as it's clicked; then the page remounts.
+    holdPlayer();
+    page.unmount();
+    page = renderIn(lang, <SortGame />);
+    const { pause, placeIt } = MESSAGES[lang].common;
+    expect(screen.getByRole("button", { name: pause })).toBeTruthy();
+    const button = screen.getByRole("button", { name: new RegExp(`^${placeIt("")}`) });
+    expect(button).toHaveProperty("disabled", false);
+  }
+  // One player the whole time: the song was loaded once and never stopped.
+  expect(fakeYouTube.loads).toBe(1);
+  expect(fakeYouTube.destroys).toBe(0);
 });
 
 it("still lets a paused song be placed after a language switch", async () => {
   const en = renderIn("en", <SortGame />);
   await playSong();
   await userEvent.click(screen.getByRole("button", { name: "Pause" }));
-  handOffPlayback();
+  holdPlayer();
   en.unmount();
   renderIn("he", <SortGame />);
-  await expect
-    .poll(() => screen.queryByRole("button", { name: "נגינה" })?.hasAttribute("disabled"))
-    .toBe(false);
+  expect(screen.getByRole("button", { name: "נגינה" })).toHaveProperty("disabled", false);
   expect(screen.getByRole("button", { name: /^לשבץ: / })).toHaveProperty("disabled", false);
 });
 
-it("keeps the hidden YouTube player out of reach", () => {
+it("stops the song when the player leaves the game", async () => {
+  const page = renderIn("en", <SortGame />);
+  await playSong();
+  page.unmount();
+  await vi.waitFor(() => expect(fakeYouTube.destroys).toBe(1));
+  expect(document.querySelector(".player-host")).toBeNull();
+});
+
+it("keeps the hidden YouTube player out of sight and out of reach", () => {
   const { container } = renderIn("en", <SortGame />);
-  const host = container.querySelector("[inert]");
-  expect(host?.getAttribute("aria-hidden")).toBe("true");
+  // On <body>, outside the page, so it outlives a language switch.
+  const host = document.querySelector<HTMLElement>(".player-host")!;
+  expect(container.contains(host)).toBe(false);
+  expect(host.inert).toBe(true);
+  expect(host.getAttribute("aria-hidden")).toBe("true");
+  expect(getComputedStyle(host).opacity).toBe("0");
+  expect(getComputedStyle(host).pointerEvents).toBe("none");
 });
 
 it("has no accessibility violations, in both languages and when done", async () => {

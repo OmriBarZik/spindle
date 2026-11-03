@@ -13,10 +13,10 @@ import { SortResult } from "@/components/SortResult";
 import { SwipeLine } from "@/components/SwipeLine";
 import { useDropRecordFlight } from "@/hooks/recordFlight";
 import { useGameScreen } from "@/hooks/useGameScreen";
-import { hasHeard } from "@/hooks/useHiddenPlayer";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { Messages } from "@/i18n/messages";
 import { track } from "@/lib/analytics";
+import { hasHeard } from "@/lib/player";
 import {
   ensureSortDay,
   placeSortSong,
@@ -35,7 +35,7 @@ function sortScoreText(t: Messages, hits: number, total: number) {
  */
 export function SortGame() {
   const { t } = useI18n();
-  const { day, data, update, hostRef, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
+  const { day, data, update, player, slot, setSlot, live, swap, setSwap } = useGameScreen(
     ensureSortDay,
     sortOpenEvent,
   );
@@ -100,7 +100,6 @@ export function SortGame() {
 
       {!done || swap ? (
         <Deck
-          hostRef={hostRef}
           player={player}
           videoId={current?.youtubeId ?? null}
           start={current?.start}

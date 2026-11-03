@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { type RefObject, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { DeckPlayIcon } from "@/components/DeckPlayIcon";
 import { useRecordLanding } from "@/hooks/recordFlight";
 import type { DeckSwap } from "@/hooks/useGameScreen";
@@ -9,11 +9,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { smoothScrollToCenter } from "@/lib/smoothScroll";
 
 /**
- * The record with its play button. The YouTube iframe lives underneath it and is fully
- * covered, so the title, channel, thumbnail and comments are never visible.
+ * The record with its play button. It only sends commands: the YouTube player itself
+ * is shared and hidden (`lib/player.ts`).
  */
 export function DeckRecord({
-  hostRef,
   active,
   busy,
   spinning,
@@ -23,7 +22,6 @@ export function DeckRecord({
   onSwapEnd,
   onToggle,
 }: {
-  hostRef: RefObject<HTMLDivElement | null>;
   /** The song is playing or on its way, so the button pauses. */
   active: boolean;
   busy: boolean;
@@ -73,10 +71,6 @@ export function DeckRecord({
           busy ? "opacity-100" : "loading-ring-idle opacity-0",
         )}
       />
-      {/*
-          The player, record and button move together, so the iframe stays
-          covered for the whole swipe.
-        */}
       <div
         className={clsx("absolute inset-0", swap && `deck-swap deck-swap-${swap.kind}`)}
         onAnimationEnd={(e) => {
@@ -85,17 +79,6 @@ export function DeckRecord({
           }
         }}
       >
-        {/*
-            Hidden player: must stay mounted and must stay covered. `inert` also keeps
-            the YouTube iframe out of the Tab order and away from screen readers.
-          */}
-        <div
-          ref={hostRef}
-          inert
-          aria-hidden
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
-        />
-        {/* Opaque record covering the player entirely. */}
         <div className={clsx("record absolute inset-0 rounded-full", spinning && "spin")}>
           <div className="record-label" />
         </div>
