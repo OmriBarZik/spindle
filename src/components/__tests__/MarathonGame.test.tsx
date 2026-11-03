@@ -82,7 +82,10 @@ it("plays until the third wrong answer, then shows and shares the score", async 
   const line = screen.getByRole("group", { name: /^Your timeline/ });
   for (const song of songs.slice(0, 6)) {
     expect(line.textContent).toContain(song.title);
-    const card = [...line.querySelectorAll("li")].find((li) => li.textContent.includes(song.title));
+    // Look on the card face, not the whole spot: songs from one year share a stack.
+    const card = [...line.querySelectorAll(".swipe-card")].find((face) =>
+      face.textContent.includes(song.title),
+    );
     const watch = card?.querySelector("a");
     expect(watch?.getAttribute("href")).toBe(`https://www.youtube.com/watch?v=${song.youtubeId}`);
   }
