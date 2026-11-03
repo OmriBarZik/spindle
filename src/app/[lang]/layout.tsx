@@ -30,6 +30,16 @@ export function generateStaticParams() {
   return localeParams();
 }
 
+/**
+ * Search engines need absolute `hreflang` links, so relative metadata URLs resolve against the
+ * site's address. Vercel sets `VERCEL_PROJECT_PRODUCTION_URL` (its production domain) in every
+ * build, so the site still needs no environment variables of its own; local builds use localhost.
+ */
+const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+const metadataBase = new URL(
+  productionHost ? `https://${productionHost}` : `http://localhost:${process.env.PORT ?? 3000}`,
+);
+
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await langParam();
   if (!hasLocale(lang)) {
@@ -37,6 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
   const t = MESSAGES[lang];
   return {
+    metadataBase,
     title: t.meta.title,
     description: t.meta.description,
     alternates: {
