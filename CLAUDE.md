@@ -198,6 +198,7 @@ is a "default" served without a prefix.
 | `src/lib/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`) |
 | `src/lib/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |
 | `src/lib/smoothScroll.ts` | `smoothScrollToCenter()`: brings the record into view after a guess (instant scroll + compositor glide, so it never lags) |
+| `src/components/Footer.tsx` | The home page's site footer (the YouTube disclaimer and the GitHub link): full width under a hairline, pushed to the bottom of the screen (`mt-auto` in the body's flex column) |
 | `src/components/Deck.tsx` | Turntable UI, built from `DeckRecord` (the record, play/pause, loading ring), `DeckTransport` and `DeckStatus`. It only sends commands to the shared player |
 | `src/components/SortGame.tsx` | Daily Five screen |
 | `src/components/TimelineGame.tsx` | Daily Timeline screen (hidden page) |

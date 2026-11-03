@@ -1,4 +1,4 @@
-import { ExternalLink } from "@/components/ExternalLink";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { WeekStripClient } from "@/components/LazyScreens";
 import { ModeSleeve } from "@/components/ModeSleeve";
@@ -10,7 +10,7 @@ export default async function Home() {
   return (
     <>
       <Header path="/" />
-      <main className="home mx-auto flex w-full max-w-page flex-col gap-300 px-200 pb-800 lg:max-w-wide">
+      <main className="home mx-auto flex w-full max-w-page flex-col gap-300 px-200 pb-600 lg:max-w-wide">
         <section className="home-hero home-inset flex flex-col gap-150 pt-200">
           <h1 className="max-w-narrow text-4xl leading-450 font-black tracking-tight text-balance lg:max-w-prose lg:text-5xl lg:leading-600 rtl:tracking-normal">
             {t.home.headline}
@@ -51,14 +51,8 @@ export default async function Home() {
             </ul>
           </details>
         </div>
-
-        <footer className="home-foot text-center text-xs text-muted">
-          {t.home.footer}{" "}
-          <ExternalLink href="https://github.com/OmriBarZik/spindle" className="underline">
-            {t.home.github}
-          </ExternalLink>
-        </footer>
       </main>
+      <Footer />
     </>
   );
 }
