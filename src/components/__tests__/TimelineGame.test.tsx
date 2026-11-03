@@ -69,7 +69,7 @@ it("grows the timeline on a right guess", async () => {
   expect(container.textContent).toContain(song.title);
   expect(container.querySelector("[data-gap]")).toBeNull();
   expect(await shareAndRead()).toBe(
-    `Spindle Timeline #1\n🔥 1 song and counting\n🟩\n${window.location.origin}/timeline`,
+    `Spindle Timeline\n🔥 1 song and counting\n🟩\n${window.location.origin}/timeline`,
   );
 });
 
@@ -83,7 +83,7 @@ it("ends the run on a wrong guess and shows where the song belongs", async () =>
   expect(container.textContent).toContain("belongs here");
   expect(savedData().timeline.runOver).toBe(true);
   expect(await shareAndRead()).toBe(
-    `Spindle Timeline #1\n❌ Timeline ended at 0 songs\n🟥\n${window.location.origin}/timeline`,
+    `Spindle Timeline\n❌ Timeline ended at 0 songs\n🟥\n${window.location.origin}/timeline`,
   );
 });
 

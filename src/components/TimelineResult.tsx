@@ -13,14 +13,12 @@ import { songCount } from "@/lib/timeline";
 export function TimelineResult({
   title,
   text,
-  day,
   wrong,
   dayNumber,
   data,
 }: {
   title: ReactNode;
   text: ReactNode;
-  day: string;
   wrong: boolean;
   dayNumber: number;
   data: SaveData;
@@ -44,7 +42,6 @@ export function TimelineResult({
         mode="timeline"
         text={timelineShareText(
           t,
-          day,
           { songs, wrong, langs: settings.songLanguages },
           window.location.origin,
         )}

@@ -97,7 +97,7 @@ it("plays until the third wrong answer, then shows and shares the score", async 
   await userEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() =>
     expect(copied).toEqual([
-      `Spindle Marathon #1 · 3 🎵\n🟩🟥🟩🟩🟥🟥\n${window.location.origin}/marathon`,
+      `Spindle Marathon · 3 🎵\n🟩🟥🟩🟩🟥🟥\n${window.location.origin}/marathon`,
     ]),
   );
 });
@@ -166,7 +166,7 @@ it("plays again after the day's run, as free play that doesn't count", async () 
 });
 
 it("opens a friend's challenge link: their songs, their score to beat", async () => {
-  const seed = `${DAY}_friend`;
+  const seed = "friend1234";
   window.history.replaceState(null, "", `/en/marathon?run=${seed}&beat=1`);
   const { container } = renderIn("en", <MarathonGame />);
   expect(container.textContent).toContain("Challenge: a friend placed 1 of these songs right");

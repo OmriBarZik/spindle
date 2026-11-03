@@ -107,20 +107,14 @@ export function marathonAnchorYearFor(day: string, langs?: readonly Locale[]): n
 }
 
 /**
- * A free-play Marathon's songs: the catalog in the run's own random order. The `seed` is made
- * when a player presses "Play again" and starts with that day (`2026-11-03_k3j2h8`), so the
- * run skips that day's Daily Five songs (no spoilers). Nothing else goes in, so a friend who
- * opens a shared run with the same song languages gets exactly the same songs.
+ * A free-play Marathon's songs: the catalog in the run's own random order. Only the `seed`
+ * (made when a player presses "Play again") and the song languages pick them, never the day,
+ * so a friend who opens a shared run gets exactly the same songs whenever they play it.
  */
 export function marathonFreeSongsFor(seed: string, langs?: readonly Locale[]): Song[] {
   const key = `${seed}|${(langs ?? LOCALES).join(",")}`;
   if (freeCache?.key !== key) {
-    const day = /^(\d{4}-\d{2}-\d{2})_/.exec(seed)?.[1];
-    const five = new Set(day ? sortSongsFor(day, langs).map((s) => s.id) : []);
-    freeCache = {
-      key,
-      songs: shuffled(`marathon-free:${seed}`, langs).filter((s) => !five.has(s.id)),
-    };
+    freeCache = { key, songs: shuffled(`marathon-free:${seed}`, langs) };
   }
   return freeCache.songs;
 }

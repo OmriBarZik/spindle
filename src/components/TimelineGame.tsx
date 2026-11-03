@@ -128,7 +128,6 @@ export function TimelineGame() {
         <TimelineResult
           title={resultTitle}
           text={resultText}
-          day={day}
           wrong={wrong}
           dayNumber={dayNumber}
           data={data}

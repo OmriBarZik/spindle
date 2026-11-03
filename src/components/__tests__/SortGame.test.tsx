@@ -104,9 +104,7 @@ it("plays a whole day, revealing each song and keeping score", async () => {
 
   await userEvent.click(screen.getByRole("button", { name: "Share result" }));
   await vi.waitFor(() =>
-    expect(copied).toEqual([
-      `Spindle Daily Five #1 3/5\n🟩🟥🟩🟩🟥\n${window.location.origin}/sort`,
-    ]),
+    expect(copied).toEqual([`Spindle Daily Five 3/5\n🟩🟥🟩🟩🟥\n${window.location.origin}/sort`]),
   );
   await screen.findByRole("button", { name: "Copied!" });
 });
@@ -164,7 +162,7 @@ it("tags the share text when the puzzle used one kind of song", async () => {
   await userEvent.click(screen.getByRole("button", { name: "שיתוף התוצאה" }));
   await vi.waitFor(() =>
     expect(copied).toEqual([
-      `Spindle החמישייה היומית #1 5/5 · רק שירים ישראליים\n🟩🟩🟩🟩🟩\n${window.location.origin}/sort`,
+      `Spindle החמישייה היומית 5/5 · רק שירים ישראליים\n🟩🟩🟩🟩🟩\n${window.location.origin}/sort`,
     ]),
   );
   expect(container.textContent).toContain(songs[0]!.titleHe);
