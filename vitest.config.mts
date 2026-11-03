@@ -18,7 +18,17 @@ const browserProject = {
   plugins: [
     tailwindcss(),
     // The React Compiler, as in the Next build, so tests (and the swipe timing) run the same code.
-    react({ compiler: true }),
+    // Not on the async server components (`src/app`, the header and footer): `Pages.test.tsx`
+    // calls them as plain functions, and the compiler's memo cache is a hook that only works
+    // inside a render.
+    react({
+      compiler: true,
+      exclude: [
+        /\/node_modules\//,
+        /\/src\/app\//,
+        /\/components\/(site\/Header|home\/Footer)\.tsx$/,
+      ],
+    }),
   ],
 };
 
