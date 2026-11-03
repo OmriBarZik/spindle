@@ -4,44 +4,87 @@ import { ResultCard } from "@/components/ResultCard";
 import { ShareButton } from "@/components/ShareButton";
 import { Stats } from "@/components/Stats";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { MarathonDay, MarathonStats } from "@/lib/saveData";
+import type { Messages } from "@/i18n/messages";
+import type { MarathonRun } from "@/lib/marathonFree";
+import type { MarathonStats } from "@/lib/saveData";
 import { marathonShareText } from "@/lib/share";
 
-/** The finished day: final score, stats and share. */
+function statItems(
+  t: Messages,
+  stats: MarathonStats,
+  hits: number,
+  daily: number | null,
+): [string, number][] {
+  if (daily !== null) {
+    // Free play: this run beside the day's real score; it never changes the stats.
+    return [
+      [t.marathon.stats.run, hits],
+      [t.marathon.stats.today, daily],
+      [t.marathon.stats.best, stats.best],
+      [t.marathon.stats.played, stats.played],
+    ];
+  }
+  const average = stats.played > 0 ? Math.round(stats.totalHits / stats.played) : 0;
+  return [
+    [t.marathon.stats.today, hits],
+    [t.marathon.stats.best, stats.best],
+    [t.marathon.stats.played, stats.played],
+    [t.marathon.stats.average, average],
+  ];
+}
+
+const secondary =
+  "w-full rounded-full border border-line px-250 py-150 font-bold transition hover:bg-hover";
+
+/**
+ * The finished run: final score, stats, share and "Play again". After a friend's run opened
+ * before the day's, the second button goes to the day's run instead.
+ */
 export function MarathonResult({
   day,
-  state,
+  run: { state, daily, dailyDone },
   stats,
   title,
   score,
   hits,
+  onPlayAgain,
+  onPlayDaily,
 }: {
   day: string;
-  state: MarathonDay;
+  run: MarathonRun;
   stats: MarathonStats;
   title: string;
   score: string;
   hits: number;
+  onPlayAgain: () => void;
+  onPlayDaily: () => void;
 }) {
   const { t } = useI18n();
-  const average = stats.played > 0 ? Math.round(stats.totalHits / stats.played) : 0;
+  const free = daily !== null;
+  const beat = "seed" in state ? state.beat : undefined;
   return (
     <ResultCard>
       <div className="text-2xl font-bold">{title}</div>
       <div className="text-lg">{score}</div>
-      <Stats
-        items={[
-          [t.marathon.stats.today, hits],
-          [t.marathon.stats.best, stats.best],
-          [t.marathon.stats.played, stats.played],
-          [t.marathon.stats.average, average],
-        ]}
-      />
+      {beat === undefined ? null : (
+        <p className="font-bold">{t.marathon.challengeResult(hits, beat)}</p>
+      )}
+      <Stats items={statItems(t, stats, hits, daily)} />
       <ShareButton
         mode="marathon"
         text={marathonShareText(t, day, state, window.location.origin)}
+        label={free ? t.marathon.shareFree : undefined}
       />
-      <p className="text-sm text-muted">{t.marathon.tomorrow}</p>
+      {dailyDone ? (
+        <button type="button" onClick={onPlayAgain} className={secondary}>
+          {t.marathon.playAgain}
+        </button>
+      ) : (
+        <button type="button" onClick={onPlayDaily} className={secondary}>
+          {t.marathon.playDaily}
+        </button>
+      )}
+      <p className="text-sm text-muted">{free ? t.marathon.freeNote : t.marathon.tomorrow}</p>
     </ResultCard>
   );
 }

@@ -2,15 +2,29 @@
 
 import { Hearts } from "@/components/Hearts";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { Messages } from "@/i18n/messages";
 import { MARATHON_HEARTS } from "@/lib/marathonState";
+import type { MarathonDay, MarathonFreeRun } from "@/lib/saveData";
 
-/** The title, the day's starting year, the hearts left and the score so far. */
+function intro(t: Messages, run: MarathonDay | MarathonFreeRun) {
+  if (!("seed" in run)) {
+    return t.marathon.intro(run.anchorYear);
+  }
+  return run.beat === undefined
+    ? t.marathon.freeIntro(run.anchorYear)
+    : t.marathon.challengeIntro(run.anchorYear, run.beat);
+}
+
+/**
+ * The title, the run's starting year, the hearts left and the score so far. A free-play run
+ * says it isn't the daily marathon, and a friend's run says the score to beat.
+ */
 export function MarathonHeader({
-  anchorYear,
+  run,
   hearts,
   hits,
 }: {
-  anchorYear: number;
+  run: MarathonDay | MarathonFreeRun;
   hearts: number;
   hits: number;
 }) {
@@ -18,7 +32,7 @@ export function MarathonHeader({
   return (
     <section className="text-center">
       <h1 className="text-2xl font-bold">{t.marathon.name}</h1>
-      <p className="mx-auto mt-50 max-w-page text-sm text-muted">{t.marathon.intro(anchorYear)}</p>
+      <p className="mx-auto mt-50 max-w-page text-sm text-muted">{intro(t, run)}</p>
       <div className="mt-150 flex items-center justify-center gap-200">
         <Hearts
           left={hearts}

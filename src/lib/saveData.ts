@@ -44,6 +44,19 @@ export type MarathonDay = {
   skipped: string[];
 };
 
+/**
+ * A free-play Marathon, started with "Play again" once the day's run is over. It has its
+ * own random shuffle (`seed`) and never touches the daily run or the stats.
+ */
+export type MarathonFreeRun = MarathonDay & {
+  /** The day it was started: it only shows on that day. */
+  day: string;
+  /** Picks the run's songs (`marathonFreeSongsFor`); shared links carry it. */
+  seed: string;
+  /** Opened from a friend's link: the score to beat. */
+  beat?: number;
+};
+
 export type MarathonStats = {
   played: number;
   /** Most songs placed right in one day. */
@@ -85,6 +98,6 @@ export type SaveData = {
   version: 1;
   sort: { days: Record<string, SortDay>; stats: SortStats };
   timeline: TimelineState;
-  marathon: { days: Record<string, MarathonDay>; stats: MarathonStats };
+  marathon: { days: Record<string, MarathonDay>; stats: MarathonStats; free?: MarathonFreeRun };
   settings: SaveSettings;
 };

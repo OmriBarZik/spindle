@@ -105,9 +105,21 @@ export type Messages = {
     over: string;
     ranOut: string;
     final: (hits: number) => string;
-    stats: { today: string; best: string; played: string; average: string };
+    stats: { today: string; best: string; played: string; average: string; run: string };
     tomorrow: string;
     shareHead: (n: number, hits: number) => string;
+    /** Free play: another run after the daily one, with its own songs and no stats. */
+    playAgain: string;
+    freeIntro: (year: number) => ReactNode;
+    freeNote: string;
+    shareFree: string;
+    freeShareHead: (hits: number) => string;
+    /** The dare under a free-play share; its link opens the same songs. */
+    shareDare: (hits: number) => string;
+    /** A run opened from a friend's link. */
+    challengeIntro: (year: number, beat: number) => ReactNode;
+    challengeResult: (hits: number, beat: number) => string;
+    playDaily: string;
   };
   timeline: {
     name: string;
@@ -264,9 +276,37 @@ const en: Messages = {
     over: "Out of hearts!",
     ranOut: "You placed every song we have!",
     final: (hits) => `${enSongs(hits)} placed right`,
-    stats: { today: "Today", best: "Best", played: "Played", average: "Average" },
+    stats: { today: "Today", best: "Best", played: "Played", average: "Average", run: "This run" },
     tomorrow: "A new marathon tomorrow.",
     shareHead: (n, hits) => `Spindle Marathon #${n} · ${hits} 🎵`,
+    playAgain: "Play again",
+    freeIntro: (year) => (
+      <>
+        <b className="text-ink">Free play</b>, just for fun: it isn&apos;t the daily marathon and
+        doesn&apos;t count toward your stats. Your line starts at <b className="text-ink">{year}</b>
+        .
+      </>
+    ),
+    freeNote: "Free play doesn't count toward your stats. A new daily marathon tomorrow.",
+    shareFree: "Challenge a friend",
+    freeShareHead: (hits) => `Spindle Marathon · Free play · ${hits} 🎵`,
+    shareDare: (hits) => `Same songs. Can you beat my ${hits}? 🎯`,
+    challengeIntro: (year, beat) => (
+      <>
+        <b className="text-ink">Challenge:</b> a friend placed <b className="text-ink">{beat}</b> of
+        these songs right. Can you beat it? Free play, so it doesn&apos;t count toward your stats.
+        Your line starts at <b className="text-ink">{year}</b>.
+      </>
+    ),
+    challengeResult: (hits, beat) => {
+      if (hits > beat) {
+        return `You beat your friend's ${beat}! 🏆`;
+      }
+      return hits === beat
+        ? `A tie with your friend's ${beat}.`
+        : `Your friend's ${beat} still stands.`;
+    },
+    playDaily: "Play today's marathon",
   },
   timeline: {
     name: "Daily Timeline",
@@ -429,9 +469,34 @@ const he: Messages = {
     over: "נגמרו הלבבות!",
     ranOut: "שיבצתם את כל השירים שיש לנו!",
     final: (hits) => `${heSongs(hits)} במקום הנכון`,
-    stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע" },
+    stats: { today: "היום", best: "שיא", played: "משחקים", average: "ממוצע", run: "הסבב הזה" },
     tomorrow: "מרתון חדש מחר.",
     shareHead: (n, hits) => `Spindle מרתון #${n} · ${hits} 🎵`,
+    playAgain: "שחקו שוב",
+    freeIntro: (year) => (
+      <>
+        <b className="text-ink">משחק חופשי</b>, סתם בשביל הכיף: זה לא המרתון היומי והוא לא נספר
+        בסטטיסטיקה. הציר שלכם מתחיל ב־<b className="text-ink">{year}</b>.
+      </>
+    ),
+    freeNote: "משחק חופשי לא נספר בסטטיסטיקה. מרתון יומי חדש מחר.",
+    shareFree: "אתגרו חברים",
+    freeShareHead: (hits) => `Spindle מרתון · משחק חופשי · ${hits} 🎵`,
+    shareDare: (hits) => `אותם שירים. תצליחו לעבור את ה־${hits} שלי? 🎯`,
+    challengeIntro: (year, beat) => (
+      <>
+        <b className="text-ink">אתגר:</b> חבר או חברה שיבצו נכון <b className="text-ink">{beat}</b>{" "}
+        מהשירים האלה. תצליחו לעבור אותם? זה משחק חופשי, והוא לא נספר בסטטיסטיקה. הציר שלכם מתחיל ב־
+        <b className="text-ink">{year}</b>.
+      </>
+    ),
+    challengeResult: (hits, beat) => {
+      if (hits > beat) {
+        return `עברתם את ה־${beat} של החברים! 🏆`;
+      }
+      return hits === beat ? `תיקו עם ה־${beat} של החברים.` : `ה־${beat} של החברים עדיין מחזיק.`;
+    },
+    playDaily: "למרתון של היום",
   },
   timeline: {
     name: "ציר הזמן היומי",

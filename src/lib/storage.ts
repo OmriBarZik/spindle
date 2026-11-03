@@ -2,6 +2,7 @@ import { type Locale, LOCALES } from "@/i18n/config";
 import { SORT_SIZE } from "./daily";
 import type {
   MarathonDay,
+  MarathonFreeRun,
   MarathonStats,
   SaveData,
   SortDay,
@@ -51,7 +52,11 @@ type StoredSave = {
   version?: unknown;
   sort?: { days?: Record<string, SortDay>; stats?: Partial<SortStats> };
   timeline?: Partial<TimelineState>;
-  marathon?: { days?: Record<string, MarathonDay>; stats?: Partial<MarathonStats> };
+  marathon?: {
+    days?: Record<string, MarathonDay>;
+    stats?: Partial<MarathonStats>;
+    free?: MarathonFreeRun;
+  };
   settings?: { songLanguages?: unknown };
 } | null;
 
@@ -78,6 +83,7 @@ export function loadSave(): SaveData {
       marathon: {
         days: parsed.marathon?.days ?? {},
         stats: { ...base.marathon.stats, ...parsed.marathon?.stats },
+        ...(parsed.marathon?.free ? { free: parsed.marathon.free } : {}),
       },
       settings: { songLanguages: cleanLanguages(parsed.settings?.songLanguages) },
     };

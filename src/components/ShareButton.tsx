@@ -6,7 +6,16 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { type GameMode, track } from "@/lib/analytics";
 import { shareOrCopy } from "@/lib/share";
 
-export function ShareButton({ text, mode }: { text: string; mode: GameMode }) {
+export function ShareButton({
+  text,
+  mode,
+  label,
+}: {
+  text: string;
+  mode: GameMode;
+  /** The button's text, when it isn't "Share result". */
+  label?: string;
+}) {
   const { t } = useI18n();
   const [msg, setMsg] = useState<string | null>(null);
   return (
@@ -23,7 +32,7 @@ export function ShareButton({ text, mode }: { text: string; mode: GameMode }) {
         }}
         className="btn-primary"
       >
-        {msg ?? t.common.shareResult}
+        {msg ?? label ?? t.common.shareResult}
       </button>
       {/* Screen readers don't announce a button's label changing, so say it here too. */}
       <Announce>{msg}</Announce>

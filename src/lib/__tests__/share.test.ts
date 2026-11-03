@@ -53,3 +53,14 @@ it("formats a Marathon result, ten squares a row", () => {
     ),
   ).toBe(`Spindle מרתון #1 · 0 🎵\n🟥🟥🟥\n${ORIGIN}/marathon`);
 });
+
+it("formats a free-play Marathon as a challenge, without the day's number", () => {
+  const free = { ...marathon([true, true, false], ["en", "he"]), day: "2026-11-02", seed: "s1" };
+  expect(marathonShareText(MESSAGES.en, "2026-11-02", free, ORIGIN)).toBe(
+    `Spindle Marathon · Free play · 2 🎵\n🟩🟩🟥\nSame songs. Can you beat my 2? 🎯\n${ORIGIN}/marathon?run=s1&beat=2`,
+  );
+  const israeli = { ...free, languages: ["he" as const] };
+  expect(marathonShareText(MESSAGES.he, "2026-11-02", israeli, ORIGIN)).toBe(
+    `Spindle מרתון · משחק חופשי · 2 🎵 · רק שירים ישראליים\n🟩🟩🟥\nאותם שירים. תצליחו לעבור את ה־2 שלי? 🎯\n${ORIGIN}/marathon?run=s1&beat=2&songs=he`,
+  );
+});

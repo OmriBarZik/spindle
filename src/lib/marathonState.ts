@@ -1,7 +1,13 @@
 import type { Messages } from "@/i18n/messages";
 import type { GameOpenEvent } from "./analytics";
-import { marathonAnchorYearFor, marathonSongsFor } from "./daily";
-import type { MarathonDay, MarathonStats, SaveData, SortLineCard } from "./saveData";
+import { marathonAnchorYearFor, marathonFreeSongsFor, marathonSongsFor } from "./daily";
+import type {
+  MarathonDay,
+  MarathonFreeRun,
+  MarathonStats,
+  SaveData,
+  SortLineCard,
+} from "./saveData";
 import { getSong, type Song } from "./songs";
 import { correctSlot, isSlotCorrect } from "./timeline";
 
@@ -12,7 +18,7 @@ function sameLanguages(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((l) => b.includes(l));
 }
 
-function isValidMarathonDay(d: Partial<MarathonDay> | undefined): d is MarathonDay {
+export function isValidMarathonDay(d: Partial<MarathonDay> | undefined): d is MarathonDay {
   return (
     d !== undefined &&
     typeof d.anchorYear === "number" &&
@@ -55,13 +61,20 @@ export function marathonHits(d: MarathonDay): number {
   return d.placements.filter((p) => p.correct).length;
 }
 
-/** The song to place next, or undefined when the day is over. */
-export function marathonCurrent(day: string, d: MarathonDay): Song | undefined {
+/** The songs a run plays, in order: the day's for the daily run, its own for free play. */
+function runSongs(day: string, d: MarathonDay | MarathonFreeRun): Song[] {
+  return "seed" in d
+    ? marathonFreeSongsFor(d.seed, d.languages)
+    : marathonSongsFor(day, d.languages);
+}
+
+/** The song to place next, or undefined when the run is over. */
+export function marathonCurrent(day: string, d: MarathonDay | MarathonFreeRun): Song | undefined {
   if (marathonMisses(d) >= MARATHON_HEARTS) {
     return undefined;
   }
   const used = new Set([...d.placements.map((p) => p.songId), ...d.skipped]);
-  return marathonSongsFor(day, d.languages).find((s) => !used.has(s.id));
+  return runSongs(day, d).find((s) => !used.has(s.id));
 }
 
 /** The line as it stands. A song placed wrong is still added, at its real position. */
@@ -85,26 +98,39 @@ function addMarathonResult(prev: MarathonStats, hits: number): MarathonStats {
   };
 }
 
-/** Place the current song into `slot` (0 = before the first card). */
+/** A run with its current song placed into `slot`, or undefined when that can't be done. */
+export function placeInRun<T extends MarathonDay>(
+  day: string,
+  run: T,
+  slot: number,
+): T | undefined {
+  const song = marathonCurrent(day, run);
+  const line = marathonLine(run);
+  if (!song || slot < 0 || slot > line.length) {
+    return undefined;
+  }
+  const correct = isSlotCorrect(line, slot, song.year);
+  return { ...run, placements: [...run.placements, { songId: song.id, slot, correct }] };
+}
+
+/** A run with its current song skipped, or undefined when there's none. */
+export function skipInRun<T extends MarathonDay>(day: string, run: T): T | undefined {
+  const song = marathonCurrent(day, run);
+  return song ? { ...run, skipped: [...run.skipped, song.id] } : undefined;
+}
+
+/** Place today's current song into `slot` (0 = before the first card). */
 export function placeMarathonSong(data: SaveData, day: string, slot: number): SaveData {
   const current = data.marathon.days[day];
-  if (!isValidMarathonDay(current)) {
+  const next = isValidMarathonDay(current) ? placeInRun(day, current, slot) : undefined;
+  if (!next) {
     return data;
   }
-  const song = marathonCurrent(day, current);
-  const line = marathonLine(current);
-  if (!song || slot < 0 || slot > line.length) {
-    return data;
-  }
-  const placements = [
-    ...current.placements,
-    { songId: song.id, slot, correct: isSlotCorrect(line, slot, song.year) },
-  ];
-  const next: MarathonDay = { ...current, placements };
   const done = !marathonCurrent(day, next);
   return {
     ...data,
     marathon: {
+      ...data.marathon,
       days: { ...data.marathon.days, [day]: next },
       stats: done
         ? addMarathonResult(data.marathon.stats, marathonHits(next))
@@ -113,31 +139,29 @@ export function placeMarathonSong(data: SaveData, day: string, slot: number): Sa
   };
 }
 
-/** What placing the current song into `slot` would do: right or wrong, and whether the day ends. */
-export function marathonOutcome(data: SaveData, day: string, slot: number) {
-  const before = data.marathon.days[day];
-  const after = placeMarathonSong(data, day, slot).marathon.days[day];
+/** What placing a run's current song into `slot` would do: right or wrong, and whether the run ends. */
+export function marathonOutcome(day: string, run: MarathonDay, slot: number) {
+  const after = placeInRun(day, run, slot);
   const correct = after?.placements.at(-1)?.correct ?? false;
   return {
     correct,
     ends: !after || !marathonCurrent(day, after),
-    score: (before ? marathonHits(before) : 0) + (correct ? 1 : 0),
+    score: marathonHits(run) + (correct ? 1 : 0),
   };
 }
 
-/** Skip the current song because its video won't play. */
+/** Skip today's current song because its video won't play. */
 export function skipMarathonSong(data: SaveData, day: string): SaveData {
   const current = data.marathon.days[day];
-  const song = isValidMarathonDay(current) ? marathonCurrent(day, current) : undefined;
-  if (!current || !song) {
+  const next = isValidMarathonDay(current) ? skipInRun(day, current) : undefined;
+  if (!next) {
     return data;
   }
-  const next: MarathonDay = { ...current, skipped: [...current.skipped, song.id] };
   return { ...data, marathon: { ...data.marathon, days: { ...data.marathon.days, [day]: next } } };
 }
 
 /** Everything the Marathon screen shows about the day so far. */
-export function marathonView(day: string, d: MarathonDay) {
+export function marathonView(day: string, d: MarathonDay | MarathonFreeRun) {
   const current = marathonCurrent(day, d);
   const line = marathonLine(d);
   const lastPlacement = d.placements.at(-1);
