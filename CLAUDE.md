@@ -87,7 +87,7 @@ home page doesn't preload it, and it's marked `noindex`. It may come back later,
 Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Desktop controls:** Space plays/pauses and Enter places, from anywhere on the page
-  (`useKeyShortcut`; a focused button keeps its own keys), alongside the arrow keys, Home and End.
+  (`useKeyShortcut`). A focused button keeps Space, but never gets Enter while the place button is on screen (it's claimed: a clicked Play button keeps the focus, and Enter must place, not pause); links keep it, alongside the arrow keys, Home and End.
   With a mouse, the strip can be dragged, a click moves the record to the nearest gap
   (`useSwipeDrag`), and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
   the keys under the place button, only for fine pointers. Every control has tests:

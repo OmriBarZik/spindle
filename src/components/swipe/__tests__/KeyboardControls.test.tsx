@@ -82,19 +82,46 @@ it("places at the gap the arrow keys chose", async () => {
   expect(savedData().sort.days[DAY]?.placements[0]?.slot).toBe(0);
 });
 
-it("leaves Enter and Space to a focused button", async () => {
+it("leaves Space to a focused button", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await playerReady();
+  await userEvent.keyboard("{End}");
+  screen.getByRole("button", { name: "Earlier" }).focus();
+  await userEvent.keyboard(" ");
+  expect(recordGap(container)).toBe(0);
+  expect(playButton("Pause")).toBeNull();
+});
+
+it("never gives Enter to another button, even before the song is heard", async () => {
   const { container } = renderIn("en", <SortGame />);
   await playerReady();
   await userEvent.keyboard("{End}");
   screen.getByRole("button", { name: "Earlier" }).focus();
   await userEvent.keyboard("{Enter}");
-  expect(recordGap(container)).toBe(0);
+  expect(recordGap(container)).toBe(1);
+  playButton("Play")!.focus();
+  await userEvent.keyboard("{Enter}");
+  expect(playButton("Pause")).toBeNull();
+  expect(sortPlaced()).toBe(0);
+});
+
+it("places with Enter while the play button it clicked has the focus", async () => {
+  renderIn("en", <SortGame />);
+  await playerReady();
+  await userEvent.click(playButton("Play")!);
+  expect(document.activeElement).toBe(playButton("Pause"));
+  await userEvent.keyboard("{Enter}");
+  expect(sortPlaced()).toBe(1);
+  expect(fakeYouTube.pauses).toBe(0);
+});
+
+it("places with Enter while Earlier has the focus, at the record's gap", async () => {
+  renderIn("en", <SortGame />);
+  await playSong();
   await userEvent.keyboard("{End}");
   screen.getByRole("button", { name: "Earlier" }).focus();
-  await userEvent.keyboard(" ");
-  expect(recordGap(container)).toBe(0);
-  expect(sortPlaced()).toBe(0);
-  expect(playButton("Pause")).toBeNull();
+  await userEvent.keyboard("{Enter}");
+  expect(savedData().sort.days[DAY]?.placements[0]?.slot).toBe(1);
 });
 
 it.for([{ name: "Control" }, { name: "Shift" }, { name: "Alt" }, { name: "Meta" }])(

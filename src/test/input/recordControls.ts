@@ -50,7 +50,7 @@ export async function playSong(lang: Locale = "en") {
     .toBe(false);
   const button = screen.getByRole("button", { name });
   await userEvent.click(button);
-  // Let go of the button, so Enter and Space reach the page's shortcuts again.
+  // Let go of the button, so Space reaches the page's shortcut again.
   button.blur();
 }
 
