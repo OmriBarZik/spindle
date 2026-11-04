@@ -454,7 +454,7 @@
   {"artist":"Taylor Swift","title":"Love Story","year":2008,"youtubeId":"8xg3vE8Ie_E"},
   {"artist":"The Black Eyed Peas","title":"Boom Boom Pow","year":2009,"youtubeId":"4m48GqaOz90"},
   {"artist":"Train","title":"Hey, Soul Sister","year":2009,"youtubeId":"kVpv8-5XWOI"},
-  {"artist":"Taio Cruz","title":"Dynamite","year":2010,"youtubeId":"VUjdiDeJ0xg"},
+  {"id":"VUjdiDeJ0xg","artist":"Taio Cruz","title":"Dynamite","year":2010,"youtubeId":"kJNyjdpT1vo"},
   {"artist":"Foster the People","title":"Pumped Up Kicks","year":2010,"youtubeId":"k_aQYP8rsgE"},
   {"artist":"Of Monsters and Men","title":"Little Talks","year":2011,"youtubeId":"IY8rOSyR5Rw"},
   {"artist":"fun. feat. Janelle Monáe","title":"We Are Young","year":2011,"youtubeId":"Sv6dMFF_yts"},
