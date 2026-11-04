@@ -7,6 +7,7 @@ import { MarathonGame } from "@/components/marathon/MarathonGame";
 import { marathonAnchorYearFor, marathonSongsFor } from "@/lib/catalog/daily";
 import { marathonRun } from "@/lib/games/marathonFree";
 import { marathonCurrent, marathonLine } from "@/lib/games/marathonState";
+import { gapToSlot, slotToGap, stackSizes } from "@/lib/line/stacks";
 import { correctSlot, isSlotCorrect } from "@/lib/line/timeline";
 import { expectAccessible } from "@/test/expectAccessible";
 import { trackedEvents } from "@/test/fakes/fakeAnalytics";
@@ -30,8 +31,10 @@ async function place(right: boolean, container: HTMLElement) {
   const { state } = marathonRun(savedData(), DAY)!;
   const song = marathonCurrent(DAY, state)!;
   const line = marathonLine(state);
-  const good = correctSlot(line, song.year);
-  const bad = [0, line.length].find((s) => !isSlotCorrect(line, s, song.year))!;
+  // The record moves between gaps, and same-year songs share one stack with no gap inside.
+  const sizes = stackSizes(line);
+  const good = slotToGap(sizes, correctSlot(line, song.year));
+  const bad = [0, sizes.length].find((g) => !isSlotCorrect(line, gapToSlot(sizes, g), song.year))!;
   await playSong();
   await moveRecordTo(container, right ? good : bad);
   await userEvent.click(placeButton());
