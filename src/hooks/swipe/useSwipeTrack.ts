@@ -55,6 +55,13 @@ export function useSwipeTrack({
   const settle = useCallback(() => {
     window.clearTimeout(steerTimerRef.current);
     steerTimerRef.current = window.setTimeout(() => {
+      // A glide redirected mid-way (Home, then an arrow key at once) can come to rest a
+      // few pixels off the gap: put it exactly under the record. One layout read per
+      // glide, never per frame; a move this small lands on the same gap, so it's not news.
+      const track = trackRef.current;
+      if (track && shownRef.current !== null) {
+        centreGap(track, shownRef.current, "instant");
+      }
       steeringRef.current = false;
     }, 140);
   }, []);

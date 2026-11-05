@@ -5,6 +5,7 @@ import { SwipeStack } from "@/components/swipe/card/SwipeStack";
 import { SwipeBrowse } from "@/components/swipe/SwipeBrowse";
 import { SwipeGap } from "@/components/swipe/SwipeGap";
 import { SwipeOverview } from "@/components/swipe/SwipeOverview";
+import { useRecordDrag } from "@/hooks/swipe/useRecordDrag";
 import { useStackedLine } from "@/hooks/swipe/useStackedLine";
 import { useSwipeDrag } from "@/hooks/swipe/useSwipeDrag";
 import { useSwipeKeys } from "@/hooks/swipe/useSwipeKeys";
@@ -104,6 +105,7 @@ export function SwipeLine({
     onStep: step,
   });
   const drag = useSwipeDrag({ pitchRef, takeOver, choosing, count, onSlot: onGap });
+  const recordDrag = useRecordDrag({ trackRef, pitchRef, choosing, onStep: step });
 
   const flank = (i: number) => choosing && gap !== null && (i === gap - 1 || i === gap);
 
@@ -140,7 +142,10 @@ export function SwipeLine({
         </div>
         {record ? (
           <div className="swipe-record">
-            {record}
+            {/* With a mouse, the record can be dragged along the line (`useRecordDrag`). */}
+            <div {...recordDrag} className={choosing ? "swipe-grab" : undefined}>
+              {record}
+            </div>
             {choosing ? (
               <>
                 <span aria-hidden className="swipe-drop" />

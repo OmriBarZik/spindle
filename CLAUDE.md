@@ -88,10 +88,18 @@ Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Desktop controls:** Space plays/pauses and Enter places, from anywhere on the page
   (`useKeyShortcut`). A focused button keeps Space, but never gets Enter while the place button is on screen (it's claimed: a clicked Play button keeps the focus, and Enter must place, not pause); links keep it, alongside the arrow keys, Home and End.
-  With a mouse, the strip can be dragged, a click moves the record to the nearest gap
-  (`useSwipeDrag`), and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
+  With a mouse, the record is what moves while placing (`useRecordDrag`): grabbing its vinyl
+  (never the play button, which keeps a pointer cursor and only plays; a drag can start in any
+  direction) lifts it
+  above the line (`.swipe-lifted`), and it follows the mouse over a line that stays still until it
+  reaches the year card beside its gap; there it pushes the line one gap that way, and keeps pushing
+  a gap at a time while held against the card. It can also be dragged a little up and down
+  (24px, `SLACK`). Letting go drops it onto the gap in the middle. The
+  strip itself can't be dragged then (only a finished line's, to look through it). A click on the
+  strip moves the record to the nearest gap (`useSwipeDrag`). On touch nothing changes: a tap on the
+  record plays it, and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
   the keys under the place button, only for fine pointers. Every control has tests:
-  `KeyboardControls`, `MouseControls`, `WheelControls` and `DesktopLayout` (at 1280px) in
+  `KeyboardControls`, `MouseControls`, `RecordDrag`, `WheelControls` and `DesktopLayout` (at 1280px) in
   `src/components/swipe/__tests__/`, plus the arrow keys in `SortGame.test.tsx`. Add one with any new control.
 - **Placing is swipe-then-tap.** The record always sits on a gap (it starts in the middle,
   `defaultSlot`), so the place button is ready at once and the whole line, record and button fit
@@ -206,7 +214,7 @@ grouped by feature, with each folder's tests in its own `__tests__/`:
 | `src/hooks/swipe/useSwipeKeys.ts` | Arrow keys, Home and End move the record from anywhere on the page |
 | `src/hooks/game/useKeyShortcut.ts` | A page-wide key (Space plays in `Deck`, Enter places in `PlaceButton`) |
 | `src/hooks/swipe/useSwipePitch.ts` | `PITCH` (the phone's gap-to-gap distance) and the strip's measured pitch, kept in a ref and re-measured on resize |
-| `src/hooks/swipe/useSwipeDrag.ts`, `useSwipeWheel.ts` | Mouse controls for the strip: drag, click to a gap, wheel |
+| `src/hooks/swipe/useSwipeDrag.ts`, `useSwipeWheel.ts`, `useRecordDrag.ts` | Mouse controls for the line: drag a finished strip, click to a gap, wheel, and drag the record while placing |
 | `src/hooks/game/recordFlight.ts` | The record's flight from the home page into a game |
 | `src/lib/games/share.ts` | `shareOrCopy()` plus the pure share-text builders (`sortShareText`, `marathonShareText`, `timelineShareText`); share texts carry no puzzle number |
 | `src/lib/display/motion.ts` | `canAnimate()` (Web Animations + reduced-motion check) and `holdHidden()` |

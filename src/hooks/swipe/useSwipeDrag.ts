@@ -21,10 +21,10 @@ function gapAt(track: HTMLElement, offset: number, pitch: number, count: number)
 }
 
 /**
- * Mouse controls for the strip (touch scrolls it natively): drag it sideways like a
- * finger would, or click anywhere on it to move the record to the nearest gap.
- * Dragging only sets scrollLeft, so the strip's own scroll handler lights the gaps
- * exactly as it does for a swipe.
+ * Mouse controls for the strip (touch scrolls it natively). While placing, a click
+ * anywhere on it moves the record to the nearest gap, but the strip itself stays put:
+ * the record is what's dragged (`useRecordDrag`). A finished line can be dragged
+ * sideways to look through it. Dragging only sets scrollLeft, as a swipe would.
  */
 export function useSwipeDrag({
   pitchRef,
@@ -64,9 +64,21 @@ export function useSwipeDrag({
     if (!drag || drag.id !== e.pointerId) {
       return;
     }
+    // The button is up, though no release came (it happened where the page can't see).
+    if ((e.buttons & 1) === 0) {
+      dragRef.current = null;
+      track.classList.remove("swipe-dragging");
+      return;
+    }
     const dx = e.clientX - drag.x;
     if (!drag.moved) {
       if (Math.abs(dx) < DRAG_START) {
+        return;
+      }
+      if (choosing) {
+        // While placing, the strip stays put: only the record moves. Not a click either.
+        dragRef.current = null;
+        draggedRef.current = true;
         return;
       }
       drag.moved = true;
@@ -77,6 +89,15 @@ export function useSwipeDrag({
     track.scrollLeft = drag.left - dx;
   }
 
+  /** A click on the strip (not on a link) moves the record to the nearest gap. */
+  function click(e: PointerEvent<HTMLDivElement>, track: HTMLElement) {
+    const onLink = e.target instanceof Element && e.target.closest("a, button");
+    if (choosing && !onLink) {
+      const box = track.getBoundingClientRect();
+      onSlot(gapAt(track, e.clientX - (box.left + box.width / 2), pitchRef.current, count));
+    }
+  }
+
   function onPointerUp(e: PointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     const track = e.currentTarget;
@@ -85,12 +106,7 @@ export function useSwipeDrag({
       return;
     }
     if (!drag.moved) {
-      // A click on a link (a card's "watch") is the link's, not the strip's.
-      const onLink = e.target instanceof Element && e.target.closest("a, button");
-      if (choosing && !onLink) {
-        const box = track.getBoundingClientRect();
-        onSlot(gapAt(track, e.clientX - (box.left + box.width / 2), pitchRef.current, count));
-      }
+      click(e, track);
       return;
     }
     draggedRef.current = true;
@@ -118,6 +134,7 @@ export function useSwipeDrag({
     onPointerMove,
     onPointerUp,
     onPointerCancel: onPointerUp,
+    onLostPointerCapture: onPointerUp,
     onClickCapture,
     // Links and text would otherwise start the browser's own drag.
     onDragStart: (e: MouseEvent<HTMLDivElement>) => e.preventDefault(),

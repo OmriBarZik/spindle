@@ -377,6 +377,10 @@
   color: var(--color-ink);
 }
 
+.swipe-step:not(:disabled) {
+  cursor: pointer;
+}
+
 .swipe-step:disabled {
   opacity: 0.3;
 }
@@ -417,23 +421,82 @@
   background: var(--color-secondary);
 }
 
-/* With a mouse the strip is dragged (useSwipeDrag.ts); a click moves the record to
-   the nearest gap. Snapping waits until the drag ends. */
+/* With a mouse (useSwipeDrag.ts), the record is grabbed and dragged along the line
+   while placing; it alone shows the grab cursor then. Only a finished line's strip is
+   dragged. Snapping waits until a drag ends. */
 @media (hover: hover) and (pointer: fine) {
   .swipe-track {
-    cursor: grab;
-
     /* A drag would otherwise select the cards' text before it starts moving the strip. */
     user-select: none;
   }
+
+  .swipe-done .swipe-track,
+  .swipe-grab {
+    cursor: grab;
+    user-select: none;
+  }
+
+  /* The play button is pressed, not dragged. */
+  .swipe-grab .record-button {
+    cursor: pointer;
+  }
+}
+
+.swipe-track.swipe-dragging,
+.swipe-grab.swipe-dragging,
+.swipe-grab.swipe-dragging .record-button {
+  cursor: grabbing;
 }
 
 .swipe-track.swipe-dragging {
-  cursor: grabbing;
   scroll-snap-type: none;
 }
 
+/* Grabbed, the record lifts off the line and hovers above it, its shadow spread on the
+   line below. Dragged, it follows the mouse (`translate`, set by useRecordDrag.ts) as
+   far as the next card. Let go, it drops back onto the chosen gap with a small bounce.
+   Only transforms and opacity change, so it stays smooth while the strip scrolls. */
+.swipe-grab {
+  position: relative;
+  transition-property: transform, translate;
+  transition-duration: var(--duration-medium), var(--duration-slow);
+  transition-timing-function: var(--ease-drop);
+}
+
+/* Following the mouse: no lag behind it. */
+.swipe-grab.swipe-dragging {
+  transition-property: transform;
+}
+
+.swipe-grab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lifted);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-medium);
+}
+
+.swipe-grab.swipe-lifted {
+  transform: translateY(calc(var(--spacing-200) * -1)) scale(1.1);
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease-out;
+}
+
+.swipe-grab.swipe-lifted::after {
+  opacity: 1;
+  transition-duration: var(--duration-fast);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .swipe-grab,
+  .swipe-grab::after {
+    transition: none;
+  }
+
   .swipe-glow {
     transition: none;
   }

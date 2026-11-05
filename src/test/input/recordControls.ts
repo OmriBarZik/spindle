@@ -98,6 +98,6 @@ export function gapUnderRecord(container: HTMLElement): { gap: number; centred: 
       best = { gap: Number(el.getAttribute("data-gap")), off };
     }
   }
-  // A glide redirected mid-way (Home, then an arrow key at once) can stop a pixel or two short.
-  return { gap: best.gap, centred: best.off <= 2 };
+  // Within a pixel: the strip re-centres exactly once a glide ends (`useSwipeTrack`).
+  return { gap: best.gap, centred: best.off <= 1 };
 }

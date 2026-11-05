@@ -95,10 +95,15 @@
   --duration-spin: 2.4s;
   --duration-spin-slow: 8s;
 
+  /* A small overshoot: the record dropping onto the line. */
+  --ease-drop: cubic-bezier(0.3, 1.6, 0.5, 1);
+
   /* Shadows and glows. */
   --shadow-record:
     0 var(--spacing-250) var(--spacing-600) var(--palette-shadow-deep),
     inset 0 0 0 var(--border-thick) var(--color-vinyl-edge);
+  /* A grabbed record hovering above the line. */
+  --shadow-lifted: 0 var(--spacing-300) var(--spacing-400) var(--palette-shadow);
   --shadow-sleeve: inset 0 0 0 var(--border-thin) var(--palette-sheen-strong);
   --glow-small: var(--spacing-150);
   --glow-medium: var(--spacing-200);
