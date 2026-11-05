@@ -48,50 +48,19 @@ it("leaves taps to the browser, which scrolls the strip itself", async () => {
   expect(recordGap(container)).toBe(1);
 });
 
-it("drags the line with the mouse, and settles on the nearest gap", async () => {
+it("keeps the line still while placing: only the record is dragged", async () => {
   const { container } = renderIn("en", <SortGame />);
   const track = lineTrack(container);
   await playSong();
   await userEvent.keyboard("{Home}");
-  // Let the strip glide there first: a drag takes over from wherever it is.
   await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
   const [x, y] = pointOn(track, 0.95, 0.3);
-  // A bit more than one gap to the left: the next gap (later) comes under the record.
   await mouseDrag([x, y], [x - 1.2 * PITCH, y]);
-  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 1, centred: true });
-  expect(recordGap(container)).toBe(1);
-  expect(screen.getByRole("button", { name: /^Place it: After / })).toBeTruthy();
+  expect(gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  expect(recordGap(container)).toBe(0);
   expect(track.classList.contains("swipe-dragging")).toBe(false);
   // Dragging selected no text, and a drag isn't a click.
   expect(window.getSelection()?.toString()).toBe("");
-});
-
-it("drags the other way on right-to-left pages", async ({ onTestFinished }) => {
-  document.documentElement.dir = "rtl";
-  onTestFinished(() => {
-    document.documentElement.removeAttribute("dir");
-  });
-  const { container } = renderIn("he", <SortGame />);
-  const track = lineTrack(container);
-  await userEvent.keyboard("{Home}");
-  // Let the strip glide there first: a drag takes over from wherever it is.
-  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
-  const [x, y] = pointOn(track, 0.05, 0.3);
-  await mouseDrag([x, y], [x + 1.2 * PITCH, y]);
-  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 1, centred: true });
-  expect(recordGap(container)).toBe(1);
-});
-
-it("stays put after a drag too short to reach the next gap", async () => {
-  const { container } = renderIn("en", <SortGame />);
-  const track = lineTrack(container);
-  await userEvent.keyboard("{Home}");
-  // Let the strip glide there first: a drag takes over from wherever it is.
-  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
-  const [x, y] = pointOn(track, 0.95, 0.3);
-  await mouseDrag([x, y], [x - 0.3 * PITCH, y]);
-  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
-  expect(recordGap(container)).toBe(0);
 });
 
 it("drags a finished line to look through it", async () => {
@@ -102,20 +71,6 @@ it("drags a finished line to look through it", async () => {
   const [x, y] = pointOn(track, 0.9, 0.3);
   await mouseDrag([x, y], [x - 200, y]);
   await expect.poll(() => track.scrollLeft).toBeGreaterThan(100);
-});
-
-it("follows a drag that interrupts the strip's glide to a key press", async () => {
-  const { container } = renderIn("en", <SortGame />);
-  const track = lineTrack(container);
-  await userEvent.keyboard("{End}");
-  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 1, centred: true });
-  // Mid-glide back to the first gap, the player grabs the strip and pulls it back.
-  await userEvent.keyboard("{Home}");
-  const [x, y] = pointOn(track, 0.95, 0.3);
-  await mouseDrag([x, y], [x - 1.2 * PITCH, y]);
-  // Wherever it lands, the record and the place button agree with the strip.
-  await expect.poll(() => gapUnderRecord(container).centred).toBe(true);
-  expect(recordGap(container)).toBe(gapUnderRecord(container).gap);
 });
 
 /** The record on the line, which the mouse can grab. */
@@ -174,4 +129,65 @@ it("leaves the record to touch, which only plays it", async () => {
   record.dispatchEvent(new PointerEvent("pointerup", { ...init, clientX: x + 2 * PITCH }));
   expect(gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
   expect(recordGap(container)).toBe(0);
+});
+
+it("stays put after a record drag too short to reach the next gap", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const [x, y] = pointOn(lineRecord(container), 0.5, 0.5);
+  await mouseDrag([x, y], [x + 0.3 * PITCH, y]);
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  expect(recordGap(container)).toBe(0);
+});
+
+it("follows a record drag that interrupts the strip's glide to a key press", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{End}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 1, centred: true });
+  // Mid-glide back to the first gap, the player grabs the record and pulls it later.
+  await userEvent.keyboard("{Home}");
+  const [x, y] = pointOn(lineRecord(container), 0.5, 0.5);
+  await mouseDrag([x, y], [x + 1.2 * PITCH, y]);
+  // Wherever it lands, the record and the place button agree with the strip.
+  await expect.poll(() => gapUnderRecord(container).centred).toBe(true);
+  expect(recordGap(container)).toBe(gapUnderRecord(container).gap);
+});
+
+/**
+ * Sends one pointer event to the record, without moving (so the press is held between
+ * calls). "pointerout" leaves it for the page, which React reports as a pointer leave.
+ */
+function pressRecord(record: HTMLElement, type: string, pointerType = "mouse") {
+  const [x, y] = pointOn(record, 0.9, 0.5);
+  const init = { pointerType, pointerId: 1, button: 0, clientX: x, clientY: y, bubbles: true };
+  record.dispatchEvent(new PointerEvent(type, { ...init, relatedTarget: document.body }));
+}
+
+it("lifts the record off the line while it's held, and drops it when let go", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  const record = lineRecord(container);
+  pressRecord(record, "pointerdown");
+  expect(record.classList.contains("swipe-lifted")).toBe(true);
+  // Raised above the line, and bigger.
+  await expect.poll(() => new DOMMatrix(getComputedStyle(record).transform).f).toBeLessThan(0);
+  expect(new DOMMatrix(getComputedStyle(record).transform).a).toBeGreaterThan(1);
+  pressRecord(record, "pointerup");
+  expect(record.classList.contains("swipe-lifted")).toBe(false);
+  await expect.poll(() => getComputedStyle(record).transform).toBe("none");
+});
+
+it("puts the record back down when the mouse slips off it without dragging", () => {
+  const { container } = renderIn("en", <SortGame />);
+  const record = lineRecord(container);
+  pressRecord(record, "pointerdown");
+  pressRecord(record, "pointerout");
+  expect(record.classList.contains("swipe-lifted")).toBe(false);
+});
+
+it("never lifts the record for touch", () => {
+  const { container } = renderIn("en", <SortGame />);
+  const record = lineRecord(container);
+  pressRecord(record, "pointerdown", "touch");
+  expect(record.classList.contains("swipe-lifted")).toBe(false);
 });

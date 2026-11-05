@@ -26,12 +26,19 @@ function gapAt(track: HTMLElement, offset: number, pitch: number, count: number)
   return clamp(Math.round(along / pitch), 0, count);
 }
 
+/** Lets go of the record: it drops back onto the line. */
+function drop(e: PointerEvent<HTMLDivElement>) {
+  e.currentTarget.classList.remove("swipe-lifted");
+}
+
 /**
- * Mouse controls for the strip (touch scrolls it natively): drag it sideways like a
- * finger would, click anywhere on it to move the record to the nearest gap, or grab the
- * record and drag it to an earlier or later gap. Touch never drags the record: a tap on
- * it plays the song. Dragging only sets scrollLeft, so the strip's own scroll handler
- * lights the gaps exactly as it does for a swipe.
+ * Mouse controls for the line (touch scrolls the strip natively). While placing, the
+ * record is what moves: grab it and it lifts off the line, drag it to an earlier or
+ * later gap, and let go to drop it there; or click anywhere on the strip to move it to
+ * the nearest gap. The strip itself can't be dragged then, only on a finished line, to
+ * look through it. Touch never drags the record: a tap on it plays the song. Dragging
+ * only sets scrollLeft, so the strip's own scroll handler lights the gaps exactly as it
+ * does for a swipe.
  */
 export function useSwipeDrag({
   trackRef,
@@ -61,6 +68,10 @@ export function useSwipeDrag({
     }
     draggedRef.current = false;
     dragRef.current = { id: e.pointerId, x: e.clientX, left: track.scrollLeft, moved: false, grip };
+    if (grip === "record") {
+      // It hovers above the line until it's dropped (`.swipe-lifted` in swipe.css).
+      e.currentTarget.classList.add("swipe-lifted");
+    }
   }
 
   function onPointerMove(e: PointerEvent<HTMLDivElement>) {
@@ -72,6 +83,12 @@ export function useSwipeDrag({
     const dx = e.clientX - drag.x;
     if (!drag.moved) {
       if (Math.abs(dx) < DRAG_START) {
+        return;
+      }
+      if (drag.grip === "strip" && choosing) {
+        // While placing, the strip stays put: only the record moves. Not a click either.
+        dragRef.current = null;
+        draggedRef.current = true;
         return;
       }
       drag.moved = true;
@@ -98,6 +115,9 @@ export function useSwipeDrag({
     dragRef.current = null;
     if (!drag || drag.id !== e.pointerId || !track) {
       return;
+    }
+    if (drag.grip === "record") {
+      drop(e);
     }
     if (!drag.moved) {
       // A click on the record is its play button's.
@@ -144,6 +164,13 @@ export function useSwipeDrag({
       onPointerDown: (e: PointerEvent<HTMLDivElement>) => {
         if (choosing) {
           start(e, "record");
+        }
+      },
+      // Pressed but never dragged, and the mouse slipped off: put it back down.
+      onPointerLeave: (e: PointerEvent<HTMLDivElement>) => {
+        if (dragRef.current?.grip === "record" && !dragRef.current.moved) {
+          dragRef.current = null;
+          drop(e);
         }
       },
     },

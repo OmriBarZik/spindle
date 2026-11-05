@@ -417,15 +417,20 @@
   background: var(--color-secondary);
 }
 
-/* With a mouse the strip is dragged (useSwipeDrag.ts); a click moves the record to
-   the nearest gap, and the record itself can be grabbed and dragged along the line.
-   Snapping waits until the drag ends. */
+/* With a mouse (useSwipeDrag.ts), the record is grabbed and dragged along the line
+   while placing, and a click on the strip moves it to the nearest gap. Only a finished
+   line's strip is dragged. Snapping waits until a drag ends. */
 @media (hover: hover) and (pointer: fine) {
-  .swipe-track,
-  .swipe-grab {
-    cursor: grab;
+  .swipe-track {
+    cursor: pointer;
 
     /* A drag would otherwise select the cards' text before it starts moving the strip. */
+    user-select: none;
+  }
+
+  .swipe-done .swipe-track,
+  .swipe-grab {
+    cursor: grab;
     user-select: none;
   }
 
@@ -445,7 +450,43 @@
   scroll-snap-type: none;
 }
 
+/* Grabbed, the record lifts off the line and hovers above it, its shadow spread on the
+   line below; let go, it drops into the gap with a small bounce. Only transform and
+   opacity change, so it stays smooth while the strip scrolls under it. */
+.swipe-grab {
+  position: relative;
+  transition: transform var(--duration-medium) var(--ease-drop);
+}
+
+.swipe-grab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-lifted);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-medium);
+}
+
+.swipe-grab.swipe-lifted {
+  transform: translateY(calc(var(--spacing-200) * -1)) scale(1.1);
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease-out;
+}
+
+.swipe-grab.swipe-lifted::after {
+  opacity: 1;
+  transition-duration: var(--duration-fast);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .swipe-grab,
+  .swipe-grab::after {
+    transition: none;
+  }
+
   .swipe-glow {
     transition: none;
   }

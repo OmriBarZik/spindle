@@ -88,9 +88,11 @@ Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Desktop controls:** Space plays/pauses and Enter places, from anywhere on the page
   (`useKeyShortcut`). A focused button keeps Space, but never gets Enter while the place button is on screen (it's claimed: a clicked Play button keeps the focus, and Enter must place, not pause); links keep it, alongside the arrow keys, Home and End.
-  With a mouse, the strip can be dragged, the record can be grabbed and dragged along the line
-  (mouse only: on touch a tap on the record just plays it), a click moves the record to the nearest gap
-  (`useSwipeDrag`), and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
+  With a mouse, the record is what moves while placing: grabbing it lifts it above the line
+  (`.swipe-lifted`), dragging moves it to an earlier or later gap, and letting go drops it there; the
+  strip itself can't be dragged then (only a finished line's, to look through it). A click on the
+  strip moves the record to the nearest gap (`useSwipeDrag`). On touch nothing changes: a tap on the
+  record plays it, and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
   the keys under the place button, only for fine pointers. Every control has tests:
   `KeyboardControls`, `MouseControls`, `WheelControls` and `DesktopLayout` (at 1280px) in
   `src/components/swipe/__tests__/`, plus the arrow keys in `SortGame.test.tsx`. Add one with any new control.
