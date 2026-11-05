@@ -32,8 +32,9 @@ export function PlaceButton({
   const at = useSyncExternalStore(live.subscribe, live.get, live.get) ?? slot;
   const where = slotLabel(cards, at, t.placeAt);
   const ready = heard && !disabled;
-  // Enter places the song from anywhere on the page (a focused button keeps its own Enter).
-  useKeyShortcut("Enter", ready, () => onPlace(at));
+  // Enter places the song from anywhere on the page, and is never another button's
+  // while the game asks for a placement (a clicked button keeps the focus).
+  useKeyShortcut("Enter", ready, () => onPlace(at), { claim: true });
   return (
     <button
       type="button"
