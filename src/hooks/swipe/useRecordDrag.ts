@@ -43,6 +43,28 @@ function putDown(el: HTMLElement) {
   el.style.translate = "";
 }
 
+/**
+ * Let go outside the record, or outside the window, or the window loses focus (a switch
+ * to another app): the record may never hear the release, so the page listens too.
+ */
+function listenForRelease(release: () => void): AbortController {
+  const unlisten = new AbortController();
+  const options = { signal: unlisten.signal };
+  window.addEventListener("pointerup", release, options);
+  window.addEventListener("pointercancel", release, options);
+  window.addEventListener("blur", release, options);
+  return unlisten;
+}
+
+/**
+ * Whether a press can grab the record: the main mouse button, on the vinyl. The play
+ * button in the middle is for playing, never for dragging; touch only taps.
+ */
+function grabs(e: PointerEvent<HTMLDivElement>): boolean {
+  const onPlay = e.target instanceof Element && e.target.closest("button");
+  return e.pointerType === "mouse" && e.button === 0 && !onPlay;
+}
+
 /** Which card the record is held against: −1 the left one, 1 the right one, 0 neither. */
 function sideOf(dx: number, reach: number): -1 | 0 | 1 {
   if (Math.abs(dx) < reach) {
@@ -123,18 +145,12 @@ export function useRecordDrag({
   }
 
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
-    if (!choosing || e.pointerType !== "mouse" || e.button !== 0) {
+    if (!choosing || !grabs(e)) {
       return;
     }
     release();
     draggedRef.current = false;
-    const unlisten = new AbortController();
-    // Let go outside the record, or outside the window, or the window loses focus (a
-    // switch to another app): the record may never hear the release, so the page listens.
-    const options = { signal: unlisten.signal };
-    window.addEventListener("pointerup", release, options);
-    window.addEventListener("pointercancel", release, options);
-    window.addEventListener("blur", release, options);
+    const unlisten = listenForRelease(release);
     const el = e.currentTarget;
     dragRef.current = {
       id: e.pointerId,
@@ -146,6 +162,13 @@ export function useRecordDrag({
       unlisten,
     };
     el.classList.add("swipe-lifted");
+  }
+
+  /** The press becomes a drag: the record keeps the mouse wherever it goes. */
+  function begin(drag: Drag, e: PointerEvent<HTMLDivElement>) {
+    drag.moved = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.currentTarget.classList.add("swipe-dragging");
   }
 
   function onPointerMove(e: PointerEvent<HTMLDivElement>) {
@@ -160,12 +183,11 @@ export function useRecordDrag({
     }
     const dx = e.clientX - drag.x;
     if (!drag.moved) {
-      if (Math.abs(dx) < DRAG_START) {
+      // Any direction starts a drag: down or up as well as sideways.
+      if (Math.hypot(dx, e.clientY - drag.y) < DRAG_START) {
         return;
       }
-      drag.moved = true;
-      e.currentTarget.setPointerCapture(e.pointerId);
-      e.currentTarget.classList.add("swipe-dragging");
+      begin(drag, e);
     }
     // The neighbouring card's year is half a pitch away: the record goes no further.
     const reach = pitchRef.current / 2;
@@ -181,10 +203,17 @@ export function useRecordDrag({
     onPointerCancel: release,
     // The browser took the mouse back (a context menu, a lost focus): let go.
     onLostPointerCapture: release,
-    // Pressed but never dragged, and the mouse slipped off: put it back down.
-    onPointerLeave: () => {
-      if (dragRef.current && !dragRef.current.moved) {
+    // The mouse left the record before the drag began (a quick pull, or a press near
+    // its edge): still held, that's a drag; let go, put the record back down.
+    onPointerLeave: (e: PointerEvent<HTMLDivElement>) => {
+      const drag = dragRef.current;
+      if (!drag || drag.moved) {
+        return;
+      }
+      if ((e.buttons & 1) === 0) {
         release();
+      } else {
+        begin(drag, e);
       }
     },
     onClickCapture: (e: MouseEvent<HTMLDivElement>) => {

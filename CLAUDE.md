@@ -88,7 +88,9 @@ Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Desktop controls:** Space plays/pauses and Enter places, from anywhere on the page
   (`useKeyShortcut`). A focused button keeps Space, but never gets Enter while the place button is on screen (it's claimed: a clicked Play button keeps the focus, and Enter must place, not pause); links keep it, alongside the arrow keys, Home and End.
-  With a mouse, the record is what moves while placing (`useRecordDrag`): grabbing it lifts it
+  With a mouse, the record is what moves while placing (`useRecordDrag`): grabbing its vinyl
+  (never the play button, which keeps a pointer cursor and only plays; a drag can start in any
+  direction) lifts it
   above the line (`.swipe-lifted`), and it follows the mouse over a line that stays still until it
   reaches the year card beside its gap; there it pushes the line one gap that way, and keeps pushing
   a gap at a time while held against the card. It can also be dragged a little up and down
@@ -97,7 +99,7 @@ Shared rules:
   strip moves the record to the nearest gap (`useSwipeDrag`). On touch nothing changes: a tap on the
   record plays it, and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
   the keys under the place button, only for fine pointers. Every control has tests:
-  `KeyboardControls`, `MouseControls`, `WheelControls` and `DesktopLayout` (at 1280px) in
+  `KeyboardControls`, `MouseControls`, `RecordDrag`, `WheelControls` and `DesktopLayout` (at 1280px) in
   `src/components/swipe/__tests__/`, plus the arrow keys in `SortGame.test.tsx`. Add one with any new control.
 - **Placing is swipe-then-tap.** The record always sits on a gap (it starts in the middle,
   `defaultSlot`), so the place button is ready at once and the whole line, record and button fit

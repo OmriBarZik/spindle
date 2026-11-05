@@ -436,9 +436,9 @@
     user-select: none;
   }
 
-  /* Over the play button too, so the record reads as one thing to grab. */
+  /* The play button is pressed, not dragged. */
   .swipe-grab .record-button {
-    cursor: grab;
+    cursor: pointer;
   }
 }
 

@@ -7,7 +7,8 @@ declare module "vitest/browser" {
   // oxlint-disable-next-line typescript/consistent-type-definitions
   interface BrowserCommands {
     mouseDrag: (from: Point, to: Point, steps?: number) => Promise<void>;
-    mouseHold: (from: Point, to: Point) => Promise<void>;
+    mouseHold: (from: Point, to: Point, steps?: number) => Promise<void>;
+    mouseMove: (to: Point, steps?: number) => Promise<void>;
     mouseUp: () => Promise<void>;
     mouseWheel: (at: Point, deltaY: number) => Promise<void>;
   }
@@ -25,8 +26,13 @@ export function mouseDrag(from: Point, to: Point, steps?: number): Promise<void>
  * Presses the real mouse at one point and moves it to another, still holding the button
  * until `mouseUp()`.
  */
-export function mouseHold(from: Point, to: Point): Promise<void> {
-  return commands.mouseHold(from, to);
+export function mouseHold(from: Point, to: Point, steps?: number): Promise<void> {
+  return commands.mouseHold(from, to, steps);
+}
+
+/** Moves the real mouse on to a point (still holding a button `mouseHold` pressed). */
+export function mouseMove(to: Point, steps?: number): Promise<void> {
+  return commands.mouseMove(to, steps);
 }
 
 /** Lets go of the mouse button `mouseHold` pressed. */
