@@ -71,6 +71,12 @@ const mouseHold: BrowserCommand<[from: Point, to: Point, steps?: number]> = asyn
   await mouse.move(end.x, end.y, { steps });
 };
 
+/** Moves the real mouse to a point, whether or not a button is held. */
+const mouseMove: BrowserCommand<[to: Point, steps?: number]> = async (context, to, steps = 10) => {
+  const end = await framePoint(context, to);
+  await context.page.mouse.move(end.x, end.y, { steps });
+};
+
 const mouseUp: BrowserCommand = async (context) => {
   await context.page.mouse.up();
 };
@@ -121,9 +127,12 @@ export default defineConfig({
           include: ["src/components/**/*.test.tsx"],
           exclude: ["**/*.perf.test.tsx"],
           sequence: { groupOrder: 0 },
+          // Waiting for the strip to glide to rest can take over a second on a busy machine;
+          // a passing poll still returns as soon as it passes.
+          expect: { poll: { timeout: 3000 } },
           browser: {
             ...chromium("browser", ["dark", "light"]),
-            commands: { mouseDrag, mouseHold, mouseUp, mouseWheel },
+            commands: { mouseDrag, mouseHold, mouseMove, mouseUp, mouseWheel },
           },
         },
       },
