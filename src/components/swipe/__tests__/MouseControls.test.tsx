@@ -117,3 +117,61 @@ it("follows a drag that interrupts the strip's glide to a key press", async () =
   await expect.poll(() => gapUnderRecord(container).centred).toBe(true);
   expect(recordGap(container)).toBe(gapUnderRecord(container).gap);
 });
+
+/** The record on the line, which the mouse can grab. */
+function lineRecord(container: HTMLElement): HTMLElement {
+  return container.querySelector<HTMLElement>(".swipe-grab")!;
+}
+
+it("drags the record along the line to a later gap, and settles there", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await playSong();
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const [x, y] = pointOn(lineRecord(container), 0.5, 0.5);
+  // Pulling the record right moves it later, the opposite way to pulling the strip.
+  await mouseDrag([x, y], [x + 1.2 * PITCH, y]);
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 1, centred: true });
+  expect(recordGap(container)).toBe(1);
+  expect(screen.getByRole("button", { name: /^Place it: After / })).toBeTruthy();
+  expect(lineRecord(container).classList.contains("swipe-dragging")).toBe(false);
+  // A drag isn't a click: the song keeps playing.
+  expect(screen.getByRole("button", { name: "Pause" })).toBeTruthy();
+});
+
+it("drags the record the other way on right-to-left pages", async ({ onTestFinished }) => {
+  document.documentElement.dir = "rtl";
+  onTestFinished(() => {
+    document.documentElement.removeAttribute("dir");
+  });
+  const { container } = renderIn("he", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const [x, y] = pointOn(lineRecord(container), 0.5, 0.5);
+  // Later is to the left in Hebrew.
+  await mouseDrag([x, y], [x - 1.2 * PITCH, y]);
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 1, centred: true });
+  expect(recordGap(container)).toBe(1);
+});
+
+it("still plays the song on a click on the record, without moving it", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  const before = recordGap(container);
+  await playSong();
+  expect(screen.getByRole("button", { name: "Pause" })).toBeTruthy();
+  expect(recordGap(container)).toBe(before);
+});
+
+it("leaves the record to touch, which only plays it", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const record = lineRecord(container);
+  const [x, y] = pointOn(record, 0.9, 0.5);
+  const init = { pointerType: "touch", pointerId: 1, button: 0, clientY: y, bubbles: true };
+  record.dispatchEvent(new PointerEvent("pointerdown", { ...init, clientX: x }));
+  record.dispatchEvent(new PointerEvent("pointermove", { ...init, clientX: x + 2 * PITCH }));
+  record.dispatchEvent(new PointerEvent("pointerup", { ...init, clientX: x + 2 * PITCH }));
+  expect(gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  expect(recordGap(container)).toBe(0);
+});

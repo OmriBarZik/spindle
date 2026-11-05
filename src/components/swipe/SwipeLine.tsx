@@ -103,7 +103,7 @@ export function SwipeLine({
     count,
     onStep: step,
   });
-  const drag = useSwipeDrag({ pitchRef, takeOver, choosing, count, onSlot: onGap });
+  const drag = useSwipeDrag({ trackRef, pitchRef, takeOver, choosing, count, onSlot: onGap });
 
   const flank = (i: number) => choosing && gap !== null && (i === gap - 1 || i === gap);
 
@@ -118,7 +118,7 @@ export function SwipeLine({
           // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- axe's scrollable-region-focusable needs it
           tabIndex={0}
           onScroll={onScroll}
-          {...drag}
+          {...drag.strip}
           className="swipe-track"
         >
           <ol className="swipe-list">
@@ -140,7 +140,10 @@ export function SwipeLine({
         </div>
         {record ? (
           <div className="swipe-record">
-            {record}
+            {/* With a mouse, the record can be dragged along the line (`useSwipeDrag`). */}
+            <div {...drag.record} className={choosing ? "swipe-grab" : undefined}>
+              {record}
+            </div>
             {choosing ? (
               <>
                 <span aria-hidden className="swipe-drop" />

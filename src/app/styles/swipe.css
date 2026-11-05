@@ -418,18 +418,30 @@
 }
 
 /* With a mouse the strip is dragged (useSwipeDrag.ts); a click moves the record to
-   the nearest gap. Snapping waits until the drag ends. */
+   the nearest gap, and the record itself can be grabbed and dragged along the line.
+   Snapping waits until the drag ends. */
 @media (hover: hover) and (pointer: fine) {
-  .swipe-track {
+  .swipe-track,
+  .swipe-grab {
     cursor: grab;
 
     /* A drag would otherwise select the cards' text before it starts moving the strip. */
     user-select: none;
   }
+
+  /* Over the play button too, so the record reads as one thing to grab. */
+  .swipe-grab .record-button {
+    cursor: grab;
+  }
+}
+
+.swipe-track.swipe-dragging,
+.swipe-grab.swipe-dragging,
+.swipe-grab.swipe-dragging .record-button {
+  cursor: grabbing;
 }
 
 .swipe-track.swipe-dragging {
-  cursor: grabbing;
   scroll-snap-type: none;
 }
 

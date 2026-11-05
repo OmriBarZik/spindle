@@ -88,7 +88,8 @@ Shared rules:
 - **Slot `i`** means "insert before `cards[i]`"; `slot === cards.length` is the end.
 - **Desktop controls:** Space plays/pauses and Enter places, from anywhere on the page
   (`useKeyShortcut`). A focused button keeps Space, but never gets Enter while the place button is on screen (it's claimed: a clicked Play button keeps the focus, and Enter must place, not pause); links keep it, alongside the arrow keys, Home and End.
-  With a mouse, the strip can be dragged, a click moves the record to the nearest gap
+  With a mouse, the strip can be dragged, the record can be grabbed and dragged along the line
+  (mouse only: on touch a tap on the record just plays it), a click moves the record to the nearest gap
   (`useSwipeDrag`), and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists
   the keys under the place button, only for fine pointers. Every control has tests:
   `KeyboardControls`, `MouseControls`, `WheelControls` and `DesktopLayout` (at 1280px) in
