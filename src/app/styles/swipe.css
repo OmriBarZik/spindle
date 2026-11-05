@@ -451,11 +451,19 @@
 }
 
 /* Grabbed, the record lifts off the line and hovers above it, its shadow spread on the
-   line below; let go, it drops into the gap with a small bounce. Only transform and
-   opacity change, so it stays smooth while the strip scrolls under it. */
+   line below. Dragged, it follows the mouse (`translate`, set by useRecordDrag.ts) as
+   far as the next card. Let go, it drops back onto the chosen gap with a small bounce.
+   Only transforms and opacity change, so it stays smooth while the strip scrolls. */
 .swipe-grab {
   position: relative;
-  transition: transform var(--duration-medium) var(--ease-drop);
+  transition-property: transform, translate;
+  transition-duration: var(--duration-medium), var(--duration-slow);
+  transition-timing-function: var(--ease-drop);
+}
+
+/* Following the mouse: no lag behind it. */
+.swipe-grab.swipe-dragging {
+  transition-property: transform;
 }
 
 .swipe-grab::after {

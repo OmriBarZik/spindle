@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { SortGame } from "@/components/sort/SortGame";
 import { PITCH } from "@/hooks/swipe/useSwipePitch";
-import { mouseDrag } from "@/test/input/realMouse";
+import { mouseDrag, mouseHold, mouseUp } from "@/test/input/realMouse";
 import {
   gapUnderRecord,
   lineTrack,
@@ -189,5 +189,48 @@ it("never lifts the record for touch", () => {
   const { container } = renderIn("en", <SortGame />);
   const record = lineRecord(container);
   pressRecord(record, "pointerdown", "touch");
+  expect(record.classList.contains("swipe-lifted")).toBe(false);
+});
+
+/** How far (px) the record has been pulled sideways from the middle. */
+function recordPull(record: HTMLElement): number {
+  return Number.parseFloat(record.style.translate || "0");
+}
+
+it("moves the record with the mouse over a still line, short of the next card", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const record = lineRecord(container);
+  const [x, y] = pointOn(record, 0.5, 0.5);
+  await mouseHold([x, y], [x + 0.3 * PITCH, y]);
+  expect(recordPull(record)).toBeCloseTo(0.3 * PITCH, 0);
+  expect(gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  expect(recordGap(container)).toBe(0);
+  await mouseUp();
+  // Let go short of the card: back onto the same gap.
+  expect(recordPull(record)).toBe(0);
+  expect(recordGap(container)).toBe(0);
+});
+
+it("pushes the line a gap at a time while the record is held against the next card", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  // A longer line: the starting year and three songs, so five gaps.
+  await placeWithEnter(container, 3);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const record = lineRecord(container);
+  const [x, y] = pointOn(record, 0.5, 0.5);
+  // Well past the card: the record stops at it, half a gap-to-gap step away.
+  await mouseHold([x, y], [x + 2 * PITCH, y]);
+  expect(recordPull(record)).toBe(PITCH / 2);
+  await expect.poll(() => recordGap(container)).toBeGreaterThanOrEqual(1);
+  // Held there, the line keeps moving.
+  await expect.poll(() => recordGap(container), { timeout: 3000 }).toBeGreaterThanOrEqual(3);
+  await mouseUp();
+  const chosen = recordGap(container);
+  expect(recordPull(record)).toBe(0);
+  // Let go, it stops: the record drops onto the gap in the middle.
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: chosen, centred: true });
   expect(record.classList.contains("swipe-lifted")).toBe(false);
 });

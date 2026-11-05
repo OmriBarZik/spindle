@@ -56,7 +56,8 @@ async function framePoint(context: Parameters<BrowserCommand>[0], [x, y]: Point)
 }
 
 /** Runs on the test server: drags with the real mouse, in `steps` moves. */
-const mouseDrag: BrowserCommand<[from: Point, to: Point, steps?: number]> = async (
+/** Presses the real mouse at `from` and moves it to `to`, still holding the button. */
+const mouseHold: BrowserCommand<[from: Point, to: Point, steps?: number]> = async (
   context,
   from,
   to,
@@ -68,10 +69,22 @@ const mouseDrag: BrowserCommand<[from: Point, to: Point, steps?: number]> = asyn
   await mouse.move(start.x, start.y);
   await mouse.down();
   await mouse.move(end.x, end.y, { steps });
-  await mouse.up();
 };
 
-/** Runs on the test server: turns the real mouse wheel over a point. */
+const mouseUp: BrowserCommand = async (context) => {
+  await context.page.mouse.up();
+};
+
+const mouseDrag: BrowserCommand<[from: Point, to: Point, steps?: number]> = async (
+  context,
+  from,
+  to,
+  steps,
+) => {
+  await mouseHold(context, from, to, steps);
+  await mouseUp(context);
+};
+
 const mouseWheel: BrowserCommand<[at: Point, deltaY: number]> = async (context, at, deltaY) => {
   const { x, y } = await framePoint(context, at);
   await context.page.mouse.move(x, y);
@@ -110,7 +123,7 @@ export default defineConfig({
           sequence: { groupOrder: 0 },
           browser: {
             ...chromium("browser", ["dark", "light"]),
-            commands: { mouseDrag, mouseWheel },
+            commands: { mouseDrag, mouseHold, mouseUp, mouseWheel },
           },
         },
       },
