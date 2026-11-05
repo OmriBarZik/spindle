@@ -320,3 +320,23 @@ it.for([
   await mouseUp();
   expect(record.style.translate).toBe("");
 });
+
+it("shows the grab cursor on the record only, and a pointer on the Earlier / Later buttons", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  const cursor = (el: Element) => getComputedStyle(el).cursor;
+  expect(cursor(lineRecord(container))).toBe("grab");
+  expect(cursor(lineTrack(container))).toBe("auto");
+  const later = screen.getByRole("button", { name: "Later" });
+  const earlier = screen.getByRole("button", { name: "Earlier" });
+  expect(cursor(later)).toBe("pointer");
+  // At the first gap, Earlier can't be pressed: no pointer.
+  await expect.poll(() => earlier.hasAttribute("disabled")).toBe(true);
+  expect(cursor(earlier)).not.toBe("pointer");
+});
+
+it("shows the grab cursor on a finished line, which can be dragged", async () => {
+  const { container } = renderIn("en", <SortGame />);
+  await placeWithEnter(container, 5);
+  expect(getComputedStyle(lineTrack(container)).cursor).toBe("grab");
+});

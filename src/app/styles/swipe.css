@@ -377,6 +377,10 @@
   color: var(--color-ink);
 }
 
+.swipe-step:not(:disabled) {
+  cursor: pointer;
+}
+
 .swipe-step:disabled {
   opacity: 0.3;
 }
@@ -418,12 +422,10 @@
 }
 
 /* With a mouse (useSwipeDrag.ts), the record is grabbed and dragged along the line
-   while placing, and a click on the strip moves it to the nearest gap. Only a finished
-   line's strip is dragged. Snapping waits until a drag ends. */
+   while placing; it alone shows the grab cursor then. Only a finished line's strip is
+   dragged. Snapping waits until a drag ends. */
 @media (hover: hover) and (pointer: fine) {
   .swipe-track {
-    cursor: pointer;
-
     /* A drag would otherwise select the cards' text before it starts moving the strip. */
     user-select: none;
   }
