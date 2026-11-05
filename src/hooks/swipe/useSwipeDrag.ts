@@ -64,6 +64,12 @@ export function useSwipeDrag({
     if (!drag || drag.id !== e.pointerId) {
       return;
     }
+    // The button is up, though no release came (it happened where the page can't see).
+    if ((e.buttons & 1) === 0) {
+      dragRef.current = null;
+      track.classList.remove("swipe-dragging");
+      return;
+    }
     const dx = e.clientX - drag.x;
     if (!drag.moved) {
       if (Math.abs(dx) < DRAG_START) {
@@ -128,6 +134,7 @@ export function useSwipeDrag({
     onPointerMove,
     onPointerUp,
     onPointerCancel: onPointerUp,
+    onLostPointerCapture: onPointerUp,
     onClickCapture,
     // Links and text would otherwise start the browser's own drag.
     onDragStart: (e: MouseEvent<HTMLDivElement>) => e.preventDefault(),

@@ -234,3 +234,62 @@ it("pushes the line a gap at a time while the record is held against the next ca
   await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: chosen, centred: true });
   expect(record.classList.contains("swipe-lifted")).toBe(false);
 });
+
+/** Holds the record against the next card, so the line keeps moving. */
+async function holdAgainstCard(container: HTMLElement): Promise<HTMLElement> {
+  await placeWithEnter(container, 3);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const record = lineRecord(container);
+  const [x, y] = pointOn(record, 0.5, 0.5);
+  await mouseHold([x, y], [x + 2 * PITCH, y]);
+  await expect.poll(() => recordGap(container)).toBeGreaterThanOrEqual(1);
+  return record;
+}
+
+/** The line has stopped: the record's gap holds still for longer than a push takes. */
+async function expectStopped(container: HTMLElement) {
+  const gap = recordGap(container);
+  await new Promise((resolve) => {
+    setTimeout(resolve, 900);
+  });
+  expect(recordGap(container)).toBe(gap);
+}
+
+it.for([
+  {
+    name: "a release outside the record",
+    event: () => new PointerEvent("pointerup", { pointerId: 1, bubbles: true }),
+    on: () => document.body,
+  },
+  { name: "the window losing focus", event: () => new FocusEvent("blur"), on: () => window },
+])("lets go of the record on $name", async ({ event, on }, { onTestFinished }) => {
+  onTestFinished(() => mouseUp());
+  const { container } = renderIn("en", <SortGame />);
+  const record = await holdAgainstCard(container);
+  on().dispatchEvent(event());
+  expect(record.classList.contains("swipe-lifted")).toBe(false);
+  expect(recordPull(record)).toBe(0);
+  await expectStopped(container);
+});
+
+it("lets go of the record when the mouse moves with its button up, though no release came", async ({
+  onTestFinished,
+}) => {
+  onTestFinished(() => mouseUp());
+  const { container } = renderIn("en", <SortGame />);
+  const record = await holdAgainstCard(container);
+  const [x, y] = pointOn(record, 0.5, 0.5);
+  record.dispatchEvent(
+    new PointerEvent("pointermove", {
+      pointerType: "mouse",
+      pointerId: 1,
+      buttons: 0,
+      clientX: x,
+      clientY: y,
+      bubbles: true,
+    }),
+  );
+  expect(record.classList.contains("swipe-lifted")).toBe(false);
+  await expectStopped(container);
+});

@@ -1,6 +1,13 @@
 "use client";
 
-import { type MouseEvent, type PointerEvent, type RefObject, useEffect, useRef } from "react";
+import {
+  type MouseEvent,
+  type PointerEvent,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { directionSign } from "@/lib/line/directionSign";
 
 /** How far (px) a mouse moves before a press becomes a drag rather than a click. */
@@ -15,7 +22,17 @@ type Drag = {
   moved: boolean;
   /** −1 or 1 while the record is held against a neighbouring card (screen direction). */
   pushing: -1 | 0 | 1;
+  /** The record being held. */
+  el: HTMLElement;
+  /** Removes the page-wide listeners that catch a release the record never hears of. */
+  unlisten: AbortController;
 };
+
+/** Puts the record down: back to the middle, over the chosen gap, with a bounce (swipe.css). */
+function putDown(el: HTMLElement) {
+  el.classList.remove("swipe-lifted", "swipe-dragging");
+  el.style.translate = "";
+}
 
 /** Which card the record is held against: −1 the left one, 1 the right one, 0 neither. */
 function sideOf(dx: number, reach: number): -1 | 0 | 1 {
@@ -50,7 +67,30 @@ export function useRecordDrag({
   const draggedRef = useRef(false);
   const repeatRef = useRef(0);
 
-  useEffect(() => () => window.clearInterval(repeatRef.current), []);
+  /**
+   * Lets go of the record, however the drag ended. Safe to call twice: the record's own
+   * pointerup and the page's both arrive for one release.
+   */
+  const release = useCallback(() => {
+    const drag = dragRef.current;
+    if (!drag) {
+      return;
+    }
+    dragRef.current = null;
+    window.clearInterval(repeatRef.current);
+    drag.unlisten.abort();
+    putDown(drag.el);
+    // The click that follows a drag isn't a press of the play button.
+    draggedRef.current = drag.moved;
+  }, []);
+
+  // Leaving the page or the game mid-drag lets go too.
+  useEffect(() => release, [release]);
+  useEffect(() => {
+    if (!choosing) {
+      release();
+    }
+  }, [choosing, release]);
 
   /** One gap towards `side` (−1 left, 1 right on screen), whatever the reading direction. */
   function push(side: -1 | 1) {
@@ -73,28 +113,32 @@ export function useRecordDrag({
     }
   }
 
-  function release(el: HTMLElement) {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    window.clearInterval(repeatRef.current);
-    el.classList.remove("swipe-lifted", "swipe-dragging");
-    // Back to the middle, over the chosen gap, with a small bounce (swipe.css).
-    el.style.translate = "";
-    return drag;
-  }
-
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     if (!choosing || e.pointerType !== "mouse" || e.button !== 0) {
       return;
     }
+    release();
     draggedRef.current = false;
-    dragRef.current = { id: e.pointerId, x: e.clientX, moved: false, pushing: 0 };
-    e.currentTarget.classList.add("swipe-lifted");
+    const unlisten = new AbortController();
+    // Let go outside the record, or outside the window, or the window loses focus (a
+    // switch to another app): the record may never hear the release, so the page listens.
+    const options = { signal: unlisten.signal };
+    window.addEventListener("pointerup", release, options);
+    window.addEventListener("pointercancel", release, options);
+    window.addEventListener("blur", release, options);
+    const el = e.currentTarget;
+    dragRef.current = { id: e.pointerId, x: e.clientX, moved: false, pushing: 0, el, unlisten };
+    el.classList.add("swipe-lifted");
   }
 
   function onPointerMove(e: PointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     if (!drag || drag.id !== e.pointerId) {
+      return;
+    }
+    // The button is up, though no release came (it happened where the page can't see).
+    if ((e.buttons & 1) === 0) {
+      release();
       return;
     }
     const dx = e.clientX - drag.x;
@@ -113,22 +157,17 @@ export function useRecordDrag({
     pushTowards(drag, sideOf(dx, reach));
   }
 
-  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
-    if (dragRef.current?.id !== e.pointerId) {
-      return;
-    }
-    draggedRef.current = Boolean(release(e.currentTarget)?.moved);
-  }
-
   return {
     onPointerDown,
     onPointerMove,
-    onPointerUp,
-    onPointerCancel: onPointerUp,
+    onPointerUp: release,
+    onPointerCancel: release,
+    // The browser took the mouse back (a context menu, a lost focus): let go.
+    onLostPointerCapture: release,
     // Pressed but never dragged, and the mouse slipped off: put it back down.
-    onPointerLeave: (e: PointerEvent<HTMLDivElement>) => {
+    onPointerLeave: () => {
       if (dragRef.current && !dragRef.current.moved) {
-        release(e.currentTarget);
+        release();
       }
     },
     onClickCapture: (e: MouseEvent<HTMLDivElement>) => {
