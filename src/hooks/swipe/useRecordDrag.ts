@@ -16,9 +16,18 @@ const DRAG_START = 5;
 /** While the record is held against a card, the line takes another step this often (ms). */
 const REPEAT = 400;
 
+/** The most (px) the record can be dragged up or down. */
+const SLACK = 24;
+
+/** How far the record follows the mouse up or down: right with it, up to `SLACK`. */
+function giveOf(dy: number): number {
+  return Math.max(-SLACK, Math.min(SLACK, dy));
+}
+
 type Drag = {
   id: number;
   x: number;
+  y: number;
   moved: boolean;
   /** −1 or 1 while the record is held against a neighbouring card (screen direction). */
   pushing: -1 | 0 | 1;
@@ -47,7 +56,7 @@ function sideOf(dx: number, reach: number): -1 | 0 | 1 {
  * Pressed, it lifts off the line (`.swipe-lifted`). Dragged, it follows the mouse over a
  * line that stays still, until it reaches the year card beside its gap; there it pushes
  * the line one gap that way, and keeps pushing a gap at a time while it's held against
- * the card. Let go, it drops back onto the gap in the middle, the one now chosen.
+ * the card. It can be dragged a little up and down too (`giveOf`). Let go, it drops back onto the gap in the middle, the one now chosen.
  */
 export function useRecordDrag({
   trackRef,
@@ -127,7 +136,15 @@ export function useRecordDrag({
     window.addEventListener("pointercancel", release, options);
     window.addEventListener("blur", release, options);
     const el = e.currentTarget;
-    dragRef.current = { id: e.pointerId, x: e.clientX, moved: false, pushing: 0, el, unlisten };
+    dragRef.current = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      moved: false,
+      pushing: 0,
+      el,
+      unlisten,
+    };
     el.classList.add("swipe-lifted");
   }
 
@@ -153,7 +170,7 @@ export function useRecordDrag({
     // The neighbouring card's year is half a pitch away: the record goes no further.
     const reach = pitchRef.current / 2;
     const offset = Math.max(-reach, Math.min(reach, dx));
-    e.currentTarget.style.translate = `${offset}px 0`;
+    e.currentTarget.style.translate = `${offset}px ${giveOf(e.clientY - drag.y)}px`;
     pushTowards(drag, sideOf(dx, reach));
   }
 

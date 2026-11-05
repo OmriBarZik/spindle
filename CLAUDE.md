@@ -91,7 +91,8 @@ Shared rules:
   With a mouse, the record is what moves while placing (`useRecordDrag`): grabbing it lifts it
   above the line (`.swipe-lifted`), and it follows the mouse over a line that stays still until it
   reaches the year card beside its gap; there it pushes the line one gap that way, and keeps pushing
-  a gap at a time while held against the card. Letting go drops it onto the gap in the middle. The
+  a gap at a time while held against the card. It can also be dragged a little up and down
+  (24px, `SLACK`). Letting go drops it onto the gap in the middle. The
   strip itself can't be dragged then (only a finished line's, to look through it). A click on the
   strip moves the record to the nearest gap (`useSwipeDrag`). On touch nothing changes: a tap on the
   record plays it, and the wheel moves it one gap per notch (`useSwipeWheel`). `KeyHints` lists

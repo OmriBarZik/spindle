@@ -197,6 +197,11 @@ function recordPull(record: HTMLElement): number {
   return Number.parseFloat(record.style.translate || "0");
 }
 
+/** How far (px) the record has been pulled down (up is negative). */
+function recordGive(record: HTMLElement): number {
+  return Number.parseFloat(record.style.translate.split(" ")[1] ?? "0");
+}
+
 it("moves the record with the mouse over a still line, short of the next card", async () => {
   const { container } = renderIn("en", <SortGame />);
   await userEvent.keyboard("{Home}");
@@ -292,4 +297,26 @@ it("lets go of the record when the mouse moves with its button up, though no rel
   );
   expect(record.classList.contains("swipe-lifted")).toBe(false);
   await expectStopped(container);
+});
+
+it.for([
+  { name: "down", dy: 400, sign: 1 },
+  { name: "up", dy: -400, sign: -1 },
+])("drags the record a little $name, however far the mouse goes", async ({ dy, sign }) => {
+  const { container } = renderIn("en", <SortGame />);
+  await userEvent.keyboard("{Home}");
+  await expect.poll(() => gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  const record = lineRecord(container);
+  const [x, y] = pointOn(record, 0.5, 0.5);
+  // A small move up or down: the record goes right with the mouse.
+  await mouseHold([x, y], [x + 0.2 * PITCH, y + sign * 10]);
+  expect(recordGive(record)).toBeCloseTo(sign * 10, 0);
+  await mouseUp();
+  // A long one stops it a little way off the line: 24px (`SLACK`).
+  await mouseHold([x, y], [x + 0.2 * PITCH, y + dy]);
+  expect(recordGive(record)).toBe(sign * 24);
+  // Up and down never moves the line.
+  expect(gapUnderRecord(container)).toEqual({ gap: 0, centred: true });
+  await mouseUp();
+  expect(record.style.translate).toBe("");
 });
